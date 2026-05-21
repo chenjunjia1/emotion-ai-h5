@@ -1,47 +1,71 @@
 "use client";
 
-import { Clock, Home, UserRound, Wand2 } from "lucide-react";
+import { Home, UserRound, Video, Wallet, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useApp } from "@/contexts/app-context";
+import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { id: "home", label: "首页", href: "/", icon: Home },
-  { id: "generate", label: "生成", href: "/generate", icon: Wand2 },
-  { id: "history", label: "历史", href: "/history", icon: Clock },
-  { id: "mine", label: "我的", href: "/mine", icon: UserRound },
+  { id: "home", labelKey: "navHome" as const, href: "/", icon: Home },
+  { id: "account", labelKey: "navAccount" as const, href: "/account-package", icon: UserRound },
+  { id: "create", labelKey: "navCreate" as const, href: "/create", icon: Wand2 },
+  { id: "video", labelKey: "navVideo" as const, href: "/ai-video", icon: Video },
+  { id: "profile", labelKey: "navProfile" as const, href: "/profile", icon: Wallet },
 ];
 
 function isNavActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
-  if (href === "/generate") {
-    return pathname === "/generate" || pathname === "/result";
+  if (href === "/create") {
+    return (
+      pathname.startsWith("/create") ||
+      pathname.startsWith("/daily-video") ||
+      pathname.startsWith("/viral-copy")
+    );
   }
   return pathname.startsWith(href);
 }
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { tr } = useApp();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-rose-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-center justify-between px-6 py-3 text-xs text-stone-500">
+    <nav
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 border-t bg-white/95 backdrop-blur-xl",
+        theme.border
+      )}
+    >
+      <div className="mx-auto grid w-full max-w-[430px] grid-cols-5 px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isNavActive(pathname, item.href);
-
           return (
             <Link
               key={item.id}
               href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex flex-col items-center gap-1 transition-colors",
-                active && "font-medium text-rose-500"
-              )}
+              className="flex flex-col items-center justify-center gap-0.5"
             >
-              <Icon className={cn("h-5 w-5", active && "stroke-[2.5px]")} />
-              {item.label}
+              <div
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition",
+                  active
+                    ? `bg-gradient-to-r ${theme.primary} text-white shadow-md ${theme.shadow}`
+                    : "text-slate-400"
+                )}
+              >
+                <Icon size={20} />
+              </div>
+              <span
+                className={cn(
+                  "text-[10px] font-bold",
+                  active ? theme.textActive : "text-slate-400"
+                )}
+              >
+                {tr(item.labelKey)}
+              </span>
             </Link>
           );
         })}

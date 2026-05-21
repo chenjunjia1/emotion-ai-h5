@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "check:env": "node scripts/check-config.mjs",
-    "test:deepseek": "node scripts/test-deepseek.mjs"
+    "test:deepseek": "node scripts/test-deepseek.mjs",
+    "test:v1": "node scripts/test-v1-flows.mjs",
+    "test:security": "node scripts/test-security.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

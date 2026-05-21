@@ -1,3 +1,4 @@
+import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "react";
 
@@ -9,7 +10,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[28px] border-0 bg-white shadow-sm",
+        "rounded-3xl border-0 bg-white/95 shadow-sm",
+        theme.border,
+        "border",
         className
       )}
       {...props}
@@ -25,7 +28,7 @@ export function CardContent({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("p-5", className)} {...props}>
+    <div className={cn("p-4", className)} {...props}>
       {children}
     </div>
   );

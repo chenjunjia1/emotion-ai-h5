@@ -1,4 +1,5 @@
 import type { GenerateFormData, GenerateResult } from "@/lib/types";
+import { resolveDeepSeekBaseUrl } from "@/lib/security/deepseek-url";
 import { buildMockResult } from "@/lib/mock";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts";
 import { parseAiResponse } from "./parse";
@@ -32,9 +33,10 @@ export async function generateWithDeepSeek(
     return { result: buildMockResult(form), usedMock: true };
   }
 
-  const baseUrl = (
-    process.env.DEEPSEEK_API_URL || DEFAULT_BASE_URL
-  ).replace(/\/$/, "");
+  const baseUrl = resolveDeepSeekBaseUrl();
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55_000);
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -52,7 +54,8 @@ export async function generateWithDeepSeek(
       temperature: 0.8,
       max_tokens: 2048,
     }),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
     const errText = await response.text();
@@ -68,9 +71,12 @@ export async function generateWithDeepSeek(
       };
     }
 
-    throw new Error(
-      `DeepSeek API 错误 (${response.status}): ${errText.slice(0, 200)}`
-    );
+    if (process.env.NODE_ENV === "development") {
+      throw new Error(
+        `DeepSeek API 错误 (${response.status}): ${errText.slice(0, 200)}`
+      );
+    }
+    throw new Error("AI 服务暂时不可用，请稍后重试");
   }
 
   const data = (await response.json()) as {

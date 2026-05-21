@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
+import { theme } from "@/lib/theme";
 import type { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost";
 }
 
 export function Button({
@@ -14,10 +15,12 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center font-semibold transition disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         variant === "primary" &&
-          "bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-600",
-        variant === "ghost" && "bg-stone-100 text-stone-600 hover:bg-stone-200",
+          `bg-gradient-to-r ${theme.primary} text-white shadow-lg ${theme.shadow}`,
+        variant === "secondary" &&
+          cn("border bg-white text-slate-800 shadow-sm", theme.border),
+        variant === "ghost" && "text-slate-600 hover:bg-orange-50/80",
         className
       )}
       {...props}
