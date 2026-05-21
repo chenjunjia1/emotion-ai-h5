@@ -1,0 +1,18 @@
+{
+  "$schema": "https://www.cursor.com/schemas/environment.schema.json",
+  "name": "emotion-ai-h5",
+  "install": "npm install --cache .npm-cache",
+  "terminals": [
+    {
+      "name": "dev server",
+      "command": "npm run dev",
+      "description": "Runs the Next.js development server"
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
