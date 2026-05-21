@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.cursor.com/schemas/environment.schema.json",
+  "install": "npm ci --cache .npm-cache",
+  "terminals": [
+    {
+      "name": "emotion-ai-h5 dev server",
+      "command": "npm run dev -- --hostname 0.0.0.0",
+      "description": "Start the Next.js development server for Cloud Agent previews."
+    }
+  ],
+  "ports": [
+    {
+      "name": "Next.js",
+      "port": 3000
+    }
+  ]
+}
