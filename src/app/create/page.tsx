@@ -38,15 +38,15 @@ function CreateContent() {
     if (topicParam) setTopic(topicParam);
   }, [searchParams]);
 
-  const onDaily = () => {
-    const { result, risk: r } = generateDaily(topic);
+  const onDaily = async () => {
+    const { result, risk: r } = await generateDaily(topic);
     setRisk(r);
     if (result) setDailyResult(result as Record<string, unknown>);
     else setDailyResult(null);
   };
 
-  const onViral = () => {
-    const { result, risk: r } = generateViral(viralTitle, viralCopy);
+  const onViral = async () => {
+    const { result, risk: r } = await generateViral(viralTitle, viralCopy);
     setRisk(r);
     if (result) setViralResult(result as Record<string, unknown>);
     else setViralResult(null);

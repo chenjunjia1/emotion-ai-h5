@@ -29,6 +29,18 @@ import {
   mockDailyVideo,
   mockViralCopy,
 } from "@/lib/mock/v1-generators";
+import {
+  apiConfirmMockPay,
+  apiCreatePayOrder,
+  apiGenerateAccount,
+  apiGenerateDaily,
+  apiGenerateViral,
+  apiLogin,
+  apiLogout,
+  apiMe,
+  apiSendCode,
+  isClientServerMode,
+} from "@/lib/client/server-api";
 import { canCreateVideo, canGenerate, checkContentRisk } from "@/lib/risk";
 import type {
   FlowLog,
@@ -58,13 +70,18 @@ interface AppContextValue {
   setPayOrder: (o: Order | null) => void;
   videoDraft: { script?: string; hook?: string } | null;
   setVideoDraft: (d: { script?: string; hook?: string } | null) => void;
-  sendCode: (mobile: string) => boolean;
+  sendCode: (mobile: string) => Promise<boolean>;
   login: (mobile: string, code: string) => boolean;
   logout: () => void;
   addRiskRecord: (contentType: string, content: string, risk: RiskResult) => void;
-  generateAccount: (input: Record<string, string>) => { result?: unknown; risk: RiskResult };
-  generateDaily: (topic: string) => { result?: unknown; risk: RiskResult };
-  generateViral: (title: string, copy: string) => { result?: unknown; risk: RiskResult };
+  generateAccount: (
+    input: Record<string, string>
+  ) => Promise<{ result?: unknown; risk: RiskResult }>;
+  generateDaily: (topic: string) => Promise<{ result?: unknown; risk: RiskResult }>;
+  generateViral: (
+    title: string,
+    copy: string
+  ) => Promise<{ result?: unknown; risk: RiskResult }>;
   createOrder: (product: ProductDef) => Order | null;
   paySuccess: (order: Order) => void;
   payFail: (order: Order) => void;
@@ -117,16 +134,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      setLangState(loadJson(STORAGE_LANG, "zh"));
-      setUser(loadJson(STORAGE_USER, null));
-      setHistories(loadJson(STORAGE_HISTORIES, []));
-      setOrders(loadJson(STORAGE_ORDERS, []));
-      setTasks(loadJson(STORAGE_TASKS, []));
-      setFlowLogs(loadJson(STORAGE_LOGS, []));
-    } finally {
-      setHydrated(true);
-    }
+    const boot = async () => {
+      try {
+        setLangState(loadJson(STORAGE_LANG, "zh"));
+        if (isClientServerMode()) {
+          const remoteUser = await apiMe();
+          setUser(remoteUser);
+        } else {
+          setUser(loadJson(STORAGE_USER, null));
+        }
+        setHistories(loadJson(STORAGE_HISTORIES, []));
+        setOrders(loadJson(STORAGE_ORDERS, []));
+        setTasks(loadJson(STORAGE_TASKS, []));
+        setFlowLogs(loadJson(STORAGE_LOGS, []));
+      } finally {
+        setHydrated(true);
+      }
+    };
+    void boot();
   }, []);
 
   // 部分内置浏览器 useEffect 异常时，避免永远卡在「加载中」
@@ -204,7 +229,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendCode = useCallback(
-    (mobile: string) => {
+    async (mobile: string) => {
+      if (isClientServerMode()) {
+        const r = await apiSendCode(mobile);
+        if (r.ok) {
+          appendLog("sms_logs", `向 ${mobile} 发送验证码`);
+          showToast(tr("codeSent"));
+          return true;
+        }
+        showToast(tr("smsFrequent"));
+        return false;
+      }
       const now = Date.now();
       const s = smsState[mobile] ?? { lastSent: 0, dayCount: 0, failCount: 0 };
       if (now - s.lastSent < 60000) {
@@ -225,6 +260,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     (mobile: string, code: string) => {
+      if (isClientServerMode()) {
+        void (async () => {
+          const r = await apiLogin(mobile, code);
+          if (r.ok && r.user) {
+            setUser(r.user);
+            setLoginOpen(false);
+            showToast(tr("loginSuccess"));
+          } else {
+            showToast(tr("codeError"));
+          }
+        })();
+        return true;
+      }
       const sms = smsState[mobile] ?? { lastSent: 0, dayCount: 0, failCount: 0 };
       if (sms.failCount >= 5) {
         showToast(tr("smsFrequent"));
@@ -261,6 +309,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    if (isClientServerMode()) void apiLogout();
     setUser(null);
     localStorage.removeItem(STORAGE_USER);
   }, []);
@@ -309,7 +358,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const generateAccount = useCallback(
-    (input: Record<string, string>) => {
+    async (input: Record<string, string>) => {
       const text = Object.values(input).join("");
       const risk = checkContentRisk(text);
       addRiskRecord("账号方案", text, risk);
@@ -319,6 +368,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (risk.level === "中") showToast(tr("riskMid"));
       if (!checkQuota("account")) return { risk };
+
+      if (isClientServerMode()) {
+        const res = await apiGenerateAccount(input);
+        if (res.error) {
+          if (res.error === "quota_insufficient") showToast(tr("quotaInsufficient"));
+          else if (res.error === "unauthorized") setLoginOpen(true);
+          return { risk: res.risk ?? risk };
+        }
+        if (res.user) setUser(res.user);
+        if (res.result) {
+          addHistory("账号方案", `${input.platform}-${input.track}`, res.result);
+        }
+        return { result: res.result, risk: res.risk ?? risk };
+      }
+
       const result = mockAccountPackage({
         platform: input.platform ?? "抖音",
         track: input.track ?? "婚恋情感",
@@ -333,7 +397,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const generateDaily = useCallback(
-    (topic: string) => {
+    async (topic: string) => {
       const risk = checkContentRisk(topic);
       addRiskRecord("今日视频", topic, risk);
       if (!canGenerate(risk.level)) {
@@ -342,6 +406,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (risk.level === "中") showToast(tr("riskMid"));
       if (!checkQuota("daily")) return { risk };
+
+      if (isClientServerMode()) {
+        const res = await apiGenerateDaily(topic);
+        if (res.error) {
+          if (res.error === "quota_insufficient") showToast(tr("quotaInsufficient"));
+          else if (res.error === "unauthorized") setLoginOpen(true);
+          return { risk: res.risk ?? risk };
+        }
+        if (res.user) setUser(res.user);
+        if (res.result) addHistory("今日视频", topic, res.result);
+        return { result: res.result, risk: res.risk ?? risk };
+      }
+
       const result = mockDailyVideo(topic);
       deductQuota("daily", "今日视频");
       addHistory("今日视频", topic, result as Record<string, unknown>);
@@ -351,7 +428,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const generateViral = useCallback(
-    (title: string, copy: string) => {
+    async (title: string, copy: string) => {
       const text = title + copy;
       const risk = checkContentRisk(text);
       addRiskRecord("爆款同款", text, risk);
@@ -361,6 +438,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (risk.level === "中") showToast(tr("riskMid"));
       if (!checkQuota("viral")) return { risk };
+
+      if (isClientServerMode()) {
+        const res = await apiGenerateViral(title, copy);
+        if (res.error) {
+          if (res.error === "quota_insufficient") showToast(tr("quotaInsufficient"));
+          else if (res.error === "unauthorized") setLoginOpen(true);
+          return { risk: res.risk ?? risk };
+        }
+        if (res.user) setUser(res.user);
+        if (res.result) addHistory("爆款同款", title, res.result);
+        return { result: res.result, risk: res.risk ?? risk };
+      }
+
       const result = mockViralCopy(title, copy);
       deductQuota("viral", "爆款同款");
       addHistory("爆款同款", title, result as Record<string, unknown>);
@@ -392,6 +482,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLoginOpen(true);
         return null;
       }
+      if (isClientServerMode()) {
+        void (async () => {
+          const r = await apiCreatePayOrder(product);
+          if (r.error) {
+            showToast(tr("payFail"));
+            return;
+          }
+          if (r.payUrl) {
+            window.location.href = r.payUrl;
+            return;
+          }
+          if (r.order) {
+            setOrders((list) => [r.order!, ...list]);
+            appendLog("order_logs", `创建订单 ${r.order.orderNo} · pending`);
+            setPayOrder(r.order);
+          }
+        })();
+        return null;
+      }
       const order: Order = {
         id: String(Date.now()),
         orderNo: `MOCK${Date.now()}`,
@@ -408,11 +517,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPayOrder(order);
       return order;
     },
-    [appendLog, user]
+    [appendLog, showToast, tr, user]
   );
 
   const paySuccess = useCallback(
     (order: Order) => {
+      if (isClientServerMode()) {
+        void (async () => {
+          const r = await apiConfirmMockPay(order.id);
+          if (r.ok && r.user) {
+            setUser(r.user);
+            setOrders((list) =>
+              list.map((o) =>
+                o.id === order.id
+                  ? {
+                      ...o,
+                      status: "paid" as const,
+                      benefitGranted: true,
+                      benefitGrantedAt: new Date().toISOString(),
+                    }
+                  : o
+              )
+            );
+            setPayOrder(null);
+            showToast(tr("paySuccessGranted"));
+          } else {
+            showToast(tr("orderProcessed"));
+            setPayOrder(null);
+          }
+        })();
+        return;
+      }
       let didGrant = false;
       setOrders((list) => {
         const current = list.find((o) => o.id === order.id);

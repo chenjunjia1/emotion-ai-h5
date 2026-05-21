@@ -43,8 +43,8 @@ function AccountPackageContent() {
     }
   }, [searchParams]);
 
-  const generate = () => {
-    const { result: res, risk: r } = generateAccount({
+  const generate = async () => {
+    const { result: res, risk: r } = await generateAccount({
       platform,
       track,
       goal,

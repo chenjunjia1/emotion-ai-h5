@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Smartphone, X } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
@@ -9,11 +9,23 @@ import { Field } from "@/components/ui/field";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
+const SMS_COOLDOWN_SEC = 60;
+
 export function LoginModal() {
   const { loginOpen, setLoginOpen, sendCode, login, showToast, tr } = useApp();
   const [mobile, setMobile] = useState("13800138000");
   const [code, setCode] = useState("1234");
   const [agreed, setAgreed] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setCooldown((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldown]);
 
   if (!loginOpen) return null;
 
@@ -24,6 +36,29 @@ export function LoginModal() {
     }
     login(mobile, code);
   };
+
+  const handleSendCode = async () => {
+    if (cooldown > 0 || sending) return;
+    const m = mobile.trim();
+    if (!/^1\d{10}$/.test(m)) {
+      showToast(tr("mobileInvalid"));
+      return;
+    }
+    setSending(true);
+    try {
+      const ok = await sendCode(m);
+      if (ok) setCooldown(SMS_COOLDOWN_SEC);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const codeButtonLabel =
+    cooldown > 0
+      ? `${cooldown}${tr("getCodeCooldown")}`
+      : sending
+        ? "..."
+        : tr("getCode");
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
@@ -62,8 +97,13 @@ export function LoginModal() {
                   theme.border
                 )}
               />
-              <Button variant="secondary" onClick={() => sendCode(mobile)}>
-                {tr("getCode")}
+              <Button
+                variant="secondary"
+                className="shrink-0 whitespace-nowrap min-w-[7.5rem]"
+                disabled={cooldown > 0 || sending}
+                onClick={() => void handleSendCode()}
+              >
+                {codeButtonLabel}
               </Button>
             </div>
           </Field>
