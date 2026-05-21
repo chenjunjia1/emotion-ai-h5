@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.cursor.com/schemas/environment.schema.json",
   "name": "emotion-ai-h5",
-  "install": "npm install --cache .npm-cache",
+  "install": "npm ci --cache .npm-cache",
   "terminals": [
     {
       "name": "dev server",
