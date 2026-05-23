@@ -1,0 +1,43 @@
+{
+  "name": "emotion-ai-h5",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-fresh.mjs",
+    "dev:quick": "next dev",
+    "dev:fresh": "node scripts/dev-fresh.mjs",
+    "kill:dev": "node scripts/kill-dev-port.mjs",
+    "verify:css": "node scripts/verify-dev-css.mjs",
+    "build": "node scripts/build-safe.mjs",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check:env": "node scripts/check-config.mjs",
+    "test:ingest": "node scripts/test-supabase-ingest.mjs",
+    "test:deepseek": "node scripts/test-deepseek.mjs",
+    "refresh:hot-topics": "node scripts/refresh-daily-hot-topics.mjs",
+    "test:full": "node scripts/test-full-app.mjs"
+  },
+  "dependencies": {
+    "@alicloud/dysmsapi20170525": "^4.1.2",
+    "@alicloud/openapi-client": "^0.4.15",
+    "@supabase/supabase-js": "^2.106.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.469.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

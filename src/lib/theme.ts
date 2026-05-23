@@ -1,0 +1,20 @@
+/** 01 奶油盲盒风 · 小红书高级奶油 + 盲盒玩法 */
+export const theme = {
+  pageBg: "#FFF7F0",
+  containerBg: "from-white to-[#FFF5EC]",
+  bg: "from-[#FFF7F0] via-[#FFF5EC] to-[#FFEDE4]",
+  primary: "from-[#FF6B6B] via-[#FF7AAE] to-[#FFC46B]",
+  primaryBtn: "from-[#FF6B6B] to-[#FF7AAE]",
+  accent: "from-[#FFB8A8] to-[#FFC46B]",
+  banner: "from-[#FF6B6B] via-[#FF7AAE] to-[#FFC46B]",
+  softOrange: "bg-[#FFF0E8] text-[#C96B5A]",
+  softRose: "bg-[#FFF0F3] text-[#D4776A]",
+  border: "border-orange-100/80",
+  card: "rounded-[28px] border border-orange-100/70 bg-white/95 shadow-[0_8px_28px_rgba(255,122,174,0.1)]",
+  cardSm: "rounded-[26px] border border-orange-100/60 bg-white shadow-[0_6px_20px_rgba(255,107,107,0.08)]",
+  shadow: "shadow-[0_4px_16px_rgba(255,122,174,0.15)]",
+  textActive: "text-[#FF7AAE]",
+  textRose: "text-[#FF6B6B]",
+  textBody: "text-slate-500",
+  textTitle: "text-slate-800",
+};

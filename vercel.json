@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-hot-topics",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

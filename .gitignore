@@ -1,0 +1,50 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# duplicate local snapshots (keep canonical src/ at repo root)
+/github-upload-pack/
+/github-upload-src-app/
+/github-upload-missing/
+/github-upload-batches/
+/emotion-ai-h5-upload-github/
+/emotion-ai-h5-上传GitHub/
+/_test-dual-app/
+/dist/
+
+# misc
+.DS_Store
+.npm-cache
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*.local
+
+# alipay keys (never commit)
+.alipay-keys/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

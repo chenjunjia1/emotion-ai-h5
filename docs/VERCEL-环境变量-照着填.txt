@@ -1,0 +1,14 @@
+# Vercel 环境变量清单（把 YOUR_* 换成你自己的值，勿把真实密钥提交到 Git）
+
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SESSION_SECRET=随机32位以上字符串
+NEXT_PUBLIC_BACKEND_MODE=server
+DEEPSEEK_API_KEY=sk-your-deepseek-key
+SMS_PROVIDER=dev
+PAY_PROVIDER=mock
+NEXT_PUBLIC_APP_URL=https://www.emovalue.top
+ALIPAY_NOTIFY_URL=https://www.emovalue.top/api/pay/notify/alipay
+CRON_SECRET=随机长字符串
+ADMIN_MOBILES=你的管理员手机号
