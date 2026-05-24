@@ -176,7 +176,9 @@ const smsState: Record<string, { lastSent: number; dayCount: number; failCount: 
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() =>
+    typeof window !== "undefined" ? readUserLocal() : null
+  );
   const [histories, setHistories] = useState<HistoryItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tasks, setTasks] = useState<VideoTask[]>([]);

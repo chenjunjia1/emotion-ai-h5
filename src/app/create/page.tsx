@@ -147,10 +147,6 @@ function CreateInner() {
         <CreateWorkshopHero tr={tr} tab={tab} socialCount={socialCount} user={user} />
       ) : null}
 
-      <p className="mb-3 rounded-2xl bg-gradient-to-r from-amber-50/90 to-orange-50/60 px-3 py-2 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200/50">
-        💡 {tr("noVideoV1")}
-      </p>
-
       <WorkshopTabs tabs={tabs} active={tab} onChange={handleTab} />
 
       {tab === "reply" && (

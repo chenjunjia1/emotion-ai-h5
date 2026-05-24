@@ -706,6 +706,43 @@ button {
     animation: profile-avatar-float 3.2s ease-in-out infinite;
   }
 
+  .notify-bell-wiggle {
+    animation: notify-bell-wiggle 2.8s ease-in-out infinite;
+  }
+
+  .notify-empty-float {
+    animation: notify-empty-float 2.4s ease-in-out infinite;
+  }
+
+  @keyframes notify-bell-wiggle {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    12% {
+      transform: rotate(-10deg);
+    }
+    24% {
+      transform: rotate(8deg);
+    }
+    36% {
+      transform: rotate(-4deg);
+    }
+    48% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes notify-empty-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
   @keyframes profile-avatar-float {
     0%,
     100% {
@@ -1115,6 +1152,8 @@ button {
     .review-result-reveal,
     .profile-hero-glow,
     .profile-avatar-float,
+    .notify-bell-wiggle,
+    .notify-empty-float,
     .profile-level-badge,
     .profile-quota-pop,
     .profile-xp-shine::after,

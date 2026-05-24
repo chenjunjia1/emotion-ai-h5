@@ -66,15 +66,16 @@ export function HomeCreamCarousel() {
     .replace("{remain}", String(topicBoxRemain))
     .replace("{limit}", String(featureLimits.topicBox));
 
-  const showMemberSlide = !user || user.plan === "free";
+  const showMemberSlide = user == null || user.plan === "free";
   const slides = useMemo<SlideId[]>(
     () => (showMemberSlide ? ["creator", "blindbox", "member"] : ["creator", "blindbox"]),
     [showMemberSlide]
   );
+  const slidesKey = slides.join("-");
 
   useEffect(() => {
-    setIndex((i) => (i >= slides.length ? 0 : i));
-  }, [slides.length]);
+    setIndex(0);
+  }, [slidesKey]);
 
   useEffect(() => {
     if (paused) return;
@@ -83,7 +84,7 @@ export function HomeCreamCarousel() {
       INTERVAL_MS
     );
     return () => window.clearInterval(id);
-  }, [paused, slides.length]);
+  }, [paused, slides.length, slidesKey]);
 
   const go = (n: number) =>
     setIndex(((n % slides.length) + slides.length) % slides.length);
@@ -104,7 +105,7 @@ export function HomeCreamCarousel() {
       showToast(tr("memberPromoLoginHint"));
       return;
     }
-    router.push("/profile?pricing=1");
+    router.push("/profile?pricing=1#membership");
   };
 
   const memberLines = bannerMemberTitleLines(tr("memberPromoTitle"));
@@ -195,10 +196,10 @@ export function HomeCreamCarousel() {
           <motion.div
             key={slides[index]}
             className="absolute inset-0 overflow-hidden"
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={{ duration: 0.28 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
           >
             {renderSlide(slides[index])}
           </motion.div>

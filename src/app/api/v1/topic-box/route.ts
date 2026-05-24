@@ -5,6 +5,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { deductQuota } from "@/lib/server/db/v1";
+import { bumpUserDailyUsage } from "@/lib/server/db/product-v1";
 import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 30;
@@ -41,6 +42,8 @@ export async function POST(req: Request) {
     goal: String(body.goal || "涨粉"),
     style: String(body.style || "温柔"),
   });
+
+  await bumpUserDailyUsage(user.id, "topic_box_count");
 
   const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,

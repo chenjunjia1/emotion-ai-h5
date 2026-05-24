@@ -117,6 +117,19 @@ export const PRODUCTS: ProductDef[] = [
   },
 ];
 
+/** 「我的」页仅展示 3 档，点按钮直接下单 */
+export const PROFILE_STORE_PRODUCT_NAMES = [
+  "Pro会员 30天",
+  "Pro年卡 365天",
+  "灵感加油包 50点",
+] as const;
+
+export function getProfileStoreProducts(products: ProductDef[]): ProductDef[] {
+  return PROFILE_STORE_PRODUCT_NAMES.map((name) =>
+    products.find((p) => p.productName === name)
+  ).filter((p): p is ProductDef => Boolean(p));
+}
+
 export const STORAGE_USER = "sv-v1-user";
 export const STORAGE_HISTORIES = "sv-v1-histories";
 export const STORAGE_ORDERS = "sv-v1-orders";

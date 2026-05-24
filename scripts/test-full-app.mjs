@@ -44,6 +44,7 @@ const PAGES = [
   "/review?tab=weekly",
   "/history",
   "/profile",
+  "/profile/edit",
   "/invite",
   "/account-test",
   "/account-package",
@@ -298,6 +299,107 @@ async function main() {
       log(r.ok && n > 0 ? "PASS" : "FAIL", "GET /api/me?sync=1 内容库", `histories=${n}`);
     } catch (e) {
       log("FAIL", "GET /api/me?sync=1", e.message);
+    }
+  }
+
+  console.log("\n--- 反向 / 异常场景 ---\n");
+  const negative = [
+    {
+      name: "POST /api/auth/send-code 非法手机号",
+      run: () =>
+        fetch(`${base}/api/auth/send-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile: "123" }),
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [400],
+    },
+    {
+      name: "POST /api/auth/login 错误验证码",
+      run: () =>
+        fetch(`${base}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile: "13800138000", code: "0000" }),
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [401],
+    },
+    {
+      name: "POST /api/v1/topic-box 未登录",
+      run: () =>
+        fetch(`${base}/api/v1/topic-box`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "抖音", track: "职场", goal: "涨粉", style: "温柔" }),
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [401],
+    },
+    {
+      name: "POST /api/v1/generate/publish-pack 未登录",
+      run: () =>
+        fetch(`${base}/api/v1/generate/publish-pack`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ platform: "抖音", topic: "x", track: "职场" }),
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [401],
+    },
+    {
+      name: "GET /api/cron 无 Token",
+      run: () =>
+        fetch(`${base}/api/cron/refresh-hot-topics?probe=1`, {
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [401],
+    },
+    {
+      name: "GET /api/cron 错误 Token",
+      run: () =>
+        fetch(`${base}/api/cron/refresh-hot-topics?probe=1`, {
+          headers: { Authorization: "Bearer wrong-secret-token" },
+          signal: AbortSignal.timeout(10000),
+        }),
+      expect: [401],
+    },
+    {
+      name: "GET /api/admin/overview 未登录",
+      run: () =>
+        fetch(`${base}/api/admin/overview`, { signal: AbortSignal.timeout(10000) }),
+      expect: [401, 403],
+    },
+  ];
+
+  for (const n of negative) {
+    try {
+      const r = await n.run();
+      const data = await r.json().catch(() => ({}));
+      if (n.expect.includes(r.status)) {
+        log("PASS", n.name, String(r.status));
+      } else {
+        log("FAIL", n.name, `status ${r.status} ${data.error ?? ""}`.trim());
+      }
+    } catch (e) {
+      log("FAIL", n.name, e.message);
+    }
+  }
+
+  if (cookie) {
+    try {
+      const r = await fetch(`${base}/api/v1/generate/publish-pack`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(15000),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 400 && data.error) log("PASS", "POST publish-pack 空 body", "400");
+      else log("FAIL", "POST publish-pack 空 body", `status ${r.status}`);
+    } catch (e) {
+      log("FAIL", "POST publish-pack 空 body", e.message);
     }
   }
 

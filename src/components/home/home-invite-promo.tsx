@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Gift, Users, Zap } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { useProduct } from "@/hooks/use-product";
+import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { getInviteProgress } from "@/lib/v1/invite-progress";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -15,9 +16,20 @@ const RULE_KEYS = [
 ] as const;
 
 export function HomeInvitePromo() {
-  const { tr, user, setLoginOpen } = useApp();
-  const { inviteRecords } = useProduct();
+  const { tr, user, setLoginOpen, showToast } = useApp();
+  const { inviteRecords, inviteLink } = useProduct();
   const progress = getInviteProgress(user, inviteRecords);
+
+  const onInviteSlotClick = (filled: boolean) => {
+    if (!user) {
+      setLoginOpen(true);
+      return;
+    }
+    if (filled) return;
+    void copyToClipboard(inviteLink).then((ok) => {
+      showToast(ok ? tr("inviteSlotCopyOk") : tr("inviteSlotCopyFail"));
+    });
+  };
 
   return (
     <section
@@ -66,7 +78,17 @@ export function HomeInvitePromo() {
           </div>
           <div className="flex justify-between gap-2">
             {progress.slots.map((slot) => (
-              <div key={slot.id} className="flex flex-1 flex-col items-center gap-0.5">
+              <button
+                key={slot.id}
+                type="button"
+                disabled={slot.filled}
+                onClick={() => onInviteSlotClick(slot.filled)}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-0.5 rounded-xl py-0.5 transition active:scale-95",
+                  slot.filled ? "cursor-default" : "cursor-pointer hover:bg-orange-50/60"
+                )}
+                aria-label={slot.filled ? tr("inviteSlotFilled") : tr("inviteCopyLink")}
+              >
                 <span
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-full text-sm shadow-sm ring-2",
@@ -80,7 +102,7 @@ export function HomeInvitePromo() {
                 <span className="text-[8px] font-semibold text-slate-500">
                   {slot.filled ? slot.label : "待邀请"}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
           <p className="mt-1.5 text-center text-[9px] text-slate-400">

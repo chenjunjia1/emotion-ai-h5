@@ -8,7 +8,7 @@ import {
   redirectToOnboarding,
 } from "@/lib/onboarding/redirect";
 
-const SKIP_PATHS = ["/onboarding", "/agreement", "/pay"];
+const SKIP_PATHS = ["/onboarding", "/profile/edit", "/agreement", "/pay"];
 
 /** 已手机号登录且未完成 AI 身份时，进入 onboarding（不关登录弹窗不触发） */
 export function OnboardingRedirect() {

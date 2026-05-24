@@ -64,6 +64,7 @@ export const zh = {
   notifyLoggedIn: "暂无新消息。订单与陪跑任务可在「我的」查看。",
   notifyGuest: "登录后可接收任务与订单通知",
   notifyAria: "消息通知",
+  close: "关闭",
   paySuccessGranted: "支付成功，权益已发放",
   payFailNoGrant: "支付失败，未发放权益",
   payCancelled: "已取消支付",

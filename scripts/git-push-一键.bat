@@ -25,6 +25,15 @@ if not errorlevel 1 (
 "%GIT%" status -sb
 echo.
 
+REM 自动提交新增的微信校验文件等未跟踪文件
+"%GIT%" add public/MP_verify_*.txt 2>nul
+for /f "delims=" %%F in ('"%GIT%" diff --cached --name-only 2^>nul') do set "HAS_STAGED=1"
+if defined HAS_STAGED (
+  "%GIT%" commit -m "chore: 添加微信 JS 接口安全域名校验文件"
+  echo [OK] 已提交校验文件
+  echo.
+)
+
 "%GIT%" fetch origin main
 if errorlevel 1 (
   echo.
