@@ -20,11 +20,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "zh_CN",
     url: SITE_URL,
+    // 微信链接分享缩略图须 <32KB；og-share.png 约 50KB 会显示灰块
     images: [
       {
-        url: "/og-share.png",
-        width: 1200,
-        height: 630,
+        url: "/brand-avatar.png",
+        width: 512,
+        height: 512,
         alt: "AI短视频运营灵感",
       },
     ],
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI短视频运营灵感",
     description: "抽选题 · 写标题 · 出发布包 · 每日灵感",
-    images: ["/og-share.png"],
+    images: ["/brand-avatar.png"],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
