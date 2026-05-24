@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * build 前检查 dev 是否在跑，避免与 next dev 同时写 .next 导致白屏/无样式
+ * 本地 build:safe — 构建前检查 dev 是否在跑，避免与 next dev 同时写 .next 导致白屏/无样式。
+ * Vercel / CI 请用 npm run build（直接 next build）。
  */
 import { spawn } from "child_process";
 import net from "net";
-import { killDevPort } from "./kill-dev-port.mjs";
 
 const PORT = Number(process.env.DEV_PORT || 3000);
 
