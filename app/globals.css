@@ -1,0 +1,1139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  background-color: #fff7f0;
+}
+
+@layer components {
+  .cream-card {
+    @apply border border-orange-100/70 bg-white/95 shadow-[0_8px_28px_rgba(255,122,174,0.08)];
+  }
+}
+
+a,
+button {
+  touch-action: manipulation;
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-hero {
+    box-shadow: 0 12px 40px rgba(217, 70, 143, 0.22);
+  }
+
+  /* —— 首页动效 Banner（CSS 动图感，非 GIF）—— */
+
+  /* 首页运营 Banner：珊瑚粉 + 蜜桃橙 + 奶油白（低饱和奶油风） */
+  .banner-gradient-pack {
+    background: linear-gradient(
+      135deg,
+      #ffd4c4 0%,
+      #ffc4b0 38%,
+      #ffe8dc 100%
+    );
+    background-size: 200% 200%;
+    animation: banner-gradient-shift 10s ease infinite;
+  }
+
+  .banner-gradient-invite {
+    background: linear-gradient(
+      135deg,
+      #ffcdbf 0%,
+      #ffbca8 45%,
+      #fff3ea 100%
+    );
+    background-size: 200% 200%;
+    animation: banner-gradient-shift 10s ease infinite;
+  }
+
+  .home-banner-carousel {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  @keyframes banner-gradient-shift {
+    0%,
+    100% {
+      background-position: 0% 40%;
+    }
+    50% {
+      background-position: 100% 60%;
+    }
+  }
+
+  @keyframes banner-gift-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  .banner-gift-float {
+    animation: banner-gift-float 3s ease-in-out infinite;
+  }
+
+  @keyframes banner-gacha-spin {
+    0%,
+    100% {
+      transform: rotate(-6deg) scale(1);
+    }
+    50% {
+      transform: rotate(6deg) scale(1.04);
+    }
+  }
+
+  .banner-gacha-spin {
+    animation: banner-gacha-spin 2.2s ease-in-out infinite;
+  }
+
+  /* —— 盲盒 / 扭蛋玩法动效 —— */
+
+  @keyframes play-box-shake {
+    0%,
+    100% {
+      transform: rotate(0deg) translateY(0);
+    }
+    15% {
+      transform: rotate(-4deg) translateY(-2px);
+    }
+    30% {
+      transform: rotate(4deg) translateY(0);
+    }
+    45% {
+      transform: rotate(-3deg) translateY(-3px);
+    }
+    60% {
+      transform: rotate(3deg) translateY(-1px);
+    }
+    75% {
+      transform: rotate(-2deg) translateY(-2px);
+    }
+  }
+
+  .play-box-shake {
+    animation: play-box-shake 0.55s ease-in-out infinite;
+  }
+
+  @keyframes play-lid-open {
+    0% {
+      transform: translateX(-50%) rotateX(0deg);
+    }
+    100% {
+      transform: translateX(-50%) rotateX(-72deg) translateY(-8px);
+    }
+  }
+
+  .play-lid-open {
+    animation: play-lid-open 0.7s ease-out forwards;
+    transform-style: preserve-3d;
+  }
+
+  @keyframes play-box-glow {
+    0%,
+    100% {
+      box-shadow: 0 12px 28px rgba(255, 107, 107, 0.35);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(255, 196, 107, 0.65), 0 12px 28px rgba(255, 107, 107, 0.4);
+    }
+  }
+
+  .play-box-glow {
+    animation: play-box-glow 0.8s ease-in-out infinite;
+  }
+
+  @keyframes play-light-burst {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    40% {
+      opacity: 0.9;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.4);
+    }
+  }
+
+  .play-light-burst {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, transparent 70%);
+    animation: play-light-burst 0.9s ease-out forwards;
+  }
+
+  @keyframes play-gift-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .play-gift-bounce {
+    animation: play-gift-bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes play-reveal-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.92) translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .play-reveal-pop {
+    animation: play-reveal-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes play-confetti {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-48px) scale(1.2) rotate(12deg);
+    }
+  }
+
+  .play-confetti {
+    animation: play-confetti 1s ease-out forwards;
+  }
+
+  @keyframes play-gacha-machine-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-2px);
+    }
+    75% {
+      transform: translateX(2px);
+    }
+  }
+
+  .play-gacha-machine-shake {
+    animation: play-gacha-machine-shake 0.12s linear infinite;
+  }
+
+  @keyframes play-slot-land {
+    0% {
+      transform: scale(1.2);
+    }
+    60% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .play-slot-land {
+    animation: play-slot-land 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .play-slot-blur {
+    filter: blur(0.5px);
+  }
+
+  @keyframes play-ssr-flash {
+    0% {
+      opacity: 0;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.5) 0%, transparent 70%);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .play-ssr-flash {
+    animation: play-ssr-flash 0.9s ease-out forwards;
+  }
+
+  @keyframes play-ssr-shine {
+    0%,
+    100% {
+      box-shadow: 0 12px 28px rgba(255, 196, 107, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 36px rgba(255, 215, 0, 0.65), 0 12px 32px rgba(255, 107, 107, 0.45);
+    }
+  }
+
+  .play-ssr-shine {
+    animation: play-ssr-shine 1.2s ease-in-out infinite;
+  }
+
+  @keyframes play-chest-legend {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(-3deg);
+    }
+  }
+
+  .play-chest-legend {
+    animation: play-chest-legend 2s ease-in-out infinite;
+  }
+
+  @keyframes banner-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-6px) rotate(3deg);
+    }
+  }
+
+  @keyframes banner-avatar {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-4px) scale(1.05);
+    }
+  }
+
+  .banner-animate-float {
+    animation: banner-float 3s ease-in-out infinite;
+  }
+
+  .banner-animate-avatar {
+    animation: banner-avatar 2.8s ease-in-out infinite;
+  }
+
+  .banner-animate-avatar-delay {
+    animation: banner-avatar 2.8s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+
+  .banner-orb-drift-a {
+    animation: banner-orb-a 9s ease-in-out infinite;
+  }
+
+  .banner-orb-drift-b {
+    animation: banner-orb-b 11s ease-in-out infinite;
+  }
+
+  .banner-orb-drift-c {
+    animation: banner-orb-c 7s ease-in-out infinite;
+  }
+
+  @keyframes banner-orb-a {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-12px, 8px) scale(1.08);
+    }
+  }
+
+  @keyframes banner-orb-b {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    50% {
+      transform: translate(10px, -6px) scale(1.05);
+    }
+  }
+
+  @keyframes banner-orb-c {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.15);
+    }
+  }
+
+  .banner-particle {
+    animation: banner-particle-rise linear infinite;
+  }
+
+  @keyframes banner-particle-rise {
+    0% {
+      transform: translateY(0) scale(0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(-120px) scale(1);
+      opacity: 0;
+    }
+  }
+
+  .banner-twinkle {
+    animation: banner-twinkle 2s ease-in-out infinite;
+  }
+
+  @keyframes banner-twinkle {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: scale(0.7) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1) rotate(15deg);
+    }
+  }
+
+  .banner-pulse-ring {
+    animation: banner-pulse-ring 2s ease-out infinite;
+  }
+
+  @keyframes banner-pulse-ring {
+    0% {
+      transform: scale(0.85);
+      opacity: 0.8;
+    }
+    70% {
+      transform: scale(1.35);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.35);
+      opacity: 0;
+    }
+  }
+
+  .banner-bar-pulse {
+    animation: banner-bar-pulse 1.6s ease-in-out infinite;
+    transform-origin: bottom;
+  }
+
+  @keyframes banner-bar-pulse {
+    0%,
+    100% {
+      transform: scaleY(0.65);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  .banner-gift-bounce {
+    animation: banner-gift-bounce 1.8s ease-in-out infinite;
+  }
+
+  @keyframes banner-gift-bounce {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    30% {
+      transform: translateY(-10px) rotate(-3deg);
+    }
+    55% {
+      transform: translateY(-2px) rotate(2deg);
+    }
+  }
+
+  .banner-shimmer-tag {
+    background-size: 200% auto;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.25) 100%
+    );
+    animation: banner-shimmer 2.5s linear infinite;
+  }
+
+  @keyframes banner-shimmer {
+    0% {
+      background-position: 200% center;
+    }
+    100% {
+      background-position: -200% center;
+    }
+  }
+
+  /* —— 邀请 Banner：小人物蹦跶 + 贴纸飘 —— */
+
+  @keyframes invite-chibi-hop {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    35% {
+      transform: translateY(-7px) rotate(2deg);
+    }
+    55% {
+      transform: translateY(-3px) rotate(-1deg);
+    }
+  }
+
+  .invite-chibi-hop {
+    animation: invite-chibi-hop 2.4s ease-in-out infinite;
+  }
+
+  @keyframes invite-chibi-wave {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(18deg);
+    }
+    50% {
+      transform: rotate(-8deg);
+    }
+  }
+
+  .invite-chibi-wave {
+    animation: invite-chibi-wave 1.8s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
+  @keyframes invite-sticker-pop {
+    0%,
+    100% {
+      transform: scale(1) rotate(-3deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(4deg);
+    }
+  }
+
+  .invite-sticker-pop {
+    animation: invite-sticker-pop 2.6s ease-in-out infinite;
+  }
+
+  @keyframes invite-gift-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+    }
+    50% {
+      box-shadow: 0 0 20px 6px rgba(255, 232, 168, 0.55);
+    }
+  }
+
+  .invite-gift-glow {
+    animation: invite-gift-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes invite-sparkle-orbit {
+    0% {
+      transform: rotate(0deg) translateX(28px) rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg) translateX(28px) rotate(-360deg);
+    }
+  }
+
+  .invite-sparkle-orbit {
+    animation: invite-sparkle-orbit 8s linear infinite;
+  }
+
+  .banner-cta-breathe {
+    animation: banner-cta-breathe 2.2s ease-in-out infinite;
+  }
+
+  @keyframes banner-cta-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(217, 70, 143, 0.35);
+    }
+  }
+
+  .banner-cta-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 65%
+    );
+    transform: translateX(-120%);
+    animation: banner-cta-shine 3s ease-in-out infinite;
+  }
+
+  @keyframes banner-cta-shine {
+    0%,
+    70%,
+    100% {
+      transform: translateX(-120%);
+    }
+    85% {
+      transform: translateX(120%);
+    }
+  }
+
+  @keyframes play-entry-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .play-entry-enter {
+    animation: play-entry-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .login-modal-enter {
+    animation: login-modal-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hint-popover-enter {
+    animation: hint-popover-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes hint-popover-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes login-modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(-16px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .profile-stagger > * {
+    animation: play-entry-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .profile-stagger > *:nth-child(1) {
+    animation-delay: 0s;
+  }
+  .profile-stagger > *:nth-child(2) {
+    animation-delay: 0.07s;
+  }
+  .profile-stagger > *:nth-child(3) {
+    animation-delay: 0.14s;
+  }
+  .profile-stagger > *:nth-child(4) {
+    animation-delay: 0.21s;
+  }
+
+  .profile-hero-glow {
+    animation: profile-hero-glow 4s ease-in-out infinite;
+  }
+
+  @keyframes profile-hero-glow {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.65;
+      transform: scale(1.08);
+    }
+  }
+
+  .profile-avatar-float {
+    animation: profile-avatar-float 3.2s ease-in-out infinite;
+  }
+
+  @keyframes profile-avatar-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .profile-level-badge {
+    animation: profile-level-badge-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.08s;
+  }
+
+  @keyframes profile-level-badge-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .profile-quota-pop {
+    animation: profile-quota-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.15s;
+  }
+
+  @keyframes profile-quota-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .profile-xp-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-xp-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: profile-xp-shine 2.8s ease-in-out infinite;
+  }
+
+  @keyframes profile-xp-shine {
+    0%,
+    65%,
+    100% {
+      transform: translateX(-100%);
+    }
+    85% {
+      transform: translateX(100%);
+    }
+  }
+
+  .profile-action-icon {
+    transition: transform 0.2s ease;
+  }
+
+  .profile-action-tile:active .profile-action-icon {
+    transform: scale(0.92);
+  }
+
+  @media (hover: hover) {
+    .profile-action-tile:hover .profile-action-icon {
+      transform: translateY(-2px) scale(1.05);
+    }
+  }
+
+  .play-section-enter {
+    animation: play-entry-in 0.4s ease-out both;
+    animation-delay: 0.12s;
+  }
+
+  .fortune-card-enter {
+    animation: play-entry-in 0.4s ease-out both;
+    animation-delay: 0.05s;
+  }
+
+  @keyframes play-icon-wiggle {
+    0%,
+    100% {
+      transform: rotate(0deg) translateY(0);
+    }
+    25% {
+      transform: rotate(-5deg) translateY(-2px);
+    }
+    75% {
+      transform: rotate(5deg) translateY(-2px);
+    }
+  }
+
+  @keyframes play-icon-spark {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.07) rotate(6deg);
+    }
+  }
+
+  @keyframes play-icon-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes play-icon-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.06);
+    }
+  }
+
+  .play-icon-wiggle {
+    animation: play-icon-wiggle 2.5s ease-in-out infinite;
+  }
+
+  .play-icon-spark {
+    animation: play-icon-spark 2.2s ease-in-out infinite;
+  }
+
+  .play-icon-bounce {
+    animation: play-icon-bounce 2s ease-in-out infinite;
+  }
+
+  .play-icon-pulse {
+    animation: play-icon-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes play-cta-nudge {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(3px);
+    }
+  }
+
+  .play-cta-nudge {
+    display: inline-block;
+    animation: play-cta-nudge 1.6s ease-in-out infinite;
+  }
+
+  @keyframes fortune-tip-flip {
+    0% {
+      opacity: 0.4;
+      transform: translateY(4px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fortune-tip-flip {
+    animation: fortune-tip-flip 0.35s ease-out;
+  }
+
+  @keyframes fortune-stat-bump {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .fortune-stat-bump {
+    animation: fortune-stat-bump 0.45s ease-out;
+  }
+
+  @keyframes fortune-stat-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .fortune-stat-pop {
+    animation: fortune-stat-pop 0.5s ease-out both;
+  }
+
+  .banner-scroll-strip {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .banner-scroll-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .play-entry-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .play-entry-card:active {
+    transform: scale(0.98);
+  }
+
+  .page-flow-stagger > * {
+    animation: play-entry-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .page-flow-stagger > *:nth-child(1) {
+    animation-delay: 0s;
+  }
+  .page-flow-stagger > *:nth-child(2) {
+    animation-delay: 0.06s;
+  }
+  .page-flow-stagger > *:nth-child(3) {
+    animation-delay: 0.12s;
+  }
+  .page-flow-stagger > *:nth-child(4) {
+    animation-delay: 0.18s;
+  }
+  .page-flow-stagger > *:nth-child(5) {
+    animation-delay: 0.24s;
+  }
+
+  .library-stat-cell {
+    animation: library-stat-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .library-stat-cell:nth-child(1) {
+    animation-delay: 0.08s;
+  }
+  .library-stat-cell:nth-child(2) {
+    animation-delay: 0.14s;
+  }
+  .library-stat-cell:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  .library-stat-cell:nth-child(4) {
+    animation-delay: 0.26s;
+  }
+
+  @keyframes library-stat-pop {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .library-hero-shine {
+    animation: library-hero-shine 3s ease-in-out infinite;
+  }
+
+  @keyframes library-hero-shine {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+
+  .library-empty-float {
+    animation: profile-avatar-float 3s ease-in-out infinite;
+  }
+
+  .library-list-item {
+    animation: play-entry-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .review-hero-step {
+    animation: play-entry-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .review-hero-step:nth-child(1) {
+    animation-delay: 0.12s;
+  }
+  .review-hero-step:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .review-hero-step:nth-child(3) {
+    animation-delay: 0.28s;
+  }
+
+  .review-chip-item {
+    animation: review-chip-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes review-chip-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .review-tier-pick {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .review-tier-pick:active {
+    transform: scale(0.97);
+  }
+
+  .review-result-reveal {
+    animation: review-result-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes review-result-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes play-entry-shimmer {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: translateX(-30%) rotate(12deg);
+    }
+    50% {
+      opacity: 0.7;
+      transform: translateX(10%) rotate(12deg);
+    }
+  }
+
+  .play-entry-shine {
+    animation: play-entry-shimmer 3.5s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .banner-gradient-pack,
+    .banner-gradient-invite,
+    .banner-orb-drift-a,
+    .banner-orb-drift-b,
+    .banner-orb-drift-c,
+    .banner-particle,
+    .banner-twinkle,
+    .banner-pulse-ring,
+    .banner-bar-pulse,
+    .banner-gift-bounce,
+    .banner-shimmer-tag,
+    .banner-cta-breathe,
+    .banner-cta-shine::after,
+    .banner-gift-float,
+    .banner-gacha-spin,
+    .banner-animate-float,
+    .play-box-shake,
+    .play-box-glow,
+    .play-gift-bounce,
+    .play-gacha-machine-shake,
+    .play-confetti,
+    .play-ssr-flash,
+    .play-ssr-shine,
+    .play-chest-legend,
+    .play-entry-shine,
+    .play-entry-enter,
+    .login-modal-enter,
+    .hint-popover-enter,
+    .profile-stagger > *,
+    .page-flow-stagger > *,
+    .library-stat-cell,
+    .library-hero-shine,
+    .library-empty-float,
+    .library-list-item,
+    .review-hero-step,
+    .review-chip-item,
+    .review-result-reveal,
+    .profile-hero-glow,
+    .profile-avatar-float,
+    .profile-level-badge,
+    .profile-quota-pop,
+    .profile-xp-shine::after,
+    .play-section-enter,
+    .fortune-card-enter,
+    .play-icon-wiggle,
+    .play-icon-spark,
+    .invite-chibi-hop,
+    .invite-chibi-wave,
+    .invite-sticker-pop,
+    .invite-gift-glow,
+    .invite-sparkle-orbit,
+    .play-icon-bounce,
+    .play-icon-pulse,
+    .play-cta-nudge,
+    .fortune-tip-flip,
+    .fortune-stat-bump,
+    .fortune-stat-pop {
+      animation: none;
+    }
+  }
+}

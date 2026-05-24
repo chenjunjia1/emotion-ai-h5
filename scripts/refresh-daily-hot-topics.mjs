@@ -7,7 +7,7 @@
  *   node scripts/refresh-daily-hot-topics.mjs --date 2026-05-23
  *   node scripts/refresh-daily-hot-topics.mjs --force
  *   node scripts/refresh-daily-hot-topics.mjs --dry-run
- *   node scripts/refresh-daily-hot-topics.mjs --via-api   # 调已部署站点的 /api/cron/refresh-hot-topics
+ *   node scripts/refresh-daily-hot-topics.mjs --via-api   # 调已部署站点�?/api/cron/refresh-hot-topics
  */
 
 import { readFileSync, existsSync, writeFileSync } from "fs";
@@ -24,16 +24,16 @@ const TRACKS = [
   "电商带货",
   "职场成长",
   "本地生活",
-  "小红书运营",
+  "小红书运�?,
   "个人IP",
   "母婴育儿",
   "美妆护肤",
   "健身减脂",
   "生活干货",
 ];
-const FORMATS = ["口播", "图文", "短视频", "直播切片"];
-const HEATS = ["爆", "高", "中"];
-const SOURCES = ["抖音", "小红书", "视频号"];
+const FORMATS = ["口播", "图文", "短视�?, "直播切片"];
+const HEATS = ["�?, "�?, "�?];
+const SOURCES = ["抖音", "小红�?, "视频�?];
 
 function loadEnv() {
   if (!existsSync(envPath)) throw new Error("缺少 .env.local");
@@ -94,12 +94,12 @@ function isValidKey(key) {
 }
 
 function buildPrompt(dateKey, count, label) {
-  return `你是「AI短视频运营灵感」平台的爆品策划。日期：${dateKey}，批次：${label}。
-请生成 ${count} 条「今日可拍」的短视频爆品选题，覆盖抖音、小红书、视频号近期热门方向。
+  return `你是「AI短视频运营灵感」平台的爆品策划。日期：${dateKey}，批次：${label}�?
+请生�?${count} 条「今日可拍」的短视频爆品选题，覆盖抖音、小红书、视频号近期热门方向�?
 
-要求：标题 8-22 字；desc 20-45 字；heat 为 爆/高/中；track 从 ${TRACKS.join("、")}；format 从 ${FORMATS.join("、")}；sources 从 抖音/小红书/视频号；angle 10-20 字。各赛道都要覆盖。
+要求：标�?8-22 字；desc 20-45 字；heat �?�?�?中；track �?${TRACKS.join("�?)}；format �?${FORMATS.join("�?)}；sources �?抖音/小红�?视频号；angle 10-20 字。各赛道都要覆盖�?
 
-只输出 JSON：{"items":[{"title":"","desc":"","heat":"","track":"","format":"","sources":[],"angle":""}]}`;
+只输�?JSON：{"items":[{"title":"","desc":"","heat":"","track":"","format":"","sources":[],"angle":""}]}`;
 }
 
 async function chatJson(env, system, user, maxTokens = 8000) {
@@ -165,7 +165,7 @@ function normalizeItems(raw) {
         ? `${angle}（监测：${src.join("·")}）`
         : `短视频爆品选题（监测：${src.join("·")}）`;
 
-    const heat = HEATS.includes(String(o.heat).trim()) ? String(o.heat).trim() : "中";
+    const heat = HEATS.includes(String(o.heat).trim()) ? String(o.heat).trim() : "�?;
     const track = TRACKS.includes(String(o.track).trim()) ? String(o.track).trim() : "个人IP";
     const format = FORMATS.includes(String(o.format).trim()) ? String(o.format).trim() : "口播";
 
@@ -183,7 +183,7 @@ function normalizeItems(raw) {
 
 async function generateWithDeepSeek(env, dateKey) {
   const system =
-    "你只输出合法 JSON，不要 markdown。面向中国短视频创作者，合规、积极、可执行。";
+    "你只输出合法 JSON，不�?markdown。面向中国短视频创作者，合规、积极、可执行�?;
   const batch1 = normalizeItems(await chatJson(env, system, buildPrompt(dateKey, 20, "A")));
   const batch2 = normalizeItems(await chatJson(env, system, buildPrompt(dateKey, 18, "B")));
 
@@ -204,7 +204,7 @@ async function viaApi(env, { dateKey, force }) {
     ""
   );
   const secret = env.CRON_SECRET;
-  if (!secret) throw new Error("via-api 需要 .env.local 配置 CRON_SECRET");
+  if (!secret) throw new Error("via-api 需�?.env.local 配置 CRON_SECRET");
 
   const url = `${site}/api/cron/refresh-hot-topics?date=${dateKey}${force ? "&force=1" : ""}`;
   const res = await fetch(url, {
@@ -220,7 +220,7 @@ function writeDoc(dateKey, items) {
   const lines = [
     `# 今日爆品热点库（${dateKey}）`,
     "",
-    `> 由 \`scripts/refresh-daily-hot-topics.mjs\` + DeepSeek 自动生成，共 ${items.length} 条。`,
+    `> �?\`scripts/refresh-daily-hot-topics.mjs\` + DeepSeek 自动生成，共 ${items.length} 条。`,
     "",
     "| # | 标题 | 热度 | 赛道 | 形式 | 说明 |",
     "|---|------|------|------|------|------|",
@@ -230,7 +230,7 @@ function writeDoc(dateKey, items) {
       `| ${idx + 1} | ${it.title} | ${it.heat} | ${it.track} | ${it.format} | ${it.desc} |`
     );
   });
-  const out = resolve(root, "docs/今日爆品热点库.md");
+  const out = resolve(root, "docs/今日爆品热点�?md");
   writeFileSync(out, lines.join("\n") + "\n", "utf8");
   return out;
 }
@@ -239,17 +239,17 @@ async function main() {
   const { force, dryRun, viaApi: useApi, dateKey } = parseArgs(process.argv.slice(2));
   const env = loadEnv();
 
-  console.log(`\n📅 日期: ${dateKey}${force ? "（强制覆盖）" : ""}${dryRun ? "（仅预览）" : ""}\n`);
+  console.log(`\n📅 日期: ${dateKey}${force ? "（强制覆盖）" : ""}${dryRun ? "（仅预览�? : ""}\n`);
 
   if (useApi) {
     const body = await viaApi(env, { dateKey, force });
-    console.log("✅ 已通过 API 刷新:", JSON.stringify(body, null, 2));
+    console.log("�?已通过 API 刷新:", JSON.stringify(body, null, 2));
     return;
   }
 
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) throw new Error("缺少 NEXT_PUBLIC_SUPABASE_URL 或 SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("缺少 NEXT_PUBLIC_SUPABASE_URL �?SUPABASE_SERVICE_ROLE_KEY");
 
   const db = createClient(url, serviceKey, { auth: { persistSession: false } });
 
@@ -272,7 +272,7 @@ async function main() {
     inspCount = Array.isArray(existingInsp?.titles) ? existingInsp.titles.length : 0;
 
     if (hotCount >= 30 && inspCount >= 30) {
-      console.log(`⏭️  今日爆品 ${hotCount} 条、灵感标题 ${inspCount} 条均已就绪。加 --force 可覆盖。\n`);
+      console.log(`⏭️  今日爆品 ${hotCount} 条、灵感标�?${inspCount} 条均已就绪。加 --force 可覆盖。\n`);
       return;
     }
   }
@@ -282,14 +282,14 @@ async function main() {
     try {
       items = await generateWithDeepSeek(env, dateKey);
       if (items.length < 30) {
-        console.warn(`⚠️  爆品仅 ${items.length} 条`);
+        console.warn(`⚠️  爆品�?${items.length} 条`);
       }
     } catch (e) {
-      console.error("❌ 爆品 DeepSeek 失败:", e.message);
+      console.error("�?爆品 DeepSeek 失败:", e.message);
       process.exit(1);
     }
 
-    console.log(`✨ 爆品 ${items.length} 条，样例:`, items.slice(0, 2).map((i) => i.title).join(" | "));
+    console.log(`�?爆品 ${items.length} 条，样例:`, items.slice(0, 2).map((i) => i.title).join(" | "));
 
     if (!dryRun) {
       const { error } = await db.from("daily_hot_topics").upsert(
@@ -297,11 +297,11 @@ async function main() {
         { onConflict: "topic_date" }
       );
       if (error) {
-        console.error("❌ 爆品写入失败:", error.message);
+        console.error("�?爆品写入失败:", error.message);
         process.exit(1);
       }
       const docPath = writeDoc(dateKey, items);
-      console.log(`✅ daily_hot_topics 已写入 · ${docPath}`);
+      console.log(`�?daily_hot_topics 已写�?· ${docPath}`);
     }
   } else {
     console.log(`⏭️  爆品已有 ${hotCount} 条，跳过`);
@@ -312,11 +312,11 @@ async function main() {
     try {
       titles = await generateInspirationTitles(env, dateKey);
     } catch (e) {
-      console.error("❌ 灵感标题 DeepSeek 失败:", e.message);
+      console.error("�?灵感标题 DeepSeek 失败:", e.message);
       process.exit(1);
     }
 
-    console.log(`✨ 灵感标题 ${titles.length} 条，样例:`, titles.slice(0, 2).join(" | "));
+    console.log(`�?灵感标题 ${titles.length} 条，样例:`, titles.slice(0, 2).join(" | "));
 
     if (!dryRun) {
       const { error: inspErr } = await db.from("daily_inspiration_titles").upsert(
@@ -324,10 +324,10 @@ async function main() {
         { onConflict: "topic_date" }
       );
       if (inspErr) {
-        console.error("❌ 灵感标题写入失败:", inspErr.message);
+        console.error("�?灵感标题写入失败:", inspErr.message);
         process.exit(1);
       }
-      console.log("✅ daily_inspiration_titles 已写入");
+      console.log("�?daily_inspiration_titles 已写�?);
     }
   } else {
     console.log(`⏭️  灵感标题已有 ${inspCount} 条，跳过`);
@@ -355,8 +355,8 @@ function normalizeTitles(raw) {
 }
 
 async function generateInspirationTitles(env, dateKey) {
-  const system = "你只输出合法 JSON。面向中国短视频创作者。";
-  const user = `日期 ${dateKey}。生成 32 条短视频「今日主题/灵感标题」，8-28字，反问反差清单反焦虑起号职场带货等，适合一键出发布包。JSON：{"titles":["..."]}`;
+  const system = "你只输出合法 JSON。面向中国短视频创作者�?;
+  const user = `日期 ${dateKey}。生�?32 条短视频「今日主�?灵感标题」，8-28字，反问反差清单反焦虑起号职场带货等，适合一键出发布包。JSON：{"titles":["..."]}`;
   const raw = await chatJson(env, system, user, 5000);
   const titles = normalizeTitles(raw);
   if (titles.length >= 30) return titles;
