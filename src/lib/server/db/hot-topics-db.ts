@@ -55,7 +55,7 @@ export async function listActiveHotTopics(opts: {
 
   if (opts.platform && opts.platform !== "all") {
     if (opts.platform === "xhs") {
-      q = q.in("platform", ["xiaohongshu_inspiration", "douyin"]);
+      q = q.eq("platform", "xiaohongshu_inspiration");
     } else if (opts.platform === "web") {
       q = q.in("platform", ["weibo", "baidu", "zhihu", "toutiao", "bilibili"]);
     } else {

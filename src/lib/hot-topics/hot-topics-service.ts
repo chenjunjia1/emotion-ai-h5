@@ -12,23 +12,52 @@ import {
   type HotTopicItem,
 } from "@/lib/hot-topics/types";
 import { buildMockHotTopicRows } from "@/lib/hot-topics/mock-hot-topics-seed";
+import { buildXhsInspirationRows } from "@/lib/hot-topics/xhs-inspiration";
 import { isServerBackendEnabled } from "@/lib/server/config";
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function mockItems(limit: number): HotTopicItem[] {
-  return buildMockHotTopicRows(todayDate())
-    .slice(0, limit)
-    .map((r, i) =>
-      recordToItem({
-        ...r,
-        id: `mock-${i}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-    );
+function mockItems(limit: number, platform?: string, category?: string): HotTopicItem[] {
+  const batchDate = todayDate();
+  const mockRows = buildMockHotTopicRows(batchDate);
+  const xhs = buildXhsInspirationRows(
+    mockRows.map((r) => ({
+      raw_title: r.raw_title,
+      display_title: r.display_title,
+      summary: r.summary,
+      category: r.category,
+      tags: r.tags,
+      target_users: r.target_users,
+      recommend_angles: r.recommend_angles,
+      viral_score: r.viral_score,
+      platform: r.platform,
+    })),
+    mockRows.map((r) => ({ title: r.raw_title, platform: r.platform, hot: r.heat_score })),
+    batchDate,
+    6
+  );
+  let all = [...mockRows, ...xhs];
+  if (platform && platform !== "all") {
+    if (platform === "xhs") all = all.filter((r) => r.platform === "xiaohongshu_inspiration");
+    else if (platform === "web")
+      all = all.filter((r) =>
+        ["weibo", "baidu", "zhihu", "toutiao", "bilibili"].includes(r.platform)
+      );
+    else all = all.filter((r) => r.platform === platform);
+  }
+  if (category && category !== "全部") {
+    all = all.filter((r) => `${r.display_title}${r.category}${r.summary}`.includes(category));
+  }
+  return all.slice(0, limit).map((r, i) =>
+    recordToItem({
+      ...r,
+      id: `mock-${platform ?? "all"}-${i}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+  );
 }
 
 export async function fetchHotTopicsForApi(opts: {
@@ -38,7 +67,7 @@ export async function fetchHotTopicsForApi(opts: {
   page?: number;
 }) {
   if (!isServerBackendEnabled()) {
-    const items = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT);
+    const items = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT, opts.platform, opts.category);
     return {
       items,
       meta: {
@@ -55,7 +84,7 @@ export async function fetchHotTopicsForApi(opts: {
   const { items, batchDate, isToday } = await listActiveHotTopics(opts);
 
   if (items.length === 0) {
-    const fallback = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT);
+    const fallback = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT, opts.platform, opts.category);
     return {
       items: fallback,
       meta: {

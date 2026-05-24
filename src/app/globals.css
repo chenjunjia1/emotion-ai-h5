@@ -1176,6 +1176,22 @@ button {
     animation: home-section-enter 0.45s ease both;
   }
 
+  .live-pulse-dot {
+    animation: live-pulse-dot 1.6s ease-in-out infinite;
+  }
+
+  @keyframes live-pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(0.85);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .banner-gradient-pack,
     .banner-gradient-invite,

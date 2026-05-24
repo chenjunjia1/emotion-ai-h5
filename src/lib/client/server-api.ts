@@ -406,8 +406,17 @@ export async function apiGetInspirationTitles(batch = 0): Promise<{
   return { titles: data.titles, items: data.items, meta: data.meta, batch: data.batch };
 }
 
-export async function apiGetHotTopics(batch = 0) {
-  const res = await fetch(`/api/hot-topics?limit=20&page=${batch + 1}`, {
+export async function apiGetHotTopics(opts?: {
+  batch?: number;
+  platform?: string;
+  category?: string;
+}) {
+  const batch = opts?.batch ?? 0;
+  const params = new URLSearchParams({ limit: "30", page: String(batch + 1) });
+  if (opts?.platform && opts.platform !== "all") params.set("platform", opts.platform);
+  if (opts?.category && opts.category !== "全部") params.set("category", opts.category);
+
+  const res = await fetch(`/api/hot-topics?${params}`, {
     credentials: "include",
   });
   const data = await res.json().catch(() => ({}));
@@ -426,6 +435,17 @@ export async function apiGetHotTopics(batch = 0) {
       : undefined,
     batch,
   };
+}
+
+export async function apiRefreshHotTopics(force = false) {
+  const qs = force ? "?force=1" : "";
+  const res = await fetch(`/api/hot-topics/refresh${qs}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error ?? "refresh_failed", ...data };
+  return data as { ok: boolean; refreshed?: boolean; message?: string };
 }
 
 export async function apiGetHotTopicsTop(): Promise<{

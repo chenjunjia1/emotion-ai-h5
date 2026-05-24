@@ -251,6 +251,8 @@ export const zhProduct = {
   homeCasesTag: "真实案例",
   homeCaseViews: "播放",
   homeCaseFans: "涨粉",
+  homeCaseLikes: "点赞",
+  homeCaseGenSame: "生成同款",
   hotTopicDetailTitle: "热点详情",
   hotTopicDetailInterpret: "热点解读",
   hotTopicDetailTarget: "适合人群",

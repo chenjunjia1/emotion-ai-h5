@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Bookmark, RefreshCw, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/contexts/app-context";
@@ -11,64 +11,62 @@ import type { HotTopicItem } from "@/hooks/use-product";
 import { FEATURE_LIMITS } from "@/lib/v1/plan-limits";
 import { cn } from "@/lib/utils";
 
-const PLATFORM_TABS = [
-  { id: "all", label: "\u63a8\u8350" },
-  { id: "douyin", label: "\u6296\u97f3\u7206\u6b3e" },
-  { id: "xhs", label: "\u5c0f\u7ea2\u4e66\u7075\u611f" },
-  { id: "web", label: "\u5168\u7f51\u70ed\u641c" },
+export const PLATFORM_TABS = [
+  { id: "all", label: "推荐" },
+  { id: "douyin", label: "抖音爆款" },
+  { id: "xhs", label: "小红书灵感" },
+  { id: "web", label: "全网热搜" },
 ] as const;
 
+export type HotTopicsTabId = (typeof PLATFORM_TABS)[number]["id"];
+
 const CATEGORY_FILTERS = [
-  "\u5168\u90e8",
-  "\u60c5\u611f",
-  "\u804c\u573a",
-  "\u751f\u6d3b",
-  "\u5ba0\u7269",
-  "\u7f8e\u98df",
-  "\u5b66\u751f",
-  "\u5b9d\u5988",
-  "\u526f\u4e1a",
-  "\u7a7f\u642d",
-  "\u63a2\u5e97",
+  "全部",
+  "情感",
+  "职场",
+  "生活",
+  "宠物",
+  "美食",
+  "学生",
+  "宝妈",
+  "副业",
+  "穿搭",
+  "探店",
   "AI工具",
 ] as const;
 
-type TabId = (typeof PLATFORM_TABS)[number]["id"];
-
-function matchTab(item: HotTopicDisplay, tab: TabId): boolean {
-  if (tab === "all") return true;
-  const p = item.platform;
-  if (tab === "douyin") return p === "\u6296\u97f3" || item.track.includes("\u804c\u573a");
-  if (tab === "xhs") return p === "\u5c0f\u7ea2\u4e66" || item.format.includes("\u56fe\u6587");
-  return p === "\u5fae\u535a" || p === "B\u7ad9" || p === "\u89c6\u9891\u53f7";
-}
-
 function matchCategory(item: HotTopicDisplay, cat: string): boolean {
-  if (cat === "\u5168\u90e8") return true;
+  if (cat === "全部") return true;
   const hay = `${item.title}${item.track}${item.category ?? ""}${item.desc}${item.targetUsers.join("")}`;
   return hay.includes(cat);
 }
 
 export function HotTopicsFeed({
   items,
+  tab,
+  category,
+  onTabChange,
+  onCategoryChange,
   onRefresh,
   refreshing,
   updatedAt,
 }: {
   items: HotTopicItem[];
+  tab: HotTopicsTabId;
+  category: string;
+  onTabChange: (tab: HotTopicsTabId) => void;
+  onCategoryChange: (cat: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
   updatedAt: string;
 }) {
   const router = useRouter();
   const { tr, user, setQuotaModalOpen } = useApp();
-  const [tab, setTab] = useState<TabId>("all");
-  const [category, setCategory] = useState<string>("\u5168\u90e8");
 
   const enriched = useMemo(() => enrichHotTopics(items), [items]);
   const filtered = useMemo(
-    () => enriched.filter((i) => matchTab(i, tab) && matchCategory(i, category)),
-    [enriched, tab, category]
+    () => enriched.filter((i) => matchCategory(i, category)),
+    [enriched, category]
   );
 
   const viewLimit = user ? FEATURE_LIMITS[user.plan].hotTopicView : 5;
@@ -90,9 +88,9 @@ export function HotTopicsFeed({
         <p className="mt-1 text-[11px] text-white/90">{tr("hotTopicsBannerDesc")}</p>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           {[
-            { n: String(Math.max(filtered.length, 20)), l: "\u4eca\u65e5\u7cbe\u9009" },
-            { n: "08:00", l: "\u6bcf\u65e5\u66f4新" },
-            { n: "AI", l: "\u667a\u80fd\u6539\u5199" },
+            { n: String(Math.max(filtered.length, items.length, 20)), l: "今日精选" },
+            { n: "08:00", l: "每日更新" },
+            { n: "6+", l: "平台热榜" },
           ].map((s) => (
             <div key={s.l} className="rounded-xl bg-white/15 px-1 py-2 backdrop-blur-sm">
               <p className="text-sm font-black">{s.n}</p>
@@ -104,7 +102,7 @@ export function HotTopicsFeed({
 
       <div className="flex items-center justify-between gap-2 text-[11px] text-[#8A94A6]">
         <span>
-          {tr("hotTopicsUpdatedAt")} {updatedAt.split(" ")[1] ?? "08:00"}
+          {tr("hotTopicsUpdatedAt")} {updatedAt.split(" ")[1] ?? updatedAt ?? "08:00"}
         </span>
         <button
           type="button"
@@ -122,7 +120,7 @@ export function HotTopicsFeed({
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => onTabChange(t.id)}
             className={cn(
               "shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-black transition",
               tab === t.id
@@ -140,7 +138,7 @@ export function HotTopicsFeed({
           <button
             key={c}
             type="button"
-            onClick={() => setCategory(c)}
+            onClick={() => onCategoryChange(c)}
             className={cn(
               "rounded-full px-2.5 py-1 text-[10px] font-bold",
               category === c
@@ -154,6 +152,16 @@ export function HotTopicsFeed({
       </div>
 
       <div className="space-y-3">
+        {filtered.length === 0 ? (
+          <div className="rounded-[22px] border border-dashed border-[#FFD0E8] bg-white/80 px-4 py-10 text-center">
+            <p className="text-sm font-black text-[#1F2937]">该分类暂无匹配热点</p>
+            <p className="mt-1 text-[11px] text-[#8A94A6]">
+              {tab === "xhs"
+                ? "小红书灵感由全网热榜 AI 改写，点「换一批热点」拉取最新"
+                : "试试切换其他 Tab 或刷新热点"}
+            </p>
+          </div>
+        ) : null}
         {filtered.map((item, index) => {
           const locked = user?.plan === "free" && index >= viewLimit;
           const showProBanner = user?.plan === "free" && index === viewLimit;
@@ -172,59 +180,64 @@ export function HotTopicsFeed({
               ) : null}
               <article
                 className={cn(
-                "hot-card-enter cream-card overflow-hidden rounded-[22px] p-3.5",
-                locked && "opacity-75"
-              )}
-            >
-              <div className="flex gap-3">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#FFE0EC]">
-                  <HotTopicCover item={item} className="rounded-xl" iconSize={18} />
-                  <span className="absolute left-1 top-1 rounded-md bg-black/45 px-1 py-0.5 text-[9px] font-black text-white">
-                    TOP {index + 1}
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-2">
-                    <h3 className="flex-1 text-[13px] font-black text-[#1F2937]">{item.title}</h3>
-                    {item.isNew ? (
-                      <span className="shrink-0 rounded-md bg-[#FF4F8B] px-1.5 py-0.5 text-[9px] font-black text-white">
-                        新
-                      </span>
-                    ) : null}
+                  "hot-card-enter cream-card overflow-hidden rounded-[22px] p-3.5",
+                  locked && "opacity-75"
+                )}
+              >
+                <div className="flex gap-3">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#FFE0EC]">
+                    <HotTopicCover item={item} className="rounded-xl" iconSize={18} />
+                    <span className="absolute left-1 top-1 rounded-md bg-black/45 px-1 py-0.5 text-[9px] font-black text-white">
+                      TOP {index + 1}
+                    </span>
                   </div>
-                  <p className="mt-1 line-clamp-1 text-[10px] text-[#8A94A6]">{item.desc}</p>
-                  <p className="mt-1 text-[10px] text-[#8A94A6]">
-                    {tr("homeHotHeat")} {item.heatValue} · {item.platform}
-                  </p>
-                  <p className="mt-1 text-[10px] text-[#8A94A6]">
-                    {tr("hotTopicDetailTarget")}：{item.targetUsers.join(" / ")}
-                  </p>
-                  <p className="mt-1 line-clamp-1 text-[10px] text-[#FF9A4D]">
-                    AI：{item.recommendAngles.join(" · ")}
-                  </p>
-                  <p className="mt-1 text-[10px] font-bold text-[#FF4F8B]">
-                    {tr("homeHotViral")} {item.viralScore}%
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-2">
+                      <h3 className="flex-1 text-[13px] font-black text-[#1F2937]">{item.title}</h3>
+                      {item.isNew ? (
+                        <span className="shrink-0 rounded-md bg-[#FF4F8B] px-1.5 py-0.5 text-[9px] font-black text-white">
+                          新
+                        </span>
+                      ) : null}
+                    </div>
+                    {item.rawTitle && item.rawTitle !== item.title ? (
+                      <p className="mt-0.5 line-clamp-1 text-[10px] text-[#FF9A4D]">
+                        热榜原文：{item.rawTitle}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 line-clamp-2 text-[10px] text-[#8A94A6]">{item.desc}</p>
+                    <p className="mt-1 text-[10px] text-[#8A94A6]">
+                      {tr("homeHotHeat")} {item.heatValue} · {item.platform}
+                    </p>
+                    <p className="mt-1 text-[10px] text-[#8A94A6]">
+                      {tr("hotTopicDetailTarget")}：{item.targetUsers.join(" / ")}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-[10px] text-[#FF9A4D]">
+                      AI：{item.recommendAngles.join(" · ")}
+                    </p>
+                    <p className="mt-1 text-[10px] font-bold text-[#FF4F8B]">
+                      {tr("homeHotViral")} {item.viralScore}%
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <Link
-                  href={`/hot-topics/${encodeURIComponent(item.id)}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF3E8] text-[#FF9A4D]"
-                  aria-label="detail"
-                >
-                  <Bookmark size={16} />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => onGenerate(item, index)}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-2 text-[12px] font-black text-white shadow-sm active:scale-[0.98]"
-                >
-                  <Sparkles size={14} />
-                  {locked ? tr("hotTopicsUnlockPro") : tr("homeHotGen")}
-                </button>
-              </div>
-            </article>
+                <div className="mt-3 flex items-center gap-2">
+                  <Link
+                    href={`/hot-topics/${encodeURIComponent(item.id)}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF3E8] text-[#FF9A4D]"
+                    aria-label="detail"
+                  >
+                    <Bookmark size={16} />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => onGenerate(item, index)}
+                    className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-2 text-[12px] font-black text-white shadow-sm active:scale-[0.98]"
+                  >
+                    <Sparkles size={14} />
+                    {locked ? tr("hotTopicsUnlockPro") : tr("homeHotGen")}
+                  </button>
+                </div>
+              </article>
             </div>
           );
         })}
@@ -232,4 +245,3 @@ export function HotTopicsFeed({
     </div>
   );
 }
-

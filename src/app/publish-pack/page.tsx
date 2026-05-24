@@ -43,6 +43,20 @@ function PublishPackInner() {
 
   const topicParam = params.get("topic");
   const topicIdParam = params.get("topic_id") ?? params.get("hotId");
+  const accountTypeParam = params.get("account_type") ?? params.get("track");
+  const styleParam = params.get("style");
+  const platformParam = params.get("platform");
+
+  useEffect(() => {
+    if (accountTypeParam && (ACCOUNT_TYPE_VALUES as readonly string[]).includes(accountTypeParam)) {
+      setAccountType(accountTypeParam);
+    }
+    if (styleParam && (PUBLISH_STYLE_VALUES as readonly string[]).includes(styleParam)) {
+      setStyle(styleParam);
+    }
+    if (platformParam) setPlatform(platformParam);
+  }, [accountTypeParam, styleParam, platformParam]);
+
   const [hotTopic, setHotTopic] = useState<HotTopicDisplay | null>(null);
 
   const loadHotTopic = useCallback(async () => {

@@ -35,6 +35,29 @@ const COVER_BY_KEYWORD: [RegExp, string][] = [
 
 const DEFAULT_COVER = UNSPLASH("photo-1611162617213-7d7a39e9b1b7");
 
+/** 分类 → 封面（与 hot_topics.category 对齐） */
+const COVER_BY_CATEGORY: Record<string, string> = {
+  情感: UNSPLASH("photo-1518199266791-5375a83190b7"),
+  职场: UNSPLASH("photo-1521737711867-e3b97375f902"),
+  生活: UNSPLASH("photo-1499750310107-5fef28a66643"),
+  宠物: UNSPLASH("photo-1583511655857-d19b40a07a18"),
+  美食: UNSPLASH("photo-1504674900247-0877df9cc836"),
+  学生: UNSPLASH("photo-1523050854058-8df90110c9f1"),
+  宝妈: UNSPLASH("photo-1515488042361-ee00e8170dc8"),
+  穿搭: UNSPLASH("photo-1483985988350-763728e066fa"),
+  探店: UNSPLASH("photo-1414235077426-338989a2e8af"),
+  "AI工具": UNSPLASH("photo-1677442136019-21780ecad995"),
+  副业: UNSPLASH("photo-1556742049-0cfed4f6a45d"),
+  治愈: UNSPLASH("photo-1507003211169-0a1dd7228f2d"),
+  成长: UNSPLASH("photo-1499750310107-5fef28a66643"),
+};
+
+/** 本地 SVG 占位图不算真实封面 */
+export function isPlaceholderHotCover(url?: string): boolean {
+  if (!url) return true;
+  return /^\/images\/hot\/.*\.svg$/i.test(url);
+}
+
 function hashStr(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -49,10 +72,20 @@ function pickVariant(base: string, seed: string): string {
   return variants[h % variants.length];
 }
 
-export function resolveHotTopicCover(item: Pick<HotTopicItem, "track" | "title" | "coverImage">): string {
-  if (item.coverImage?.startsWith("http")) return item.coverImage;
+export function resolveHotTopicCover(
+  item: Pick<HotTopicItem, "track" | "title" | "coverImage" | "category">
+): string {
+  if (item.coverImage?.startsWith("http") && !isPlaceholderHotCover(item.coverImage)) {
+    return item.coverImage;
+  }
 
   const title = item.title ?? "";
+  const category = item.category ?? item.track ?? "";
+
+  if (category && COVER_BY_CATEGORY[category]) {
+    return pickVariant(COVER_BY_CATEGORY[category], `${category}-${title}`);
+  }
+
   for (const [re, url] of COVER_BY_KEYWORD) {
     if (re.test(title)) return pickVariant(url, title);
   }

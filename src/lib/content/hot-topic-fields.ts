@@ -1,6 +1,6 @@
 import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { normalizeHeat, type HeatLevel } from "@/lib/content/heat-level";
-import { resolveHotTopicCover } from "@/lib/content/hot-topic-covers";
+import { resolveHotTopicCover, isPlaceholderHotCover } from "@/lib/content/hot-topic-covers";
 
 function hashStr(s: string): number {
   let h = 0;
@@ -44,7 +44,10 @@ export function ensureHotTopicFields(item: HotTopicItem): HotTopicItem {
   return {
     ...item,
     heat,
-    coverImage: item.coverImage ?? resolveHotTopicCover(item),
+    coverImage:
+      item.coverImage && !isPlaceholderHotCover(item.coverImage)
+        ? item.coverImage
+        : resolveHotTopicCover(item),
     heatValue: item.heatValue ?? formatHeatValue(item.heat, seed),
     viralScore: item.viralScore ?? deriveViralScore(item.heat, seed),
     platform: item.platform ?? extractPlatform(item.desc),

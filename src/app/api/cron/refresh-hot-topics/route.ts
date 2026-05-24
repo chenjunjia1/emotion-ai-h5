@@ -46,7 +46,7 @@ export async function GET(req: Request) {
 
   if (!force) {
     const existingHot = await countActiveHotTopics();
-    hotSkipped = existingHot >= 20;
+    hotSkipped = existingHot >= 28;
     const existingInsp = await getDailyInspirationTitlesFromDb(dateKey);
     inspSkipped = Boolean(existingInsp && existingInsp.length >= 30);
     if (hotSkipped && inspSkipped) {

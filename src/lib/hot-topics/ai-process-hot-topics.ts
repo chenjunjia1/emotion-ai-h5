@@ -8,6 +8,7 @@ import {
   parseHeatScore,
 } from "@/lib/hot-topics/filters";
 import { computeViralScore } from "@/lib/hot-topics/viral-score";
+import { PLATFORM_LABEL } from "@/lib/hot-topics/types";
 
 const AI_PROMPT = `你是一个短视频运营选题专家。现在给你一批全网热搜标题，请你筛选出适合普通人用于抖音、小红书、视频号创作的热点。
 
@@ -54,6 +55,15 @@ function guessCategory(title: string): string {
   return "生活";
 }
 
+const PLATFORM_ANGLES: Record<string, string[]> = {
+  douyin: ["跟拍挑战", "卡点转场", "热门BGM"],
+  weibo: ["热搜解读", "普通人视角", "共鸣口播"],
+  baidu: ["3分钟解读", "搜索热点科普", "信息差"],
+  bilibili: ["热点二创", "知识解说", "年轻向盘点"],
+  toutiao: ["资讯快评", "清单体干货", "真实记录"],
+  zhihu: ["经验分享", "口播回答", "深度拆解"],
+};
+
 function fallbackRewrite(raw: RawHotFromApi): AiProcessedHotTopic {
   const category = guessCategory(raw.title);
   const heatScore = parseHeatScore(raw.hot);
@@ -63,35 +73,22 @@ function fallbackRewrite(raw: RawHotFromApi): AiProcessedHotTopic {
     title: raw.title,
     platform: raw.platform,
   });
-
-  const displayMap: Record<string, string> = {
-    多巴胺: "多巴胺穿搭上镜公式",
-    AI: "AI工具帮写短视频脚本",
-    下班: "下班后的治愈时刻",
-    宠物: "猫咪治愈瞬间",
-    猫: "猫咪治愈瞬间",
-    存钱: "普通人的30天改变",
-  };
+  const label = PLATFORM_LABEL[raw.platform] ?? raw.platform;
+  const angles = PLATFORM_ANGLES[raw.platform] ?? ["真实记录", "前后对比", "3步干货"];
 
   let display = raw.title.slice(0, 16);
-  for (const [k, v] of Object.entries(displayMap)) {
-    if (raw.title.includes(k)) {
-      display = v;
-      break;
-    }
-  }
-  if (display === raw.title && raw.title.length > 12) {
+  if (raw.title.length > 12) {
     display = `${raw.title.slice(0, 10)}拍摄公式`;
   }
 
   return {
     raw_title: raw.title,
     display_title: display.slice(0, 16),
-    summary: `「${raw.title}」近期热度较高，适合${category}类账号用真实场景切入，普通人今天就能拍。`,
+    summary: `【${label}热榜】「${raw.title}」今日上榜，适合${category}类账号用${angles[0]}切入创作。`,
     category,
-    tags: [category, "短视频", "普通人"],
+    tags: [category, label, "短视频"],
     target_users: [`${category}号`, "生活号", "新手创作者"],
-    recommend_angles: ["真实记录", "前后对比", "3步干货"],
+    recommend_angles: angles,
     viral_score: viral,
     platform: raw.platform,
   };
@@ -122,7 +119,7 @@ function normalizeAiRow(row: unknown, raw: RawHotFromApi): AiProcessedHotTopic {
       ? o.recommend_angles.map(String).slice(0, 6)
       : fb.recommend_angles,
     viral_score: viral,
-    platform: String(o.platform ?? raw.platform),
+    platform: raw.platform,
   };
 }
 

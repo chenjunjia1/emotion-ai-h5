@@ -33,6 +33,8 @@ export interface HotTopicItem {
   heatValue?: string;
   viralScore?: number;
   platform?: string;
+  /** 数据库 platform 字段，用于 Tab 筛选 */
+  platformKey?: string;
   angle?: string;
   rawTitle?: string;
   displayTitle?: string;
@@ -67,7 +69,7 @@ export type AiProcessedHotTopic = {
   platform: string;
 };
 
-export const HOT_TOPIC_LIST_LIMIT = 20;
+export const HOT_TOPIC_LIST_LIMIT = 30;
 export const HOT_TOPIC_TOP_LIMIT = 3;
 
 export const DAILY_HOT_PLATFORMS = [
@@ -108,11 +110,12 @@ export function recordToItem(row: HotTopicRecord): HotTopicItem {
     heat,
     track: row.category,
     category: row.category,
-    format: "短视频",
+    format: row.platform === "xiaohongshu_inspiration" ? "图文" : "短视频",
     coverImage: row.cover_image,
     heatValue: row.heat_value,
     viralScore: row.viral_score,
     platform: platformToLabel(row.platform),
+    platformKey: row.platform,
     angle: row.recommend_angles[0],
     tags: row.tags,
     targetUsers: row.target_users,
