@@ -5,7 +5,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { deductQuota, refundQuota } from "@/lib/server/db/v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export async function POST(req: Request) {
   const guard = guardApi(req, { scope: "reply", ipLimit: 60, ipWindowMs: 60_000 });
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "generate_failed" }, { status: 500 });
   }
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "reply",
     topic: comment.slice(0, 80),
@@ -63,6 +63,7 @@ export async function POST(req: Request) {
     result,
     usedMock,
     user: q.user,
-    saved: true,
+    saved: saved.ok,
+    generationId: saved.id,
   });
 }

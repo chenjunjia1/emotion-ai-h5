@@ -6,7 +6,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { deductQuota, refundQuota } from "@/lib/server/db/v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 import {
   bumpUserDailyUsage,
   getUserDailyUsageCounts,
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
   await bumpUserDailyUsage(user.id, "viral_score_count");
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "score",
     topic: title || script.slice(0, 40),
@@ -80,6 +80,7 @@ export async function POST(req: Request) {
     result,
     usedMock,
     user: q.user,
-    saved: true,
+    saved: saved.ok,
+    generationId: saved.id,
   });
 }

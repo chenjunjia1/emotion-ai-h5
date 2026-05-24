@@ -546,6 +546,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory(
+            "账号方案",
+            `${input.platform}-${input.track}`,
+            res.result as Record<string, unknown>,
+            { id: res.generationId }
+          );
           scheduleBackgroundSync();
         }
         return { result: res.result, risk: res.risk ?? risk };
@@ -693,6 +699,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory("爆款同款", title, res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           scheduleBackgroundSync();
         }
         return { result: res.result, risk: res.risk ?? risk };

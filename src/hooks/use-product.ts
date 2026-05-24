@@ -589,6 +589,9 @@ export function useProduct() {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory("AI情绪聊天", input.chat.slice(0, 80), res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           syncHistories();
           return { ...res.result, usedMock: res.usedMock };
         }
@@ -630,6 +633,9 @@ export function useProduct() {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory("神回复", comment.slice(0, 80), res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           syncHistories();
           return res.result;
         }
@@ -681,6 +687,12 @@ export function useProduct() {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory(
+            "爆款潜力打分",
+            input.title.trim() || input.script.slice(0, 40) || "未命名",
+            res.result as Record<string, unknown>,
+            { id: res.generationId }
+          );
           syncHistories();
           return res.result;
         }
@@ -735,6 +747,9 @@ export function useProduct() {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory("发完复盘", String(input.title ?? ""), res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           syncHistories();
           return { ...res.result, usedMock: res.usedMock };
         }

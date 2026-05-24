@@ -8,7 +8,7 @@ import { isServerBackendEnabled } from "@/lib/server/config";
 import { requireUser } from "@/lib/server/auth-request";
 import { deductQuota } from "@/lib/server/db/v1";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 35;
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     style: String(input.style || ""),
   });
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "account",
     topic: String(input.track ?? ""),
@@ -79,5 +79,13 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({ result, risk, usedMock, fastPath, user: q.user, saved: true });
+  return NextResponse.json({
+    result,
+    risk,
+    usedMock,
+    fastPath,
+    user: q.user,
+    saved: saved.ok,
+    generationId: saved.id,
+  });
 }

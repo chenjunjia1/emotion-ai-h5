@@ -6,7 +6,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { requireUser } from "@/lib/server/auth-request";
 import { deductQuota } from "@/lib/server/db/v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 30;
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
   const { result, usedMock, fastPath } = await generateViralCopy(title, copy);
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "viral",
     topic: title,
@@ -61,5 +61,13 @@ export async function POST(req: Request) {
     riskLevel: risk.level,
   });
 
-  return NextResponse.json({ result, risk, usedMock, fastPath, user: q.user, saved: true });
+  return NextResponse.json({
+    result,
+    risk,
+    usedMock,
+    fastPath,
+    user: q.user,
+    saved: saved.ok,
+    generationId: saved.id,
+  });
 }

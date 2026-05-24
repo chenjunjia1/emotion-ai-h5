@@ -13,7 +13,6 @@ export function mergeHistories(
   const serverKeys = new Set(server.map(historyKey));
   const pending = local.filter((h) => {
     if (serverIds.has(h.id)) return false;
-    if (!/^\d+$/.test(h.id)) return false;
     return !serverKeys.has(historyKey(h));
   });
   return [...server, ...pending].slice(0, 50);

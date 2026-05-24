@@ -8,7 +8,7 @@ import {
   bumpUserDailyUsage,
   getUserDailyUsageCounts,
 } from "@/lib/server/db/product-v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 30;
 
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
   await bumpUserDailyUsage(user.id, "title_gacha_count");
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "title_gacha",
     topic: String(result.recommended ?? ""),
@@ -58,5 +58,11 @@ export async function POST(req: Request) {
     riskLevel: "低",
   });
 
-  return NextResponse.json({ result, usedMock, fastPath, saved: true });
+  return NextResponse.json({
+    result,
+    usedMock,
+    fastPath,
+    saved: saved.ok,
+    generationId: saved.id,
+  });
 }

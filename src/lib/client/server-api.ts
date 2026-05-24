@@ -258,24 +258,13 @@ export async function apiGenerateAccount(input: Record<string, string>): Promise
   risk?: RiskResult;
   user?: User;
   error?: string;
+  generationId?: string;
 }> {
   const res = await fetch("/api/v1/generate/account", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify(input),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data.error, risk: data.risk };
-  return { result: data.result, risk: data.risk, user: data.user };
-}
-
-export async function apiGenerateDaily(topic: string) {
-  const res = await fetch("/api/v1/generate/daily", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ topic }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error, risk: data.risk };
@@ -296,7 +285,29 @@ export async function apiGenerateViral(title: string, copy: string) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error, risk: data.risk };
-  return { result: data.result, risk: data.risk, user: data.user };
+  return {
+    result: data.result,
+    risk: data.risk,
+    user: data.user,
+    generationId: data.generationId as string | undefined,
+  };
+}
+
+export async function apiGenerateDaily(topic: string) {
+  const res = await fetch("/api/v1/generate/daily", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ topic }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error, risk: data.risk };
+  return {
+    result: data.result,
+    risk: data.risk,
+    user: data.user,
+    generationId: data.generationId as string | undefined,
+  };
 }
 
 export async function apiGeneratePublishPack(input: Record<string, unknown>) {
@@ -354,6 +365,7 @@ export async function apiEmotionChat(input: {
   usedMock?: boolean;
   user?: User;
   error?: string;
+  generationId?: string;
 }> {
   const res = await fetch("/api/v1/emotion-chat", {
     method: "POST",
@@ -367,9 +379,10 @@ export async function apiEmotionChat(input: {
     result: data.result as Record<string, unknown> | undefined,
     usedMock: Boolean(data.usedMock),
     user: data.user as User | undefined,
+    generationId: data.generationId as string | undefined,
   };
   if (data.user) return payload;
-  return { result: payload.result, usedMock: payload.usedMock };
+  return { result: payload.result, usedMock: payload.usedMock, generationId: payload.generationId };
 }
 
 export async function apiGetInspirationTitles(batch = 0): Promise<{
@@ -523,6 +536,7 @@ export async function apiReview(input: Record<string, string | number>) {
     result: data.result,
     usedMock: Boolean(data.usedMock),
     user: data.user as User,
+    generationId: data.generationId as string | undefined,
   };
 }
 
@@ -535,7 +549,11 @@ export async function apiReply(comment: string) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
-  return { result: data.result, user: data.user as User };
+  return {
+    result: data.result,
+    user: data.user as User,
+    generationId: data.generationId as string | undefined,
+  };
 }
 
 export async function apiScore(input: Record<string, string>) {
@@ -547,5 +565,9 @@ export async function apiScore(input: Record<string, string>) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
-  return { result: data.result, user: data.user as User };
+  return {
+    result: data.result,
+    user: data.user as User,
+    generationId: data.generationId as string | undefined,
+  };
 }
