@@ -1,5 +1,6 @@
 import type { HotTopicItem } from "@/lib/server/db/product-v1";
 import { HOT_TOPICS_POOL, type HotTopicSeed } from "@/lib/hot-topics/daily-pool";
+import { sortByHeat } from "@/lib/content/heat-level";
 
 function hashSeed(s: string): number {
   let h = 0;
@@ -33,7 +34,8 @@ function toItem(seed: HotTopicSeed, id: string): HotTopicItem {
 
 export function getDailyHotTopics(dateKey: string, batch = 0): HotTopicItem[] {
   const ordered = shuffleSeeded(HOT_TOPICS_POOL, `${dateKey}-b${batch}`);
-  return ordered.map((item, i) => toItem(item, `${dateKey}-${batch}-${i}`));
+  const items = ordered.map((item, i) => toItem(item, `${dateKey}-${batch}-${i}`));
+  return sortByHeat(items);
 }
 
 export function getHotTopicsMeta(dateKey: string) {
@@ -42,6 +44,6 @@ export function getHotTopicsMeta(dateKey: string) {
     total: HOT_TOPICS_POOL.length,
     updatedAt: `${dateKey} 08:00`,
     sources: ["抖音", "小红书", "视频号"],
-    note: "基于公开趋势与平台热门结构人工监测整理，每日轮换排序",
+    note: "基于公开趋势与平台热门结构整理，按爆→高→中排序展示",
   };
 }

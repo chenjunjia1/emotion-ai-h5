@@ -151,7 +151,7 @@ function normalizeRawItems(raw: unknown): HotTopicItem[] {
 }
 
 function buildPrompt(dateKey: string, count: number, batchLabel: string) {
-  return `你是「ai短视频运营」平台的爆品策划。日期：${dateKey}，批次：${batchLabel}。
+  return `你是「AI短视频运营灵感」平台的爆品策划。日期：${dateKey}，批次：${batchLabel}。
 请生成 ${count} 条「今日可拍」的短视频爆品选题，覆盖抖音、小红书、视频号近期热门方向（结合当季、节点、情绪消费、本地生活、职场、母婴、情感、带货等）。
 
 要求：

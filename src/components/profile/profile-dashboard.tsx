@@ -211,7 +211,16 @@ export function ProfileHeroCard({
 
         <div className="relative mt-2.5">
           <div className="mb-1 flex items-center justify-between text-[10px]">
-            <span className="font-medium text-slate-500">{tr("statFrozenCoin")}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-slate-500">{tr("statFrozenCoin")}</span>
+              <HintTip
+                variant="popover"
+                title={tr("profileHintXpTitle")}
+                body={tr("profileHintXpBody")}
+                okLabel={hintOk}
+                ariaLabel={hintAria}
+              />
+            </div>
             <span className="truncate text-right text-slate-400">
               {nextLevel
                 ? tr("profileXpToNext")

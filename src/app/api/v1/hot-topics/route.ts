@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { guardApi } from "@/lib/security/api-guard";
 import { getOrCreateDailyHotTopics } from "@/lib/server/db/product-v1";
 import { getDailyHotTopics, getHotTopicsMeta } from "@/lib/hot-topics/resolve-daily";
+import { sortByHeat } from "@/lib/content/heat-level";
 import { isServerBackendEnabled } from "@/lib/server/config";
 
 export async function GET(req: Request) {
@@ -21,8 +22,9 @@ export async function GET(req: Request) {
   }
 
   const base = await getOrCreateDailyHotTopics();
-  const items =
-    batch === 0 ? base : getDailyHotTopics(dateKey, batch);
+  const items = sortByHeat(
+    batch === 0 ? base : getDailyHotTopics(dateKey, batch)
+  );
   const meta = getHotTopicsMeta(dateKey);
   meta.total = items.length;
 

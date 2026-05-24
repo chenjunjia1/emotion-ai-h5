@@ -94,7 +94,7 @@ function isValidKey(key) {
 }
 
 function buildPrompt(dateKey, count, label) {
-  return `你是「ai短视频运营」平台的爆品策划。日期：${dateKey}，批次：${label}。
+  return `你是「AI短视频运营灵感」平台的爆品策划。日期：${dateKey}，批次：${label}。
 请生成 ${count} 条「今日可拍」的短视频爆品选题，覆盖抖音、小红书、视频号近期热门方向。
 
 要求：标题 8-22 字；desc 20-45 字；heat 为 爆/高/中；track 从 ${TRACKS.join("、")}；format 从 ${FORMATS.join("、")}；sources 从 抖音/小红书/视频号；angle 10-20 字。各赛道都要覆盖。

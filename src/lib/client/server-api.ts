@@ -7,6 +7,7 @@ import type {
   VideoTask,
 } from "@/lib/types/v1";
 import type { I18nKey } from "@/lib/i18n";
+import type { HeatLevel } from "@/lib/content/heat-level";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/types/v1";
 
@@ -74,11 +75,13 @@ export async function apiMe(): Promise<User | null> {
 
 export async function apiMeSync(): Promise<{
   user: User | null;
+  unauthorized?: boolean;
   orders?: Order[];
   tasks?: VideoTask[];
   histories?: HistoryItem[];
 }> {
   const res = await fetch("/api/me?sync=1", { credentials: "include" });
+  if (res.status === 401) return { user: null, unauthorized: true };
   if (!res.ok) return { user: null };
   const data = await res.json();
   return {
@@ -276,7 +279,12 @@ export async function apiGenerateDaily(topic: string) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error, risk: data.risk };
-  return { result: data.result, risk: data.risk, user: data.user };
+  return {
+    result: data.result,
+    risk: data.risk,
+    user: data.user,
+    generationId: data.generationId as string | undefined,
+  };
 }
 
 export async function apiGenerateViral(title: string, copy: string) {
@@ -300,7 +308,12 @@ export async function apiGeneratePublishPack(input: Record<string, unknown>) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error, risk: data.risk };
-  return { result: data.result, risk: data.risk, user: data.user };
+  return {
+    result: data.result,
+    risk: data.risk,
+    user: data.user,
+    generationId: data.generationId as string | undefined,
+  };
 }
 
 export async function apiDrawTopicBox(input: Record<string, string>) {
@@ -312,7 +325,11 @@ export async function apiDrawTopicBox(input: Record<string, string>) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
-  return { result: data.result, user: data.user as User | undefined };
+  return {
+    result: data.result,
+    user: data.user as User | undefined,
+    generationId: data.generationId as string | undefined,
+  };
 }
 
 export async function apiDrawTitleGacha(input: Record<string, string>) {
@@ -357,6 +374,7 @@ export async function apiEmotionChat(input: {
 
 export async function apiGetInspirationTitles(batch = 0): Promise<{
   titles?: string[];
+  items?: { title: string; heat: HeatLevel }[];
   meta?: {
     date: string;
     total: number;
@@ -371,7 +389,7 @@ export async function apiGetInspirationTitles(batch = 0): Promise<{
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
-  return { titles: data.titles, meta: data.meta, batch: data.batch };
+  return { titles: data.titles, items: data.items, meta: data.meta, batch: data.batch };
 }
 
 export async function apiGetHotTopics(batch = 0): Promise<{

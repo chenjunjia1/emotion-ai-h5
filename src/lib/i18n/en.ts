@@ -3,7 +3,7 @@ import { zh } from "./zh";
 /** English copy: fallback to zh where not translated yet */
 export const en: Record<keyof typeof zh, string> = {
   ...zh,
-  appName: "ai短视频运营",
+  appName: "AI短视频运营灵感",
   appTagline: "Topics · Publish pack · Easy growth",
   homeTitle: "Stuck on short video? AI generates ready-to-post content daily",
   homeSubtitle:

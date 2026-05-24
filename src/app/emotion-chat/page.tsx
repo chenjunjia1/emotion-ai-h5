@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Dices, Heart, MessageCircle, Sparkles } from "lucide-react";
+import { Copy, Heart, MessageCircle, RefreshCw, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { SectionTitle } from "@/components/section-title";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,16 @@ import {
   getTodayInspirationCount,
   msUntilNextInspirationTick,
 } from "@/lib/banner-inspiration-count";
-import { getDailyEmotionScenarios, RELATIONSHIP_MOOD } from "@/lib/emotion-chat/scenarios";
+import {
+  EMOTION_SCENARIO_DAILY_TAKE,
+  getDailyEmotionScenarios,
+  getEmotionScenariosMeta,
+  RELATIONSHIP_MOOD,
+  heartbeatFunLabel,
+  EMOTION_LOADING_LINES,
+  type EmotionScenario,
+} from "@/lib/emotion-chat/scenarios";
+import { heatBadgeClass } from "@/lib/content/heat-level";
 import {
   EMOTION_GOAL_VALUES,
   EMOTION_STYLE_VALUES,
@@ -53,17 +62,52 @@ export default function EmotionChatPage() {
   const [style, setStyle] = useState<string>(EMOTION_STYLE_VALUES[0]);
   const [result, setResult] = useState<EmotionResult | null>(null);
   const [scenarioBatch, setScenarioBatch] = useState(0);
+  const [dateKey, setDateKey] = useState(todayKey);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [socialCount, setSocialCount] = useState(() => getTodayInspirationCount());
   const [contentDemo, setContentDemo] = useState(false);
+  const [loadingLine, setLoadingLine] = useState(0);
   const emotionCost = QUOTA_COST.emotion_chat ?? 2;
 
   const scenarios = useMemo(
-    () => getDailyEmotionScenarios(todayKey(), scenarioBatch, 12),
-    [scenarioBatch]
+    () => getDailyEmotionScenarios(dateKey, scenarioBatch, EMOTION_SCENARIO_DAILY_TAKE),
+    [dateKey, scenarioBatch]
+  );
+  const scenarioMeta = useMemo(
+    () => getEmotionScenariosMeta(dateKey, scenarios.length),
+    [dateKey, scenarios.length]
+  );
+  const featuredScenario = scenarios.find((s) => s.heat === "爆") ?? scenarios[0];
+  const listScenarios = useMemo(
+    () => (featuredScenario ? scenarios.filter((s) => s.text !== featuredScenario.text) : scenarios),
+    [scenarios, featuredScenario]
   );
 
+  useEffect(() => {
+    const checkDate = () => {
+      const key = todayKey();
+      setDateKey((prev) => {
+        if (prev !== key) {
+          setScenarioBatch(0);
+          return key;
+        }
+        return prev;
+      });
+    };
+    checkDate();
+    const id = window.setInterval(checkDate, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const mood = RELATIONSHIP_MOOD[relationship] ?? { emoji: "💗", hint: "先接住情绪，再表达你的想法" };
+
+  useEffect(() => {
+    if (!busy) return;
+    const id = window.setInterval(() => {
+      setLoadingLine((i) => (i + 1) % EMOTION_LOADING_LINES.length);
+    }, 900);
+    return () => window.clearInterval(id);
+  }, [busy]);
 
   useEffect(() => {
     const tick = () => setSocialCount(getTodayInspirationCount());
@@ -101,15 +145,19 @@ export default function EmotionChatPage() {
     showToast(tr("emotionChatScenariosShuffleDone"));
   };
 
-  const pickScenario = (text: string) => {
-    setChat(text);
+  const pickScenario = (item: EmotionScenario) => {
+    setChat(item.text);
+    if (item.suggestRelationship) setRelationship(item.suggestRelationship);
+    if (item.suggestGoal) setGoal(item.suggestGoal);
+    if (item.suggestStyle) setStyle(item.suggestStyle);
     setResult(null);
+    showToast(tr("emotionChatScenarioApplied"));
   };
 
   const copyReply = useCallback(
     (text: string) => {
       void copyToClipboard(text);
-      showToast(tr("copied"));
+      showToast(tr("emotionCopyGoChat"));
     },
     [showToast, tr]
   );
@@ -150,36 +198,88 @@ export default function EmotionChatPage() {
         </div>
       </Card>
 
+      <Card className="mb-3 border-[#FF7AAE]/25 bg-gradient-to-r from-[#FFF0F5] to-[#FFF8EE]">
+        <CardContent className="py-3">
+          <p className="text-xs font-black text-[#FF5C8A]">
+            {tr("emotionChatScenariosMetaLine")
+              .replace("{total}", String(scenarioMeta.total))
+              .replace("{date}", scenarioMeta.updatedAt)}
+          </p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            {scenarioMeta.note ?? tr("emotionChatScenariosMetaNote")}
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="mb-3">
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="flex items-center gap-1 text-[11px] font-black text-[#FF5C8A]">
-            <MessageCircle size={13} />
-            {tr("emotionChatScenariosTitle")}
-          </p>
+          <div>
+            <p className="flex items-center gap-1 text-[11px] font-black text-[#FF5C8A]">
+              <MessageCircle size={13} />
+              {tr("emotionChatScenariosTitle")}（{scenarios.length}）
+            </p>
+            <p className="mt-0.5 text-[9px] text-slate-500">{tr("emotionChatScenariosSub")}</p>
+          </div>
           <button
             type="button"
             onClick={onShuffleScenarios}
-            className="inline-flex items-center gap-0.5 rounded-full bg-white px-2 py-1 text-[9px] font-bold text-[#FF7AAE] ring-1 ring-[#FF7AAE]/25 active:scale-95"
+            className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[10px] font-bold text-[#FF7AAE] ring-1 ring-[#FF7AAE]/30 active:scale-95"
           >
-            <Dices size={11} />
+            <RefreshCw size={13} />
             {tr("emotionChatScenariosShuffle")}
           </button>
         </div>
-        <div className="max-h-[88px] overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-white/70 p-1.5">
-          <div className="flex flex-wrap gap-1.5">
-            {scenarios.map((s) => (
+
+        {featuredScenario ? (
+          <button
+            type="button"
+            onClick={() => pickScenario(featuredScenario)}
+            className="mb-2 w-full rounded-2xl border border-[#FF7AAE]/40 bg-gradient-to-r from-[#FFF0F5] to-orange-50 p-3 text-left active:scale-[0.99]"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[9px] font-black text-[#FF5C8A]">
+                  🔥 {tr("emotionChatFeaturedScenario")}
+                </p>
+                <p className="mt-1 text-xs font-black leading-snug text-slate-800">
+                  {featuredScenario.text}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black",
+                  heatBadgeClass(featuredScenario.heat)
+                )}
+              >
+                {featuredScenario.heat}
+              </span>
+            </div>
+          </button>
+        ) : null}
+
+        <div className="max-h-[calc(2.25rem*5+0.25rem*4+0.75rem)] overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-white/70 p-1.5">
+          <div className="space-y-1">
+            {listScenarios.map((s) => (
               <button
-                key={`${scenarioBatch}-${s}`}
+                key={`${scenarioBatch}-${s.text}`}
                 type="button"
                 onClick={() => pickScenario(s)}
                 className={cn(
-                  "rounded-full px-2 py-1 text-left text-[10px] font-semibold leading-snug transition active:scale-95",
-                  chat === s
-                    ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white"
-                    : "bg-orange-50/90 text-slate-600 ring-1 ring-orange-100"
+                  "flex h-9 w-full items-center gap-2 rounded-xl px-2.5 text-left transition active:scale-[0.99]",
+                  chat === s.text
+                    ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white shadow-sm"
+                    : "bg-white/95 text-slate-600 ring-1 ring-orange-100/80"
                 )}
               >
-                {s}
+                <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-none">{s.text}</span>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black",
+                    chat === s.text ? "bg-white/25 text-white" : heatBadgeClass(s.heat)
+                  )}
+                >
+                  {s.heat}
+                </span>
               </button>
             ))}
           </div>
@@ -266,7 +366,7 @@ export default function EmotionChatPage() {
           onClick={onAnalyze}
         >
           <Sparkles size={16} className="mr-1" />
-          {busy ? tr("loading") : tr("emotionChatBtn")}
+          {busy ? EMOTION_LOADING_LINES[loadingLine] : tr("emotionChatBtn")}
         </Button>
         <p className="mt-1.5 text-center text-[9px] text-slate-400">{tr("emotionChatBtnSub")}</p>
       </div>

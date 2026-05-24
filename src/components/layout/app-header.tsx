@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { Bell } from "lucide-react";
 import { ProfileUserAvatar } from "@/components/profile/profile-user-avatar";
 import { useApp } from "@/contexts/app-context";
 import { getTotalQuota } from "@/lib/v1/quota";
@@ -17,14 +18,14 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-orange-100/60 bg-[#FFF7F0]/95 px-4 py-3 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-[0_4px_14px_rgba(255,107,107,0.35)]",
-              theme.primaryBtn
-            )}
-          >
-            <Sparkles size={20} />
-          </div>
+          <Image
+            src="/brand-avatar.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-2xl shadow-[0_4px_14px_rgba(255,107,107,0.35)]"
+            priority
+          />
           <div className="min-w-0 text-left leading-tight">
             <div className="truncate text-[14px] font-black text-slate-800">
               {tr("appName")}

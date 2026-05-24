@@ -5,6 +5,7 @@ import { getOrCreateDailyInspirationTitles } from "@/lib/server/db/product-v1";
 import {
   getDailyInspirationTitles,
   getInspirationMeta,
+  toInspirationItems,
 } from "@/lib/publish-pack/resolve-daily-inspiration";
 
 export async function GET(req: Request) {
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
 
   const meta = getInspirationMeta(dateKey, titles.length);
   meta.total = titles.length;
+  const items = toInspirationItems(titles, dateKey);
 
-  return NextResponse.json({ titles, meta, batch });
+  return NextResponse.json({ titles, items, meta, batch });
 }

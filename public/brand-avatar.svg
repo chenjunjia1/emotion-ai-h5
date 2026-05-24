@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="64" x2="416" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF6B6B"/>
+      <stop offset="1" stop-color="#FF7AAE"/>
+    </linearGradient>
+    <filter id="shadow" x="24" y="28" width="464" height="472" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#FF6B6B" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- 与网站 AppHeader 一致：h-10 w-10 rounded-2xl + primaryBtn 渐变 -->
+  <rect x="32" y="32" width="448" height="448" rx="179" fill="url(#bg)" filter="url(#shadow)"/>
+  <!-- Lucide Sparkles 24x24，等比放大至约占方块 50%（与 size={20} in 40px 一致） -->
+  <g
+    transform="translate(256 256) scale(10.6667) translate(-12 -12)"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+    <path d="M20 3v4"/>
+    <path d="M22 5h-4"/>
+    <path d="M4 17v2"/>
+    <path d="M5 18H3"/>
+  </g>
+</svg>

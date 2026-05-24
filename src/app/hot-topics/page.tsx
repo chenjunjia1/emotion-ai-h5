@@ -24,6 +24,7 @@ import {
 } from "@/lib/i18n/form-options";
 import { mockHotTopics } from "@/lib/mock/content-v1";
 import { readHotTopicsForToday, todayKey } from "@/lib/hot-topics/read-cached";
+import { heatBadgeClass, sortByHeat } from "@/lib/content/heat-level";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +79,7 @@ export default function HotTopicsPage() {
         const r = await apiGetHotTopics(nextBatch);
         if (r.items?.length) {
           setUsingDemoPool(false);
-          setItems(r.items);
+          setItems(sortByHeat(r.items));
           setMeta({
             ...(r.meta ?? {
               date: key,
@@ -116,7 +117,7 @@ export default function HotTopicsPage() {
   );
 
   useEffect(() => {
-    if (hotTopics.length > 0) setItems(hotTopics);
+    if (hotTopics.length > 0) setItems(sortByHeat(hotTopics));
   }, [hotTopics]);
 
   useEffect(() => {
@@ -174,12 +175,7 @@ export default function HotTopicsPage() {
       }
     });
 
-  const heatClass = (heat: string) =>
-    heat === "爆"
-      ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white"
-      : heat === "高"
-        ? "bg-rose-50 text-rose-600"
-        : "bg-orange-50 text-orange-600";
+  const heatClass = heatBadgeClass;
 
   return (
     <AppShell>

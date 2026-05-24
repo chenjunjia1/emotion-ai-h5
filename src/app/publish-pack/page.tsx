@@ -14,7 +14,10 @@ import { apiGetInspirationTitles } from "@/lib/client/server-api";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { displayField } from "@/lib/ai/normalize-ai-result";
 import { STORAGE_DAILY_INSPIRATION } from "@/lib/constants/v1";
-import { readInspirationTitlesForToday, todayKey } from "@/lib/publish-pack/read-inspiration-cached";
+import { readInspirationItemsForToday, todayKey } from "@/lib/publish-pack/read-inspiration-cached";
+import type { InspirationTitleItem } from "@/lib/publish-pack/resolve-daily-inspiration";
+import { toInspirationItems } from "@/lib/publish-pack/resolve-daily-inspiration";
+import { heatBadgeClass } from "@/lib/content/heat-level";
 import {
   GOAL_VALUES,
   PLATFORM_VALUES,
@@ -36,8 +39,8 @@ function PublishPackInner() {
   const params = useSearchParams();
   const { tr, showToast, addHistory } = useApp();
   const { generatePublishPack } = useProduct();
-  const [inspirationTitles, setInspirationTitles] = useState<string[]>(() =>
-    readInspirationTitlesForToday(0)
+  const [inspirationItems, setInspirationItems] = useState<InspirationTitleItem[]>(() =>
+    readInspirationItemsForToday(0)
   );
   const [inspirationBatch, setInspirationBatch] = useState(0);
   const [inspirationMeta, setInspirationMeta] = useState<{
@@ -45,7 +48,7 @@ function PublishPackInner() {
     note: string;
   } | null>(null);
   const [shufflingInspiration, setShufflingInspiration] = useState(false);
-  const [topic, setTopic] = useState(() => readInspirationTitlesForToday(0)[0] ?? "");
+  const [topic, setTopic] = useState(() => readInspirationItemsForToday(0)[0]?.title ?? "");
   const [platform, setPlatform] = useState<string>(PLATFORM_VALUES[0]);
   const [track, setTrack] = useState<string>(TRACK_VALUES[3]);
   const [goal, setGoal] = useState<string>(GOAL_VALUES[0]);
@@ -59,8 +62,8 @@ function PublishPackInner() {
     const key = todayKey();
     try {
       const r = await apiGetInspirationTitles(nextBatch);
-      if (r.titles?.length) {
-        setInspirationTitles(r.titles);
+      if (r.items?.length) {
+        setInspirationItems(r.items);
         if (r.meta) {
           setInspirationMeta({
             updatedAt: r.meta.updatedAt,
@@ -69,15 +72,30 @@ function PublishPackInner() {
         }
         localStorage.setItem(
           STORAGE_DAILY_INSPIRATION,
-          JSON.stringify({ date: key, titles: r.titles, batch: nextBatch })
+          JSON.stringify({ date: key, items: r.items, batch: nextBatch })
+        );
+        return;
+      }
+      if (r.titles?.length) {
+        const items = toInspirationItems(r.titles, key);
+        setInspirationItems(items);
+        if (r.meta) {
+          setInspirationMeta({
+            updatedAt: r.meta.updatedAt,
+            note: r.meta.note,
+          });
+        }
+        localStorage.setItem(
+          STORAGE_DAILY_INSPIRATION,
+          JSON.stringify({ date: key, items, batch: nextBatch })
         );
         return;
       }
     } catch {
       /* 本地池 */
     }
-    const local = readInspirationTitlesForToday(nextBatch);
-    setInspirationTitles(local);
+    const local = readInspirationItemsForToday(nextBatch);
+    setInspirationItems(local);
     setInspirationMeta({
       updatedAt: `${key} 08:00`,
       note: "每日 8 点更新，点选即可当今日主题",
@@ -211,7 +229,7 @@ function PublishPackInner() {
                 <p className="mt-0.5 text-[9px] text-slate-500">
                   {tr("dailyInspirationSub")
                     .replace("{time}", inspirationMeta?.updatedAt?.split(" ")[1] ?? "08:00")
-                    .replace("{count}", String(inspirationTitles.length))}
+                    .replace("{count}", String(inspirationItems.length))}
                 </p>
               </div>
               <button
@@ -225,26 +243,38 @@ function PublishPackInner() {
               </button>
             </div>
             <div className="relative mt-1.5">
-              <div className="max-h-[132px] overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-gradient-to-b from-white to-orange-50/30 p-1.5 pr-0.5">
-                <div className="flex flex-wrap gap-1.5">
-                  {inspirationTitles.map((t) => (
+              <div className="max-h-[160px] overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-gradient-to-b from-white to-orange-50/30 p-1.5 pr-0.5">
+                <div className="space-y-1">
+                  {inspirationItems.map((item) => (
                     <button
-                      key={`${inspirationBatch}-${t}`}
+                      key={`${inspirationBatch}-${item.title}`}
                       type="button"
-                      onClick={() => setTopic(t)}
+                      onClick={() => setTopic(item.title)}
                       className={cn(
-                        "rounded-full px-2.5 py-1 text-left text-[10px] font-semibold leading-snug transition active:scale-95",
-                        topic === t
+                        "flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left transition active:scale-[0.99]",
+                        topic === item.title
                           ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white shadow-sm"
                           : "bg-white/95 text-slate-600 ring-1 ring-orange-100/80"
                       )}
                     >
-                      {t}
+                      <span className="flex-1 text-[10px] font-semibold leading-snug">
+                        {item.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black",
+                          topic === item.title
+                            ? "bg-white/25 text-white"
+                            : heatBadgeClass(item.heat)
+                        )}
+                      >
+                        {item.heat}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
-              {inspirationTitles.length > 8 ? (
+              {inspirationItems.length > 4 ? (
                 <p className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-xl bg-gradient-to-t from-orange-50/95 to-transparent pb-0.5 pt-4 text-center text-[8px] font-bold text-slate-400">
                   {tr("hotTopicsScrollHint")}
                 </p>

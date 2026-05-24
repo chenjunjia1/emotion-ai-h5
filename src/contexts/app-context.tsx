@@ -15,6 +15,7 @@ import { debouncedSaveJson } from "@/lib/debounce-storage";
 import {
   MOCK_SMS_CODE,
   PLAN_QUOTA,
+  NEW_USER_WELCOME_BONUS,
   PRODUCTS,
   QUOTA_COST,
   STORAGE_FEEDBACKS,
@@ -70,6 +71,7 @@ import {
   loginErrorMessage,
 } from "@/lib/client/server-api";
 import { canCreateVideo, canGenerate, checkContentRisk } from "@/lib/risk";
+import { mergeHistories } from "@/lib/history/merge-histories";
 import type {
   FlowLog,
   HistoryItem,
@@ -111,7 +113,12 @@ interface AppContextValue {
   logout: () => void;
   refreshUser: () => Promise<void>;
   scheduleBackgroundSync: () => void;
-  addHistory: (type: string, topic: string, output?: Record<string, unknown>) => void;
+  addHistory: (
+    type: string,
+    topic: string,
+    output?: Record<string, unknown>,
+    opts?: { id?: string }
+  ) => void;
   addRiskRecord: (contentType: string, content: string, risk: RiskResult) => void;
   generateAccount: (
     input: Record<string, string>
@@ -192,10 +199,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const syncFromServer = useCallback(async () => {
     const data = await apiMeSync();
-    setUser(data.user ?? null);
+    if (data.unauthorized) {
+      setUser(null);
+      localStorage.removeItem(STORAGE_USER);
+      return;
+    }
+    if (data.user) {
+      persistUserLocal(data.user);
+      setUser(data.user);
+    }
     if (data.orders) setOrders(data.orders);
     if (data.tasks) setTasks(data.tasks);
-    if (data.histories) setHistories(data.histories);
+    if (data.histories) {
+      setHistories((prev) => mergeHistories(data.histories!, prev));
+    }
   }, []);
 
   const scheduleBackgroundSync = useCallback(() => {
@@ -209,19 +226,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useLayoutEffect(() => {
     setLangState(loadJson(STORAGE_LANG, "zh"));
+    const cachedUser = readUserLocal();
+    if (cachedUser) {
+      setUser(cachedUser);
+    }
+    if (!isClientServerMode()) {
+      setHistories(loadJson(STORAGE_HISTORIES, []));
+      setOrders(loadJson(STORAGE_ORDERS, []));
+      setTasks(loadJson(STORAGE_TASKS, []));
+      setFlowLogs(loadJson(STORAGE_LOGS, []));
+    }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (isClientServerMode()) {
       void syncFromServer();
-      return;
     }
-    /* 本地模式：未经过手机号登录不写回 user，避免关闭登录弹窗仍显示已登录 */
-    setHistories(loadJson(STORAGE_HISTORIES, []));
-    setOrders(loadJson(STORAGE_ORDERS, []));
-    setTasks(loadJson(STORAGE_TASKS, []));
-    setFlowLogs(loadJson(STORAGE_LOGS, []));
   }, [syncFromServer]);
 
   useEffect(() => {
@@ -232,10 +253,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     if (user) {
+      persistUserLocal(user);
       saveJson(STORAGE_USER, user);
       if (!isClientServerMode()) saveInviteRegistryUser(user);
     } else if (!isClientServerMode()) {
-      /* 服务端模式首屏 user 为 null 时会话仍在 Cookie，勿清空本地快照（否则登录后无法进 onboarding） */
       localStorage.removeItem(STORAGE_USER);
     }
   }, [user, hydrated]);
@@ -284,20 +305,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /* V1 不做成片，关闭视频任务轮询，减少后台请求与重渲染 */
 
-  const addHistory = useCallback((type: string, topic: string, output?: Record<string, unknown>) => {
-    setHistories((list) =>
-      [
-        {
-          id: String(Date.now()),
-          type,
-          topic,
-          createdAt: new Date().toLocaleString(),
-          output,
-        },
-        ...list,
-      ].slice(0, 50)
-    );
-  }, []);
+  const addHistory = useCallback(
+    (
+      type: string,
+      topic: string,
+      output?: Record<string, unknown>,
+      opts?: { id?: string }
+    ) => {
+      setHistories((list) =>
+        [
+          {
+            id: opts?.id ?? String(Date.now()),
+            type,
+            topic,
+            createdAt: new Date().toLocaleString(),
+            output,
+          },
+          ...list,
+        ].slice(0, 50)
+      );
+    },
+    []
+  );
 
   const sendCode = useCallback(
     async (mobile: string) => {
@@ -396,7 +425,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           plan: "free",
           dailyQuota: PLAN_QUOTA.free,
           usedCount: 0,
-          bonusQuota: 0,
+          bonusQuota: NEW_USER_WELCOME_BONUS,
           videoCoin: 0,
           frozenVideoCoin: 0,
           language: lang,
@@ -555,6 +584,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory("完整发布包", topic, res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           scheduleBackgroundSync();
         }
         return { result: res.result, risk: res.risk ?? risk };
@@ -607,6 +639,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
+          addHistory(historyLabel, topic, res.result as Record<string, unknown>, {
+            id: res.generationId,
+          });
           scheduleBackgroundSync();
           return { result: res.result, risk: res.risk ?? risk };
         }

@@ -137,5 +137,7 @@ export const STORAGE_AI_PROFILE = "sv-v1-ai-profile";
 
 export const INVITE_REGISTER_REWARD = 10;
 export const INVITE_MEMBER_REWARD = 30;
+/** 新用户首次注册赠送灵感，可体验一次完整发布包（消耗 5） */
+export const NEW_USER_WELCOME_BONUS = 5;
 /** 邀请人每月最多获得注册奖励的邀请人数（超出仍注册成功，但不发奖励） */
 export const INVITE_MONTHLY_CAP = 30;

@@ -32,6 +32,7 @@
 .DS_Store
 .npm-cache
 *.pem
+*.zip
 
 # debug
 npm-debug.log*
@@ -41,6 +42,7 @@ yarn-error.log*
 
 # env files
 .env*.local
+.env.vercel-paste
 
 # alipay keys (never commit)
 .alipay-keys/

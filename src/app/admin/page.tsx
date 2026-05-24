@@ -63,8 +63,8 @@ export default function AdminPage() {
         <Card>
           <CardContent className="py-12 text-center text-sm text-slate-500">
             {serverMode
-              ? "请使用管理员账号登录（手机号末尾 0000 自动为 admin）。"
-              : "演示模式：Mock 管理员号 13800138000（末尾 0000）。"}
+              ? "请使用已在 Vercel 配置 ADMIN_MOBILES 白名单的管理员手机号登录。"
+              : "演示模式：本地登录手机号末尾 0000 可体验 admin（仅开发）。"}
             <br />
             <Link href="/profile" className="mt-4 inline-block font-bold text-orange-600">
               返回我的
@@ -82,7 +82,7 @@ export default function AdminPage() {
 
   const onAdjust = async () => {
     if (!selectedUser) {
-      showToast("请先点选下方用户");
+      showToast("请先在上方点选一位用户");
       return;
     }
     const r = await apiAdminAdjustUser(selectedUser.id, {
@@ -139,12 +139,52 @@ export default function AdminPage() {
         </div>
       )}
 
+      {serverMode && overview && (
+        <Card className="mb-4">
+          <CardContent>
+            <h3 className="mb-1 font-bold">最近用户</h3>
+            <p className="mb-2 text-xs text-slate-500">点击下方用户行选中，再填写额度并保存</p>
+            {overview.recentUsers.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => {
+                  setSelectedUser(u);
+                  setAdjustQuota(String(u.dailyQuota));
+                  setAdjustBonus(String(u.bonusQuota));
+                  setAdjustCoin(String(u.videoCoin));
+                }}
+                className={cn(
+                  "mb-2 w-full rounded-2xl p-3 text-left text-xs leading-6",
+                  selectedUser?.id === u.id
+                    ? "bg-orange-100 ring-2 ring-orange-300"
+                    : "bg-orange-50"
+                )}
+              >
+                <b>{u.mobile}</b> · {u.plan} · 额度 {u.usedCount}/{u.dailyQuota}{" "}
+                · 币 {u.videoCoin}
+              </button>
+            ))}
+            {!overview.recentUsers.length && (
+              <p className="text-sm text-slate-500">暂无用户</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {serverMode && (
         <Card className="mb-4">
           <CardContent className="space-y-3">
-            <h3 className="font-bold">手动调额（选中用户后提交）</h3>
-            <p className="text-xs text-slate-500">
-              选中用户：{selectedUser?.mobile ?? "未选择"}
+            <h3 className="font-bold">手动调额</h3>
+            <p
+              className={cn(
+                "rounded-xl px-3 py-2 text-xs",
+                selectedUser ? "bg-orange-50 text-orange-800" : "bg-slate-50 text-slate-500"
+              )}
+            >
+              {selectedUser
+                ? `已选：${selectedUser.mobile}（${selectedUser.plan}）`
+                : "请先在上方「最近用户」里点选一位用户"}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <Field label="日额度">
@@ -181,32 +221,6 @@ export default function AdminPage() {
 
       {serverMode && overview && (
         <>
-          <Card className="mb-3">
-            <CardContent>
-              <h3 className="mb-2 font-bold">最近用户</h3>
-              {overview.recentUsers.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUser(u);
-                    setAdjustQuota(String(u.dailyQuota));
-                    setAdjustBonus(String(u.bonusQuota));
-                    setAdjustCoin(String(u.videoCoin));
-                  }}
-                  className={cn(
-                    "mb-2 w-full rounded-2xl p-3 text-left text-xs leading-6",
-                    selectedUser?.id === u.id
-                      ? "bg-orange-100 ring-2 ring-orange-300"
-                      : "bg-orange-50"
-                  )}
-                >
-                  <b>{u.mobile}</b> · {u.plan} · 额度 {u.usedCount}/{u.dailyQuota}{" "}
-                  · 币 {u.videoCoin}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
           <Card className="mb-3">
             <CardContent>
               <h3 className="mb-2 font-bold">风控记录</h3>

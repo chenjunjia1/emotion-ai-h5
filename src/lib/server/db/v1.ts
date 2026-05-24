@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { PLAN_QUOTA, VIDEO_COIN_COST } from "@/lib/constants/v1";
+import { NEW_USER_WELCOME_BONUS, PLAN_QUOTA, VIDEO_COIN_COST } from "@/lib/constants/v1";
 import type {
   HistoryItem,
   Order,
@@ -89,6 +89,22 @@ export async function findUserById(id: string): Promise<User | null> {
   return data ? rowToUser(data as Record<string, unknown>) : null;
 }
 
+/** 白名单管理员登录时同步 role（老用户注册时可能还是 user） */
+async function syncAdminRoleOnLogin(user: User, mobile: string): Promise<User> {
+  if (!isAdminMobile(mobile) || user.role === "admin") return user;
+  const db = getSupabaseAdmin();
+  if (!db) return user;
+  const { error } = await db
+    .from("users")
+    .update({ role: "admin", updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+  if (error) {
+    console.error("[syncAdminRoleOnLogin]", error.message);
+    return user;
+  }
+  return { ...user, role: "admin" };
+}
+
 export async function upsertUserOnLogin(
   mobile: string,
   existing?: User | null
@@ -96,10 +112,10 @@ export async function upsertUserOnLogin(
   const db = getSupabaseAdmin();
   if (!db) throw new Error("database_unavailable");
 
-  if (existing) return existing;
+  if (existing) return syncAdminRoleOnLogin(existing, mobile);
 
   const found = existing === undefined ? await findUserByMobile(mobile) : null;
-  if (found) return found;
+  if (found) return syncAdminRoleOnLogin(found, mobile);
 
   const role = isAdminMobile(mobile) ? "admin" : "user";
   const { data, error } = await db
@@ -110,7 +126,7 @@ export async function upsertUserOnLogin(
       plan: "free",
       daily_quota: PLAN_QUOTA.free,
       used_count: 0,
-      bonus_quota: 0,
+      bonus_quota: NEW_USER_WELCOME_BONUS,
       video_coin: 0,
       frozen_video_coin: 0,
       language: "zh",

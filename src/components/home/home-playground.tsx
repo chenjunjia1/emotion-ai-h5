@@ -16,7 +16,7 @@ const TABS = [
 
 const QUICK = [
   { href: "/topic-box", emoji: "🎲", title: "灵感盲盒", desc: "开盒抽 SSR 选题" },
-  { href: "/hot-topics", emoji: "🔥", title: "每日爆品", desc: "3灵感一键出包" },
+  { href: "/hot-topics", emoji: "🔥", title: "每日热点", desc: "3灵感一键出包" },
   { href: "/invite", emoji: "🎁", title: "邀好友", desc: "双人领灵感" },
 ];
 

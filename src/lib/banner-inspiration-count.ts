@@ -11,13 +11,9 @@ export function getTodayInspirationCount(now = Date.now()): number {
 }
 
 /**
- * 展示用：「万」+ 三位小数，如 3.162万（31621 人）
- * 比 3.16万 更具体；文案连读：今日已有 3.162万 人生成灵感
+ * 展示用：完整人数，如 30,130（文案：今日已有 30,130 人生成灵感）
  */
 export function formatInspirationCount(n: number): string {
-  if (n >= 10_000) {
-    return `${(n / 10_000).toFixed(3)}万`;
-  }
   return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
 }
 

@@ -1,11 +1,11 @@
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { mockInviteBlindBox } from "@/lib/mock/content-v1";
+import { rollInviteBlindBoxReward } from "@/lib/constants/invite-rewards";
 import { findUserById } from "@/lib/server/db/v1";
 
 export async function openInviteBlindBoxForUser(userId: string): Promise<{
   ok: boolean;
   error?: string;
-  reward?: ReturnType<typeof mockInviteBlindBox>;
+  reward?: ReturnType<typeof rollInviteBlindBoxReward>;
   user?: Awaited<ReturnType<typeof findUserById>>;
 }> {
   const db = getSupabaseAdmin();
@@ -22,7 +22,7 @@ export async function openInviteBlindBoxForUser(userId: string): Promise<{
   const count = Number(row.invite_blind_box_count ?? 0);
   if (count <= 0) return { ok: false, error: "no_blind_box" };
 
-  const reward = mockInviteBlindBox();
+  const reward = rollInviteBlindBoxReward();
   let bonusQuota = Number(row.bonus_quota ?? 0);
   let inviteRewardTotal = Number(row.invite_reward_total ?? 0);
 

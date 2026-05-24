@@ -101,11 +101,11 @@ export function getProfileLevelHintContent(xp: number): {
   const remain = next ? Math.max(0, next.minXp - xp) : 0;
 
   const status = next
-    ? `当前「${current.name}」→ 下一级「${next.name}」还差 ${remain} 成长值`
+    ? `当前「${current.name}」→ 下一级「${next.name}」还差 ${remain} 灵感值`
     : `当前「${current.name}」，已是最高等级`;
 
   return {
-    intro: "按成长值升级，显示在昵称旁。",
+    intro: "按灵感值升级，显示在昵称旁。",
     status,
     footer: "多做发布包、复盘、每日任务可更快升级。",
     stages: GROWTH_LEVELS.map((level) => ({

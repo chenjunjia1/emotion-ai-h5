@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function EmotionHeartbeatMeter({
@@ -10,18 +11,42 @@ export function EmotionHeartbeatMeter({
   label?: string;
 }) {
   const v = Math.max(0, Math.min(100, value));
+  const [pulse, setPulse] = useState(false);
   const tier =
-    v >= 80 ? "from-rose-500 via-pink-500 to-orange-400" : v >= 60 ? "from-pink-400 to-rose-400" : v >= 40 ? "from-amber-300 to-orange-300" : "from-slate-300 to-slate-400";
+    v >= 80
+      ? "from-rose-500 via-pink-500 to-orange-400"
+      : v >= 60
+        ? "from-pink-400 to-rose-400"
+        : v >= 40
+          ? "from-amber-300 to-orange-300"
+          : "from-slate-300 to-slate-400";
+
+  useEffect(() => {
+    setPulse(true);
+    const t = window.setTimeout(() => setPulse(false), 700);
+    return () => window.clearTimeout(t);
+  }, [v]);
 
   return (
     <div className="w-full">
       <div className="mb-1 flex items-end justify-between">
         <span className="text-[10px] font-bold text-white/85">心动指数</span>
-        <span className="text-2xl font-black leading-none text-white">{v}</span>
+        <span
+          className={cn(
+            "text-2xl font-black leading-none text-white transition-transform duration-500",
+            pulse && "scale-110"
+          )}
+        >
+          {v}
+        </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-white/25">
         <div
-          className={cn("h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out", tier)}
+          className={cn(
+            "h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out",
+            tier,
+            pulse && "shadow-[0_0_12px_rgba(255,255,255,0.55)]"
+          )}
           style={{ width: `${v}%` }}
         />
       </div>

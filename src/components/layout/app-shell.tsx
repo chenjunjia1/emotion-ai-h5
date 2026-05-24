@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "./app-header";
+import { SiteFooter } from "./site-footer";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       <AppHeader />
       <main className="px-4 pb-2 pt-2">{children}</main>
+      <SiteFooter />
     </div>
   );
 }

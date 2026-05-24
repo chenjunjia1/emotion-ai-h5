@@ -17,6 +17,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check:env": "node scripts/check-config.mjs",
+    "verify:cron": "node scripts/verify-cron.mjs",
     "test:ingest": "node scripts/test-supabase-ingest.mjs",
     "test:deepseek": "node scripts/test-deepseek.mjs",
     "refresh:hot-topics": "node scripts/refresh-daily-hot-topics.mjs",
@@ -43,5 +44,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "eslint-visitor-keys": "^4.2.1"
   }
 }

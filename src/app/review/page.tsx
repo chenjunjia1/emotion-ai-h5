@@ -23,11 +23,17 @@ import { QUOTA_COST } from "@/lib/constants/v1";
 import { DemoContentBadge } from "@/components/ui/demo-content-badge";
 import { QuotaCostBadge } from "@/components/ui/quota-cost-badge";
 import { HintTip } from "@/components/ui/hint-tip";
+import { heatBadgeClass } from "@/lib/content/heat-level";
 import {
   REVIEW_DATA_TIERS,
+  REVIEW_LOADING_LINES,
   calcEngagementRate,
-  getDailyReviewTitleIdeas,
+  engagementFunLabel,
+  getDailyReviewTitleItems,
+  getTierById,
+  scoreFunBadge,
   scoreLabel,
+  type ReviewTitleIdea,
 } from "@/lib/review/presets";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -51,19 +57,36 @@ function ReviewInner() {
   const [track, setTrack] = useState<string>(TRACK_VALUES[3]);
   const [tierId, setTierId] = useState<string>("good");
   const [titleBatch, setTitleBatch] = useState(0);
+  const [loadingLine, setLoadingLine] = useState(0);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [contentDemo, setContentDemo] = useState(false);
   const [socialCount, setSocialCount] = useState(() => getTodayInspirationCount());
   const reviewCost = QUOTA_COST.review ?? 2;
 
   const titleIdeas = useMemo(
-    () => getDailyReviewTitleIdeas(todayKey(), titleBatch, 8),
+    () => getDailyReviewTitleItems(todayKey(), titleBatch, 8),
     [titleBatch]
   );
-
+  const featuredTitle = titleIdeas.find((item) => item.heat === "爆") ?? titleIdeas[0];
   const viewsNum = Number(views) || 0;
   const likesNum = Number(likes) || 0;
   const engagement = calcEngagementRate(viewsNum, likesNum);
+  const selectedTier = getTierById(tierId);
+  const engagementHint = engagementFunLabel(engagement);
+  const formStep = !title.trim() ? 1 : viewsNum > 0 ? 3 : 2;
+  const isStepComplete = (i: number) => {
+    if (i === 0) return Boolean(title.trim());
+    if (i === 1) return viewsNum > 0;
+    return false;
+  };
+
+  useEffect(() => {
+    if (!busy) return;
+    const id = window.setInterval(() => {
+      setLoadingLine((i) => (i + 1) % REVIEW_LOADING_LINES.length);
+    }, 900);
+    return () => window.clearInterval(id);
+  }, [busy]);
 
   useEffect(() => {
     const tick = () => setSocialCount(getTodayInspirationCount());
@@ -103,9 +126,11 @@ function ReviewInner() {
     setResult(null);
   }, []);
 
-  const pickTitle = (t: string) => {
-    setTitle(t);
+  const pickTitle = (item: ReviewTitleIdea) => {
+    setTitle(item.title);
+    if (item.suggestTrack) setTrack(item.suggestTrack);
     setResult(null);
+    showToast(tr("reviewTitleApplied"));
   };
 
   if (tab === "weekly") {
@@ -203,10 +228,22 @@ function ReviewInner() {
               {[tr("reviewStep1"), tr("reviewStep2"), tr("reviewStep3")].map((step, i) => (
                 <span
                   key={step}
-                  className="review-hero-step flex flex-1 items-center justify-center gap-1 rounded-xl bg-white/15 py-1.5 text-[9px] font-bold backdrop-blur-sm"
+                  className={cn(
+                    "review-hero-step flex flex-1 items-center justify-center gap-1 rounded-xl py-1.5 text-[9px] font-bold backdrop-blur-sm transition",
+                    formStep === i + 1
+                      ? "bg-white/25 ring-2 ring-white/50"
+                      : isStepComplete(i)
+                        ? "bg-white/30 ring-1 ring-white/40"
+                        : "bg-white/15"
+                  )}
                 >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/30 text-[10px]">
-                  {i + 1}
+                <span
+                  className={cn(
+                    "flex h-4 w-4 items-center justify-center rounded-full text-[10px]",
+                    isStepComplete(i) ? "bg-white font-black text-[#FF5C8A]" : "bg-white/30"
+                  )}
+                >
+                  {isStepComplete(i) ? "✓" : i + 1}
                 </span>
                 {step}
               </span>
@@ -244,7 +281,10 @@ function ReviewInner() {
 
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[11px] font-bold text-slate-600">{tr("reviewTitleIdeas")}</p>
+              <div>
+                <p className="text-[11px] font-bold text-slate-600">{tr("reviewTitleIdeas")}</p>
+                <p className="text-[9px] text-slate-500">{tr("reviewTitleIdeasSub")}</p>
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -257,21 +297,57 @@ function ReviewInner() {
                 {tr("reviewTitleShuffle")}
               </button>
             </div>
-            <div key={titleBatch} className="flex flex-wrap gap-1.5">
+
+            {featuredTitle ? (
+              <button
+                type="button"
+                onClick={() => pickTitle(featuredTitle)}
+                className="mb-2 w-full rounded-2xl border border-[#FF7AAE]/35 bg-gradient-to-r from-[#FFF0F5] to-orange-50 p-3 text-left active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[9px] font-black text-[#FF5C8A]">
+                      🔥 {tr("reviewFeaturedTitle")}
+                    </p>
+                    <p className="mt-1 text-xs font-black leading-snug text-slate-800">
+                      {featuredTitle.title}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black",
+                      heatBadgeClass(featuredTitle.heat)
+                    )}
+                  >
+                    {featuredTitle.heat}
+                  </span>
+                </div>
+              </button>
+            ) : null}
+
+            <div key={titleBatch} className="max-h-[120px] space-y-1 overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-white/70 p-1.5">
               {titleIdeas.map((idea, i) => (
                 <button
-                  key={idea}
+                  key={idea.title}
                   type="button"
                   onClick={() => pickTitle(idea)}
                   style={{ animationDelay: `${i * 0.04}s` }}
                   className={cn(
-                    "review-chip-item max-w-full truncate rounded-full px-2.5 py-1 text-[10px] font-semibold ring-1 transition active:scale-95",
-                    title === idea
-                      ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white ring-transparent"
-                      : "bg-white/90 text-slate-600 ring-orange-100"
+                    "review-chip-item flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left transition active:scale-[0.99]",
+                    title === idea.title
+                      ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white shadow-sm"
+                      : "bg-white/95 text-slate-600 ring-1 ring-orange-100/80"
                   )}
                 >
-                  {idea}
+                  <span className="flex-1 text-[10px] font-semibold leading-snug">{idea.title}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black",
+                      title === idea.title ? "bg-white/25 text-white" : heatBadgeClass(idea.heat)
+                    )}
+                  >
+                    {idea.heat}
+                  </span>
                 </button>
               ))}
             </div>
@@ -362,6 +438,15 @@ function ReviewInner() {
             </div>
           </div>
 
+          {selectedTier ? (
+            <div className="rounded-2xl bg-gradient-to-r from-[#FFF0F5] to-amber-50/50 px-3 py-2 ring-1 ring-[#FF7AAE]/15">
+              <p className="text-[10px] font-black text-[#FF5C8A]">
+                {selectedTier.emoji} {tr("reviewTierCheer")}：{selectedTier.cheer}
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-600">{selectedTier.hint}</p>
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-[10px] font-bold text-slate-500">
@@ -394,8 +479,16 @@ function ReviewInner() {
           </div>
 
           <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-[#FFF0F5]/80 to-amber-50/60 px-3 py-2 ring-1 ring-[#FF7AAE]/10">
-            <span className="text-[10px] font-bold text-slate-600">{tr("reviewEngagement")}</span>
-            <span className="text-lg font-black text-[#FF5C8A]">{engagement}%</span>
+            <div>
+              <span className="text-[10px] font-bold text-slate-600">{tr("reviewEngagement")}</span>
+              <p className="text-[9px] text-slate-400">{tr("reviewEngagementHint")}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-lg font-black text-[#FF5C8A]">{engagement}%</span>
+              <p className="text-[10px] font-bold text-slate-600">
+                {engagementHint.emoji} {engagementHint.text}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -420,7 +513,7 @@ function ReviewInner() {
           >
             <span className="flex items-center gap-2 text-sm font-black">
               <TrendingUp size={18} />
-              {busy ? tr("loading") : tr("reviewBtn")}
+              {busy ? REVIEW_LOADING_LINES[loadingLine] : tr("reviewBtn")}
             </span>
             <span className="text-[9px] font-semibold text-white/90">{tr("reviewBtnSub")}</span>
           </button>
@@ -441,7 +534,11 @@ function ReviewInner() {
                     : "bg-gradient-to-r from-slate-400 to-slate-500"
               )}
             >
-              <ReviewScoreMeter score={score} label={label} title={title.trim() || "未命名内容"} />
+              <ReviewScoreMeter
+                score={score}
+                label={`${scoreFunBadge(score)} ${label}`}
+                title={title.trim() || "未命名内容"}
+              />
               {typeof result.engagementRate === "number" ? (
                 <p className="mt-2 text-[10px] font-bold text-white/85">
                   {tr("reviewEngagement")} {result.engagementRate}%

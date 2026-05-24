@@ -31,6 +31,14 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
+  if (url.searchParams.get("probe") === "1") {
+    return NextResponse.json({
+      ok: true,
+      probe: true,
+      message: "Cron 鉴权通过；移除 ?probe=1 执行真实刷新",
+    });
+  }
+
   const dateKey = url.searchParams.get("date")?.trim() || todayDate();
   const force = url.searchParams.get("force") === "1";
 

@@ -42,6 +42,24 @@ export const INSPIRATION_TITLE_POOL = [
   "小红书搜索型标题：把痛点写进前10个字",
 ] as const;
 
+/** 人工标注更易爆的灵感标题 */
+export const INSPIRATION_HEAT_OVERRIDES: Partial<
+  Record<(typeof INSPIRATION_TITLE_POOL)[number], "爆" | "高" | "中">
+> = {
+  "情感号一句话让人想评论「是我本人」": "爆",
+  "美食号不要只拍菜，拍「决策瞬间」": "爆",
+  "小红书封面3秒让人停下来的秘诀": "爆",
+  "直播切片怎么剪成第二条爆款短视频": "爆",
+  "评论区怎么预埋神回复拉高互动": "爆",
+  "前3秒钩子：5个模板直接套用": "高",
+  "打工人周三发什么最容易被收藏": "高",
+  "带货视频前30秒怎么抓住购买力": "高",
+  "小红书搜索型标题：把痛点写进前10个字": "高",
+  "职场号用「领导不会告诉你」结构写标题": "高",
+  "健身号跟练视频：前5秒必须给结果预告": "高",
+  "换季护肤/穿搭：节点内容怎么蹭热度": "高",
+};
+
 export const INSPIRATION_TITLE_POOL_SIZE = INSPIRATION_TITLE_POOL.length;
 
 /** @deprecated 使用 INSPIRATION_TITLE_POOL */

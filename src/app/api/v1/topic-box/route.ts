@@ -5,7 +5,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { deductQuota } from "@/lib/server/db/v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 30;
 
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     style: String(body.style || "温柔"),
   });
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "topic_box",
     topic: String(result.topic ?? ""),
@@ -53,5 +53,12 @@ export async function POST(req: Request) {
     growthTaskId: "topic",
   });
 
-  return NextResponse.json({ result, usedMock, fastPath, saved: true, user: q.user });
+  return NextResponse.json({
+    result,
+    usedMock,
+    fastPath,
+    saved: saved.ok,
+    generationId: saved.id,
+    user: q.user,
+  });
 }

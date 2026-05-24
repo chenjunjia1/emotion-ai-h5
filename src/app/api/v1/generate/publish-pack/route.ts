@@ -6,7 +6,7 @@ import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { deductQuota, refundQuota } from "@/lib/server/db/v1";
-import { deferGenerationSideEffects } from "@/lib/server/defer-generation-side-effects";
+import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export const maxDuration = 30;
 
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "generate_failed", risk }, { status: 500 });
   }
 
-  deferGenerationSideEffects({
+  const saved = await persistGenerationAndDeferGrowth({
     userId: user.id,
     type: "publish_pack",
     topic,
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
     usedMock,
     fastPath,
     user: q.user,
-    saved: true,
+    saved: saved.ok,
+    generationId: saved.id,
   });
 }

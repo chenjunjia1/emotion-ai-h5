@@ -3,7 +3,7 @@
  * 运行: node scripts/check-config.mjs
  */
 
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -66,7 +66,7 @@ const checks = [
   { key: "NEXT_PUBLIC_SUPABASE_ANON_KEY", label: "Supabase Anon", required: false },
 ];
 
-console.log("\nAI短视频运营助手 — 环境配置检查\n");
+console.log("\nAI短视频运营灵感 — 环境配置检查\n");
 
 let ok = true;
 for (const { key, label, required } of checks) {
@@ -104,8 +104,22 @@ if (pay && alipayReady(env)) {
 
 if (env.CRON_SECRET && env.CRON_SECRET.length >= 16) {
   console.log("✅ CRON_SECRET 已配置（每日爆品定时任务）");
+  console.log("   · vercel.json: 0 0 * * * → 北京时间每天 08:00");
+  console.log("   · 本地验收: npm run verify:cron");
 } else {
-  console.log("⚠️  CRON_SECRET 未配置：线上定时刷新爆品库可能失败");
+  console.log("⚠️  CRON_SECRET 未配置：Vercel Cron 调用 /api/cron/refresh-hot-topics 将 401");
+}
+
+const vercelJson = resolve(root, "vercel.json");
+if (existsSync(vercelJson)) {
+  try {
+    const cron = JSON.parse(readFileSync(vercelJson, "utf8")).crons?.[0];
+    if (cron?.path?.includes("refresh-hot-topics")) {
+      console.log(`✅ Vercel Cron 已声明: ${cron.schedule} → ${cron.path}`);
+    }
+  } catch {
+    console.log("⚠️  vercel.json 解析失败");
+  }
 }
 
 if (env.ADMIN_MOBILES?.trim()) {
@@ -124,6 +138,57 @@ if (env.SMS_PROVIDER === "aliyun") {
   console.log(smsOk ? "✅ 阿里云短信已配置" : "❌ 短信变量未配全");
 } else {
   console.log("ℹ️  短信：dev 模式（验证码见服务端日志）");
+}
+
+const appUrl = env.NEXT_PUBLIC_APP_URL?.trim();
+if (appUrl && /^https:\/\/.+/.test(appUrl)) {
+  console.log(`✅ NEXT_PUBLIC_APP_URL: ${appUrl}`);
+} else {
+  console.log("⚠️  NEXT_PUBLIC_APP_URL 未设或不是 https：分享链接/支付回调可能不正确");
+}
+
+if (pay && env.NEXT_PUBLIC_PAY_PROVIDER !== "alipay") {
+  console.log("⚠️  PAY_PROVIDER=alipay 但 NEXT_PUBLIC_PAY_PROVIDER 未设 alipay（前端仍显示 Mock 支付）");
+}
+
+const assets = [
+  ["public/brand-avatar.png", "品牌头像（顶栏/公众号）"],
+  ["public/brand-avatar.svg", "品牌头像 SVG"],
+  ["public/og-share.png", "微信/社交分享图"],
+  ["public/favicon.svg", "浏览器标签图标"],
+];
+for (const [rel, label] of assets) {
+  console.log(
+    existsSync(resolve(root, rel))
+      ? `✅ ${label}（${rel}）`
+      : `❌ 缺少 ${label}：${rel}`
+  );
+}
+
+const publicDir = resolve(root, "public");
+const mpVerify = existsSync(publicDir)
+  ? readdirSync(publicDir).filter((f) => /^MP_verify_.+\.txt$/i.test(f))
+  : [];
+if (mpVerify.length) {
+  console.log(`✅ 微信业务域名校验文件: public/${mpVerify[0]}`);
+} else {
+  console.log(
+    "⚠️  未找到 public/MP_verify_*.txt — 公众平台「业务域名」需下载校验文件后部署"
+  );
+  console.log("   详见 docs/微信H5分享配置.md");
+}
+
+if (env.NEXT_PUBLIC_ICP_BEIAN?.trim()) {
+  console.log(`✅ ICP 备案号已配置: ${env.NEXT_PUBLIC_ICP_BEIAN.trim()}`);
+} else {
+  console.log("ℹ️  NEXT_PUBLIC_ICP_BEIAN 未填：页脚暂不显示备案号（下证后填写）");
+  console.log("   详见 docs/ICP备案-流程.md");
+}
+
+if (env.VIDEO_PROVIDER && env.VIDEO_PROVIDER !== "mock") {
+  console.log(`ℹ️  VIDEO_PROVIDER=${env.VIDEO_PROVIDER}（V1 页面仍展示文本创作说明）`);
+} else {
+  console.log("ℹ️  VIDEO_PROVIDER=mock：AI 成片页展示 V1 说明，后续可接厂商 API");
 }
 
 console.log(
