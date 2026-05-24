@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { generateDailyHotTopicsWithDeepSeek } from "@/lib/hot-topics/generate-daily-deepseek";
 import { generateDailyInspirationTitlesWithDeepSeek } from "@/lib/publish-pack/generate-daily-inspiration-deepseek";
+import { runHotTopicsUpdatePipeline } from "@/lib/hot-topics/update-pipeline";
 import {
-  getDailyHotTopicsFromDb,
   getDailyInspirationTitlesFromDb,
-  saveDailyHotTopics,
   saveDailyInspirationTitles,
 } from "@/lib/server/db/product-v1";
+import { countActiveHotTopics } from "@/lib/server/db/hot-topics-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,8 +45,8 @@ export async function GET(req: Request) {
   let inspSkipped = false;
 
   if (!force) {
-    const existingHot = await getDailyHotTopicsFromDb(dateKey);
-    hotSkipped = Boolean(existingHot && existingHot.length >= 30);
+    const existingHot = await countActiveHotTopics();
+    hotSkipped = existingHot >= 20;
     const existingInsp = await getDailyInspirationTitlesFromDb(dateKey);
     inspSkipped = Boolean(existingInsp && existingInsp.length >= 30);
     if (hotSkipped && inspSkipped) {
@@ -55,7 +54,7 @@ export async function GET(req: Request) {
         ok: true,
         skipped: true,
         date: dateKey,
-        hotTopics: existingHot!.length,
+        hotTopics: existingHot,
         inspirationTitles: existingInsp!.length,
         message: "今日数据已齐全，传 ?force=1 强制覆盖",
       });
@@ -65,15 +64,14 @@ export async function GET(req: Request) {
   const result: Record<string, unknown> = { ok: true, date: dateKey };
 
   if (!hotSkipped || force) {
-    const { items, source } = await generateDailyHotTopicsWithDeepSeek(dateKey, 32);
-    const save = await saveDailyHotTopics(dateKey, items);
-    if (!save.ok) {
+    const hot = await runHotTopicsUpdatePipeline(dateKey);
+    if (!hot.ok) {
       return NextResponse.json(
-        { error: "hot_save_failed", detail: save.error, count: items.length, source },
+        { error: "hot_topics_save_failed", detail: hot.error, ...hot },
         { status: 500 }
       );
     }
-    result.hotTopics = { count: items.length, source, sample: items.slice(0, 3).map((i) => i.title) };
+    result.hotTopics = hot;
   } else {
     result.hotTopics = { skipped: true };
   }

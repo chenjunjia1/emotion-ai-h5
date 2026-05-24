@@ -1,146 +1,114 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
-import { Copy, FileText, MessageCircle, RefreshCw, Sparkles, Wand2 } from "lucide-react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, Flame, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { SectionTitle } from "@/components/section-title";
-import { Button } from "@/components/ui/button";
-import { ContentFormChips } from "@/components/v1/content-form-chips";
+import { PublishPackResultTabs } from "@/components/publish-pack/publish-pack-result-tabs";
+import { SelectedHotTopicCard } from "@/components/publish-pack/selected-hot-topic-card";
+import { PlatformIconRow } from "@/components/v1/platform-icon-row";
+import { StepChipGrid } from "@/components/v1/step-chip-grid";
+import { QuotaCostBadge } from "@/components/ui/quota-cost-badge";
 import { useApp } from "@/contexts/app-context";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { useProduct } from "@/hooks/use-product";
-import { apiGetInspirationTitles } from "@/lib/client/server-api";
+import { apiGetHotTopicDetail } from "@/lib/client/server-api";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { displayField } from "@/lib/ai/normalize-ai-result";
-import { STORAGE_DAILY_INSPIRATION } from "@/lib/constants/v1";
-import { readInspirationItemsForToday, todayKey } from "@/lib/publish-pack/read-inspiration-cached";
-import type { InspirationTitleItem } from "@/lib/publish-pack/resolve-daily-inspiration";
-import { toInspirationItems } from "@/lib/publish-pack/resolve-daily-inspiration";
-import { heatBadgeClass } from "@/lib/content/heat-level";
-import {
-  GOAL_VALUES,
-  PLATFORM_VALUES,
-  STYLE_VALUES,
-  TRACK_VALUES,
-} from "@/lib/i18n/form-options";
+import { enrichHotTopic, type HotTopicDisplay } from "@/lib/content/hot-topic-enrichment";
 import { QUOTA_COST } from "@/lib/constants/v1";
-import { HintTip } from "@/components/ui/hint-tip";
+import {
+  ACCOUNT_TYPE_VALUES,
+  PUBLISH_GOAL_VALUES,
+  PUBLISH_STYLE_VALUES,
+} from "@/lib/i18n/publish-form-options";
+import { getTotalQuota } from "@/lib/v1/quota";
 import { cn } from "@/lib/utils";
 
-const PACK_ITEMS = [
-  { icon: "📝", label: "爆款标题" },
-  { icon: "🎬", label: "口播脚本" },
-  { icon: "📕", label: "小红书图文" },
-  { icon: "💬", label: "首评+神回复" },
-];
-
 function PublishPackInner() {
+  const router = useRouter();
   const params = useSearchParams();
-  const { tr, showToast, addHistory } = useApp();
+  const { tr, showToast, addHistory, user } = useApp();
   const { generatePublishPack } = useProduct();
-  const [inspirationItems, setInspirationItems] = useState<InspirationTitleItem[]>(() =>
-    readInspirationItemsForToday(0)
-  );
-  const [inspirationBatch, setInspirationBatch] = useState(0);
-  const [inspirationMeta, setInspirationMeta] = useState<{
-    updatedAt: string;
-    note: string;
-  } | null>(null);
-  const [shufflingInspiration, setShufflingInspiration] = useState(false);
-  const [topic, setTopic] = useState(() => readInspirationItemsForToday(0)[0]?.title ?? "");
-  const [platform, setPlatform] = useState<string>(PLATFORM_VALUES[0]);
-  const [track, setTrack] = useState<string>(TRACK_VALUES[3]);
-  const [goal, setGoal] = useState<string>(GOAL_VALUES[0]);
-  const [style, setStyle] = useState<string>(STYLE_VALUES[0]);
-  const [withXhs, setWithXhs] = useState(true);
-  const [pack, setPack] = useState<Record<string, unknown> | null>(null);
   const { run, busy } = useAsyncAction();
-  const cost = QUOTA_COST.publish_pack ?? 5;
+  const cost = QUOTA_COST.publish_pack ?? 30;
 
-  const loadInspiration = useCallback(async (nextBatch: number) => {
-    const key = todayKey();
+  const [platform, setPlatform] = useState("抖音");
+  const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE_VALUES[0]);
+  const [style, setStyle] = useState<string>(PUBLISH_STYLE_VALUES[0]);
+  const [goal, setGoal] = useState<string>(PUBLISH_GOAL_VALUES[0]);
+  const [extraNote, setExtraNote] = useState("");
+  const [pack, setPack] = useState<Record<string, unknown> | null>(null);
+
+  const topicParam = params.get("topic");
+  const topicIdParam = params.get("topic_id") ?? params.get("hotId");
+  const [hotTopic, setHotTopic] = useState<HotTopicDisplay | null>(null);
+
+  const loadHotTopic = useCallback(async () => {
     try {
-      const r = await apiGetInspirationTitles(nextBatch);
-      if (r.items?.length) {
-        setInspirationItems(r.items);
-        if (r.meta) {
-          setInspirationMeta({
-            updatedAt: r.meta.updatedAt,
-            note: r.meta.note,
-          });
+      if (topicIdParam) {
+        const detail = await apiGetHotTopicDetail(topicIdParam);
+        if (detail.item) {
+          setHotTopic(enrichHotTopic(detail.item));
+          return;
         }
-        localStorage.setItem(
-          STORAGE_DAILY_INSPIRATION,
-          JSON.stringify({ date: key, items: r.items, batch: nextBatch })
-        );
-        return;
       }
-      if (r.titles?.length) {
-        const items = toInspirationItems(r.titles, key);
-        setInspirationItems(items);
-        if (r.meta) {
-          setInspirationMeta({
-            updatedAt: r.meta.updatedAt,
-            note: r.meta.note,
-          });
-        }
-        localStorage.setItem(
-          STORAGE_DAILY_INSPIRATION,
-          JSON.stringify({ date: key, items, batch: nextBatch })
+      if (topicParam) {
+        setHotTopic(
+          enrichHotTopic({
+            id: topicIdParam ?? "custom",
+            title: decodeURIComponent(topicParam),
+            desc: "来自热点/自定义选题",
+            heat: "高",
+            track: "生活",
+            format: "短视频",
+          })
         );
-        return;
       }
     } catch {
-      /* 本地池 */
+      /* keep null */
     }
-    const local = readInspirationItemsForToday(nextBatch);
-    setInspirationItems(local);
-    setInspirationMeta({
-      updatedAt: `${key} 08:00`,
-      note: "每日 8 点更新，点选即可当今日主题",
-    });
-  }, []);
+  }, [topicIdParam, topicParam]);
 
   useEffect(() => {
-    void loadInspiration(0);
-  }, [loadInspiration]);
+    void loadHotTopic();
+  }, [loadHotTopic]);
 
-  useEffect(() => {
-    const t = params.get("topic");
-    if (t) setTopic(decodeURIComponent(t));
-  }, [params]);
-
-  const onShuffleInspiration = useCallback(async () => {
-    setShufflingInspiration(true);
-    try {
-      const next = inspirationBatch + 1;
-      await loadInspiration(next);
-      setInspirationBatch(next);
-      showToast(tr("dailyInspirationShuffleDone"));
-    } finally {
-      setShufflingInspiration(false);
-    }
-  }, [inspirationBatch, loadInspiration, showToast, tr]);
+  const quotaTotal = useMemo(() => (user ? getTotalQuota(user) : 0), [user]);
 
   const onGen = () =>
     void run(async () => {
-      const trimmed = topic.trim();
-      if (!trimmed) {
-        showToast("先写一个今日主题吧");
+      if (!hotTopic) {
+        showToast("请先选择热点选题");
+        return;
+      }
+      const topic = hotTopic.title.trim();
+      if (!topic) {
+        showToast("请先选择热点选题");
         return;
       }
       try {
         const r = await generatePublishPack({
-          topic: trimmed,
+          topic,
           platform,
-          track,
+          track: accountType,
           goal,
           style,
-          withXhs,
+          withXhs: platform === "小红书",
+          extraNote: extraNote.trim(),
+          accountType,
+          topicId: hotTopic.id,
+          hotTopicSummary: hotTopic.summary ?? hotTopic.desc,
+          hotTopicAngles: hotTopic.recommendAngles,
+          hotTopicTargetUsers: hotTopic.targetUsers,
         });
         if (r && typeof r === "object" && "recommendedTitle" in r) {
           setPack(r as Record<string, unknown>);
+          showToast("发布包已生成");
+          setTimeout(() => {
+            document.getElementById("pack-result")?.scrollIntoView({ behavior: "smooth" });
+          }, 100);
         } else {
           showToast(tr("generateFailed"));
         }
@@ -154,324 +122,148 @@ function PublishPackInner() {
     const text = [
       `【推荐标题】${displayField(pack.recommendedTitle, "")}`,
       `【口播脚本】\n${displayField(pack.script30s, "")}`,
-      pack.xhsNote ? `【小红书】\n${displayField(pack.xhsNote, "")}` : "",
+      `【封面】${displayField(pack.coverCopy, "")}`,
       `【首评】${displayField(pack.firstComment, "")}`,
-      `【回复】\n${((pack.commentReplies as string[]) ?? []).join("\n")}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+      `【标签】${((pack.tags as string[]) ?? []).join(" ")}`,
+    ].join("\n\n");
     void copyToClipboard(text);
     showToast(tr("copied"));
   };
 
   return (
-    <AppShell>
-      <SectionTitle
-        eyebrow="⚡"
-        title={tr("publishPackTitle")}
-        desc={tr("publishPackDesc")}
-      />
-
-      {/* 发布包包含什么 */}
-      <div className="mb-3 flex flex-wrap gap-2">
-        {PACK_ITEMS.map((item) => (
-          <span
-            key={item.label}
-            className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-slate-600 ring-1 ring-orange-100"
-          >
-            {item.icon} {item.label}
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] px-2.5 py-1 text-[10px] font-black text-white">
-            {cost} 灵感/次
-          </span>
-          <HintTip
-            title={tr("profileHintQuotaTitle")}
-            body={tr("profileHintQuotaBody")}
-            okLabel={tr("profileHintOk")}
-            ariaLabel={tr("profileHintAria")}
-          />
-        </span>
-      </div>
-
-      {!pack ? (
-        <div className="cream-card rounded-[28px] p-4 shadow-[0_10px_28px_rgba(255,122,174,0.1)] ring-1 ring-orange-100/60">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF9EC4] to-[#FF7AAE] text-white">
-              <Wand2 size={18} />
-            </span>
-            <div>
-              <p className="text-xs font-black text-slate-800">{tr("publishPackHeroTitle")}</p>
-              <p className="text-[10px] text-slate-500">标题、脚本、图文、评论全套带走</p>
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <p className="mb-1.5 text-[11px] font-bold text-slate-600">✏️ {tr("labelTodayTopic")}</p>
-            <textarea
-              className={cn(
-                "w-full resize-none rounded-2xl border-0 bg-white/95 p-3 text-sm font-medium text-slate-800",
-                "shadow-inner ring-2 ring-[#FF7AAE]/25 outline-none focus:ring-[#FF7AAE]/50"
-              )}
-              rows={3}
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="例如：新手第一周怎么发内容…"
-            />
-            <p className="mt-1 text-right text-[10px] text-slate-400">{topic.length} 字</p>
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div>
-                <p className="flex items-center gap-1 text-[11px] font-black text-[#FF5C8A]">
-                  <Sparkles size={12} />
-                  {tr("dailyInspirationTitles")}
-                </p>
-                <p className="mt-0.5 text-[9px] text-slate-500">
-                  {tr("dailyInspirationSub")
-                    .replace("{time}", inspirationMeta?.updatedAt?.split(" ")[1] ?? "08:00")
-                    .replace("{count}", String(inspirationItems.length))}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void onShuffleInspiration()}
-                disabled={shufflingInspiration}
-                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-white px-2 py-1 text-[9px] font-bold text-[#FF7AAE] ring-1 ring-[#FF7AAE]/30 disabled:opacity-50"
-              >
-                <RefreshCw size={11} className={shufflingInspiration ? "animate-spin" : ""} />
-                {tr("dailyInspirationShuffle")}
-              </button>
-            </div>
-            <div className="relative mt-1.5">
-              <div className="max-h-[160px] overflow-y-auto overscroll-contain rounded-xl border border-orange-100/80 bg-gradient-to-b from-white to-orange-50/30 p-1.5 pr-0.5">
-                <div className="space-y-1">
-                  {inspirationItems.map((item) => (
-                    <button
-                      key={`${inspirationBatch}-${item.title}`}
-                      type="button"
-                      onClick={() => setTopic(item.title)}
-                      className={cn(
-                        "flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left transition active:scale-[0.99]",
-                        topic === item.title
-                          ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white shadow-sm"
-                          : "bg-white/95 text-slate-600 ring-1 ring-orange-100/80"
-                      )}
-                    >
-                      <span className="flex-1 text-[10px] font-semibold leading-snug">
-                        {item.title}
-                      </span>
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black",
-                          topic === item.title
-                            ? "bg-white/25 text-white"
-                            : heatBadgeClass(item.heat)
-                        )}
-                      >
-                        {item.heat}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {inspirationItems.length > 4 ? (
-                <p className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-xl bg-gradient-to-t from-orange-50/95 to-transparent pb-0.5 pt-4 text-center text-[8px] font-bold text-slate-400">
-                  {tr("hotTopicsScrollHint")}
-                </p>
-              ) : null}
-            </div>
-            {inspirationMeta?.note ? (
-              <p className="mt-1 text-[9px] text-slate-400">{inspirationMeta.note}</p>
-            ) : null}
-          </div>
-
-          <div className="mb-3 h-px bg-gradient-to-r from-transparent via-[#FF7AAE]/20 to-transparent" />
-
-          <ContentFormChips
-            platform={platform}
-            track={track}
-            goal={goal}
-            style={style}
-            onPlatform={setPlatform}
-            onTrack={setTrack}
-            onGoal={setGoal}
-            onStyle={setStyle}
-          />
-
-          <button
-            type="button"
-            onClick={() => setWithXhs((v) => !v)}
-            className={cn(
-              "mt-3 flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left transition active:scale-[0.99]",
-              withXhs
-                ? "bg-gradient-to-r from-[#FFF0F5] to-[#FFF8EE] ring-2 ring-[#FF7AAE]/35"
-                : "bg-white/80 ring-1 ring-orange-100"
-            )}
-          >
-            <span className="text-xs font-bold text-slate-700">📕 {tr("withXhs")}</span>
-            <span
-              className={cn(
-                "relative h-6 w-11 rounded-full transition",
-                withXhs ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE]" : "bg-slate-200"
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition",
-                  withXhs ? "left-[22px]" : "left-0.5"
-                )}
-              />
-            </span>
-          </button>
-
-          <button
-            type="button"
-            disabled={busy || !topic.trim()}
-            onClick={onGen}
-            className={cn(
-              "banner-cta-breathe mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black text-white",
-              "bg-gradient-to-r from-[#FF6B6B] via-[#FF7AAE] to-[#FFC46B] shadow-[0_8px_24px_rgba(255,107,107,0.4)]",
-              "disabled:opacity-50"
-            )}
-          >
-            <Sparkles size={18} className={busy ? "animate-spin" : ""} />
-            {busy ? tr("loading") : tr("publishPackBtn")}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="overflow-hidden rounded-[28px] shadow-lg ring-1 ring-orange-100/80">
-            <div className="bg-gradient-to-r from-[#FF6B6B] via-[#FF7AAE] to-[#FFC46B] px-4 py-3 text-white">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/90">✨ 完整发布包已就绪</span>
-                <span className="rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-bold">
-                  安全分 {displayField(pack.safetyScore, "—")}
-                </span>
-              </div>
-              <p className="mt-1.5 text-base font-black leading-snug">
-                {displayField(pack.recommendedTitle)}
-              </p>
-            </div>
-
-            <div className="space-y-2 bg-white p-3">
-              <ContentFormChips
-                compact
-                platform={platform}
-                track={track}
-                goal={goal}
-                style={style}
-                onPlatform={setPlatform}
-                onTrack={setTrack}
-                onGoal={setGoal}
-                onStyle={setStyle}
-              />
-
-              <PackBlock
-                icon={<FileText size={14} />}
-                title="30秒口播脚本"
-                text={displayField(pack.script30s)}
-                onCopy={() => {
-                  void copyToClipboard(displayField(pack.script30s, ""));
-                  showToast(tr("copied"));
-                }}
-              />
-              {pack.xhsNote ? (
-                <PackBlock
-                  icon={<span className="text-sm">📕</span>}
-                  title="小红书图文"
-                  text={displayField(pack.xhsNote)}
-                  tone="rose"
-                  onCopy={() => {
-                    void copyToClipboard(displayField(pack.xhsNote, ""));
-                    showToast(tr("copied"));
-                  }}
-                />
-              ) : null}
-              <PackBlock
-                icon={<MessageCircle size={14} />}
-                title="首评 + 回复话术"
-                text={[
-                  displayField(pack.firstComment, ""),
-                  ...((pack.commentReplies as string[]) ?? []),
-                ]
-                  .filter(Boolean)
-                  .join("\n")}
-                onCopy={() => copyAll()}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={copyAll}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] py-3 text-sm font-bold text-white shadow-md active:scale-[0.98]"
-          >
-            <Copy size={16} />
-            {tr("publishPackCopy")}
-          </button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => {
-                setPack(null);
-              }}
-            >
-              再生成一条
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                addHistory("完整发布包", topic, pack);
-                showToast(tr("savedToHistory"));
-              }}
-            >
-              {tr("publishPackSave")}
-            </Button>
-          </div>
-        </div>
-      )}
-    </AppShell>
-  );
-}
-
-function PackBlock({
-  title,
-  text,
-  icon,
-  tone = "orange",
-  onCopy,
-}: {
-  title: string;
-  text: string;
-  icon: ReactNode;
-  tone?: "orange" | "rose";
-  onCopy: () => void;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-2xl p-3",
-        tone === "rose" ? "bg-rose-50/80" : "bg-orange-50/70"
-      )}
-    >
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1 text-[11px] font-bold text-[#FF7AAE]">
-          {icon} {title}
-        </span>
+    <AppShell showHeader={false}>
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#FFE8F0] bg-[#FFF4F7]/95 px-4 py-3 backdrop-blur-xl">
         <button
           type="button"
-          onClick={onCopy}
-          className="shrink-0 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[#FF7AAE] ring-1 ring-[#FF7AAE]/30 active:scale-95"
+          onClick={() => router.back()}
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#FF4F8B] shadow-sm"
+          aria-label="返回"
         >
-          复制
+          <ChevronLeft size={20} />
         </button>
+        <h1 className="text-base font-black text-[#1F2937]">{tr("publishPackTitle")}</h1>
+        <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#FF4F8B] ring-1 ring-[#FFE0EC]">
+          <Flame size={12} />
+          {quotaTotal} 灵感
+        </span>
       </div>
-      <pre className="whitespace-pre-wrap font-sans text-[11px] leading-relaxed text-slate-700">
-        {text}
-      </pre>
-    </div>
+
+      <div className="space-y-4 px-4 pb-32 pt-4">
+        {!pack ? (
+          <>
+            {hotTopic ? (
+              <SelectedHotTopicCard topic={hotTopic} />
+            ) : (
+              <p className="text-center text-sm text-[#8A94A6]">今日热点正在更新中，请稍后再来看看。</p>
+            )}
+
+            <div className="cream-card space-y-4 rounded-[24px] p-4 ring-1 ring-[#FFE8F0]">
+              <PlatformIconRow value={platform} onChange={setPlatform} step={1} />
+              <StepChipGrid
+                step={2}
+                title="选择账号类型"
+                options={ACCOUNT_TYPE_VALUES}
+                value={accountType}
+                onChange={setAccountType}
+              />
+              <StepChipGrid
+                step={3}
+                title="选择内容风格"
+                options={PUBLISH_STYLE_VALUES}
+                value={style}
+                onChange={setStyle}
+                columns={4}
+              />
+              <StepChipGrid
+                step={4}
+                title="选择生成目标"
+                options={PUBLISH_GOAL_VALUES}
+                value={goal}
+                onChange={setGoal}
+                columns={4}
+              />
+
+              <section>
+                <p className="mb-2 text-[12px] font-black text-[#1F2937]">
+                  <span className="mr-1 text-[#FF4F8B]">5.</span>
+                  补充说明（选填）
+                </p>
+                <textarea
+                  className="w-full resize-none rounded-2xl border-0 bg-white p-3 text-[12px] text-[#1F2937] ring-1 ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
+                  rows={4}
+                  maxLength={200}
+                  value={extraNote}
+                  onChange={(e) => setExtraNote(e.target.value)}
+                  placeholder="请输入你的账号情况或想要的内容方向…"
+                />
+                <p className="mt-1 text-right text-[10px] text-[#8A94A6]">{extraNote.length}/200</p>
+              </section>
+
+              <div className="flex items-center justify-center">
+                <QuotaCostBadge cost={cost} />
+              </div>
+
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onGen}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black text-white",
+                  "bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] shadow-[0_8px_24px_rgba(255,79,139,0.35)] disabled:opacity-50"
+                )}
+              >
+                <Sparkles size={18} className={busy ? "animate-spin" : ""} />
+                {busy ? tr("loading") : "一键生成发布包 ✨"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div id="pack-result" className="space-y-3">
+            {hotTopic ? <SelectedHotTopicCard topic={hotTopic} /> : null}
+            <PublishPackResultTabs
+              pack={pack}
+              onCopy={(text) => {
+                void copyToClipboard(text);
+                showToast(tr("copied"));
+              }}
+            />
+            <button
+              type="button"
+              onClick={copyAll}
+              className="w-full rounded-2xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-3 text-sm font-black text-white"
+            >
+              复制全部内容
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPack(null)}
+                className="rounded-2xl bg-white py-3 text-sm font-bold text-[#5A6478] ring-1 ring-[#FFE8F0]"
+              >
+                再生成一条
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!hotTopic) return;
+                  addHistory("完整发布包", hotTopic.title, pack);
+                  showToast(tr("savedToHistory"));
+                }}
+                className="rounded-2xl bg-[#FFF0F5] py-3 text-sm font-bold text-[#FF4F8B] ring-1 ring-[#FF4F8B]/20"
+              >
+                {tr("publishPackSave")}
+              </button>
+            </div>
+            <Link
+              href="/hot-topics"
+              className="block text-center text-[11px] font-bold text-[#8A94A6]"
+            >
+              换个热点继续生成 →
+            </Link>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
 

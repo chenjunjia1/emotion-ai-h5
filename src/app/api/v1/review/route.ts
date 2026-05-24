@@ -36,10 +36,17 @@ export async function POST(req: Request) {
 
   const reviewInput = {
     title,
+    contentIntro: String(body.contentIntro ?? "").trim(),
     views: Number(body.views ?? 0),
     likes: Number(body.likes ?? 0),
+    comments: Number(body.comments ?? 0),
+    saves: Number(body.saves ?? 0),
+    shares: Number(body.shares ?? 0),
+    completionRate: Number(body.completionRate ?? 0),
     platform: String(body.platform ?? "抖音"),
-    track: String(body.track ?? "职场成长"),
+    track: String(body.track ?? body.accountType ?? "情感号"),
+    accountType: String(body.accountType ?? body.track ?? "情感号"),
+    publishTime: String(body.publishTime ?? "晚上 19-22点"),
   };
 
   let result: Record<string, unknown>;

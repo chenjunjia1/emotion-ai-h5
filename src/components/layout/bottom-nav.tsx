@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Home, Sparkles, UserRound, ClipboardList } from "lucide-react";
+import { Flame, Home, Sparkles, UserRound, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/contexts/app-context";
@@ -8,37 +8,38 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { id: "home", labelKey: "navHome" as const, href: "/", icon: Home },
-  { id: "create", labelKey: "navCreate" as const, href: "/create", icon: Sparkles },
+  { id: "hot", labelKey: "navHotTopics" as const, href: "/hot-topics", icon: Flame },
+  { id: "create", labelKey: "navCreate" as const, href: "/publish-pack", icon: Sparkles },
   { id: "review", labelKey: "navReview" as const, href: "/review", icon: ClipboardList },
-  { id: "library", labelKey: "navLibrary" as const, href: "/history", icon: BookOpen },
   { id: "profile", labelKey: "navProfile" as const, href: "/profile", icon: UserRound },
 ];
 
 function isNavActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  if (href === "/hot-topics") {
+    return pathname.startsWith("/hot-topics");
+  }
   if (href === "/create") {
     return (
       pathname.startsWith("/create") ||
       pathname.startsWith("/publish-pack") ||
       pathname.startsWith("/topic-box") ||
-      pathname.startsWith("/hot-topics") ||
       pathname.startsWith("/title-gacha") ||
       pathname.startsWith("/account-test") ||
-      pathname.startsWith("/account-package")
+      pathname.startsWith("/account-package") ||
+      pathname.startsWith("/emotion-chat")
     );
   }
   if (href === "/review") {
-    return pathname.startsWith("/review") || pathname.startsWith("/emotion-chat");
+    return pathname.startsWith("/review");
   }
   if (href === "/profile") {
     return (
       pathname.startsWith("/profile") ||
       pathname.startsWith("/invite") ||
-      pathname.startsWith("/support")
+      pathname.startsWith("/support") ||
+      pathname.startsWith("/history")
     );
-  }
-  if (href === "/history") {
-    return pathname.startsWith("/history");
   }
   return pathname.startsWith(href);
 }
@@ -48,7 +49,7 @@ export function BottomNav() {
   const { tr } = useApp();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-orange-100/70 bg-[#FFF7F0]/95 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-orange-100/70 bg-[#FFF4F7]/95 backdrop-blur-xl">
       <div className="mx-auto grid w-full max-w-[430px] grid-cols-5 px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -64,8 +65,8 @@ export function BottomNav() {
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-xl transition",
                   active
-                    ? "bg-gradient-to-r from-[#FF6B6B] to-[#FF7AAE] text-white shadow-[0_4px_12px_rgba(255,122,174,0.35)]"
-                    : "text-slate-400"
+                    ? "bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] text-white shadow-[0_4px_12px_rgba(255,79,139,0.35)]"
+                    : "text-[#8A94A6]"
                 )}
               >
                 <Icon size={20} />
@@ -73,7 +74,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   "text-[10px] font-bold",
-                  active ? "text-[#FF7AAE]" : "text-slate-400"
+                  active ? "text-[#FF4F8B]" : "text-[#8A94A6]"
                 )}
               >
                 {tr(item.labelKey)}

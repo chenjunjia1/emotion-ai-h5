@@ -21,6 +21,8 @@
     "test:ingest": "node scripts/test-supabase-ingest.mjs",
     "test:deepseek": "node scripts/test-deepseek.mjs",
     "refresh:hot-topics": "node scripts/refresh-daily-hot-topics.mjs",
+    "seed:hot-topics": "node scripts/seed-hot-topics.mjs",
+    "refresh:hot-topics-v2": "node scripts/seed-hot-topics.mjs --via-api",
     "test:full": "node scripts/test-full-app.mjs",
     "test:all": "npm run typecheck && npm run lint && npm run build && npm run verify:css && npm run verify:cron && npm run test:full && npm run test:ingest"
   },

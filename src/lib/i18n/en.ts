@@ -10,6 +10,7 @@ export const en: Record<keyof typeof zh, string> = {
     "For Xiaohongshu, Douyin & Channels. Draw topics, titles, scripts, notes & replies — like a fun blind box.",
   homeCta: "Draw today's topic 🎲",
   navHome: "Home",
+  navHotTopics: "Hot",
   navCreate: "Create",
   navReview: "Review",
   navLibrary: "Library",

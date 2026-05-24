@@ -4,7 +4,13 @@ import { SiteFooter } from "./site-footer";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  showHeader = true,
+}: {
+  children: ReactNode;
+  showHeader?: boolean;
+}) {
   return (
     <div
       className={cn(
@@ -14,7 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
       style={{ backgroundColor: theme.pageBg }}
     >
-      <AppHeader />
+      {showHeader ? <AppHeader /> : null}
       <main className="px-4 pb-2 pt-2">{children}</main>
       <SiteFooter />
     </div>

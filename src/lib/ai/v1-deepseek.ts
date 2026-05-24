@@ -1,5 +1,6 @@
 import {
   normalizePublishPackResult,
+  normalizeReviewResult,
   normalizeTitleGachaResult,
   normalizeTopicBoxResult,
 } from "@/lib/ai/normalize-ai-result";
@@ -8,6 +9,7 @@ import { AI_GENERATE_BUDGET } from "@/lib/constants/performance";
 import {
   mockAccountPersonalityTest,
   mockEmotionChat,
+  mockOperationConsultant,
   mockGodReplies,
   mockPostReview,
   mockPublishPack,
@@ -73,7 +75,30 @@ export async function generatePublishPack(input: {
   goal: string;
   style: string;
   withXhs?: boolean;
+  extraNote?: string;
+  accountType?: string;
+  hotTopicContext?: {
+    topicId?: string;
+    summary?: string;
+    angles?: unknown;
+    targetUsers?: unknown;
+  };
 }): Promise<{ result: Record<string, unknown>; usedMock: boolean; fastPath?: boolean }> {
+  const hotCtx = input.hotTopicContext;
+  const userPayload = {
+    topic: input.topic,
+    platform: input.platform,
+    track: input.track,
+    goal: input.goal,
+    style: input.style,
+    withXhs: input.withXhs,
+    extraNote: input.extraNote,
+    accountType: input.accountType,
+    hotTopicSummary: hotCtx?.summary,
+    hotTopicAngles: hotCtx?.angles,
+    hotTopicTargetUsers: hotCtx?.targetUsers,
+  };
+
   const budget =
     input.topic.length > 20
       ? AI_GENERATE_BUDGET.publish_pack
@@ -82,8 +107,8 @@ export async function generatePublishPack(input: {
   const { result, usedMock, fastPath } = await generateWithBudget({
     budget,
     system:
-      "你是短视频运营教练。只输出 JSON：packName, topic, platform, track, titles(3条), recommendedTitle, script30s(约120字口播), xhsNote(可选80字), coverCopy, firstComment, commentReplies(3条), publishTime, publishTips(1条), safetyScore(数字), safetyLevel。",
-    user: JSON.stringify(input),
+      "你是短视频运营教练。只输出 JSON：packName, topic, platform, track, titles(3条), recommendedTitle, script30s(约120字口播), xhsNote(可选80字), coverCopy, firstComment, commentReplies(3条), tags(10个话题标签), publishTime, publishTips, shootTips(拍摄画面建议), safetyScore(数字), safetyLevel。结合热点解读与切入方向创作。",
+    user: JSON.stringify(userPayload),
     mock: () => mockPublishPack(input) as Record<string, unknown>,
     normalize: (raw) => normalizePublishPackResult(raw, input),
   });
@@ -134,9 +159,9 @@ export async function generateEmotionChat(input: {
   const { result, usedMock, fastPath } = await generateWithBudget({
     budget: AI_GENERATE_BUDGET.emotion_chat,
     system:
-      "你是恋爱沟通教练。只输出 JSON：stage, heartbeat(0-100整数), heartbeatLabel, insight, tips(3条字符串), replies(3条{tone,text})。语气符合用户选择的风格。",
+      "你是短视频账号运营顾问，专门帮助用户做抖音、小红书、视频号起号和内容优化。只输出 JSON：analysis(200字内口语化分析), todayTopics(3条今日建议选题字符串数组), titleSuggestions(3条标题), contentStructure(3条内容结构建议), publishTips(2条发布建议), recommendPublishPack(布尔), recommendHotTopic(一条热点选题或空字符串)。回答要具体实用，可主动推荐生成发布包或查看今日热点。",
     user: JSON.stringify(input),
-    mock: () => mockEmotionChat(input) as Record<string, unknown>,
+    mock: () => mockOperationConsultant(input) as Record<string, unknown>,
   });
   return { result, usedMock, fastPath };
 }
@@ -149,9 +174,10 @@ export async function generatePostReview(input: Record<string, string | number>)
   const { result, usedMock, fastPath } = await generateWithBudget({
     budget: AI_GENERATE_BUDGET.review,
     system:
-      "你是短视频数据复盘教练。只输出 JSON：performanceScore(0-99), summary, problems(2-3条), nextSuggestion, nextTopic, engagementRate(数字)。",
+      "你是短视频数据复盘教练。只输出 JSON：performanceScore(0-99), titleScore, pacingScore, interactionScore, titleScoreLabel(好/一般/偏低), pacingScoreLabel, interactionScoreLabel, advantages(主要优点一句话), coreProblems(核心问题一句话), summary, problems(2-3条), nextSuggestion, nextTopic, engagementRate(数字), hookAdvice, publishTimeAdvice, titleAdvice。",
     user: JSON.stringify(input),
     mock: () => mockPostReview(input) as Record<string, unknown>,
+    normalize: (raw) => normalizeReviewResult(raw as Record<string, unknown>),
   });
   return { result, usedMock, fastPath };
 }

@@ -9,6 +9,7 @@ import {
   STORAGE_USER,
 } from "@/lib/constants/v1";
 import type { User } from "@/lib/types/v1";
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import {
   mockAccountPersonalityTest,
   mockEmotionChat,
@@ -59,14 +60,7 @@ export interface GrowthState {
   level: ReturnType<typeof getLevelByXp>;
 }
 
-export interface HotTopicItem {
-  id: string;
-  title: string;
-  desc: string;
-  heat: string;
-  track: string;
-  format: string;
-}
+export type { HotTopicItem };
 
 function readCachedUserGrowthXp(): number | null {
   if (typeof window === "undefined" || !isClientServerMode()) return null;
@@ -490,7 +484,7 @@ export function useProduct() {
   );
 
   const generatePublishPack = useCallback(
-    async (input: Record<string, string | boolean>) => {
+    async (input: Record<string, string | boolean | string[] | undefined>) => {
       if (!ensureLogin()) return null;
       const topic = String(input.topic ?? "").trim();
       if (!topic) return null;
@@ -504,6 +498,12 @@ export function useProduct() {
         style: String(input.style ?? "温柔"),
         withXhs: Boolean(input.withXhs),
         quotaAction,
+        extraNote: input.extraNote as string | undefined,
+        accountType: input.accountType as string | undefined,
+        topicId: input.topicId as string | undefined,
+        hotTopicSummary: input.hotTopicSummary as string | undefined,
+        hotTopicAngles: input.hotTopicAngles as string[] | undefined,
+        hotTopicTargetUsers: input.hotTopicTargetUsers as string[] | undefined,
       });
       if (!result) return null;
       if (serverMode) {

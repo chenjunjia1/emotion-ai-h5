@@ -1,6 +1,7 @@
-import type { HotTopicItem } from "@/lib/server/db/product-v1";
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { HOT_TOPICS_POOL, type HotTopicSeed } from "@/lib/hot-topics/daily-pool";
 import { sortByHeat } from "@/lib/content/heat-level";
+import { ensureHotTopicFields } from "@/lib/content/hot-topic-fields";
 
 function hashSeed(s: string): number {
   let h = 0;
@@ -22,14 +23,16 @@ function shuffleSeeded<T>(arr: T[], seedKey: string): T[] {
 
 function toItem(seed: HotTopicSeed, id: string): HotTopicItem {
   const sources = seed.sources.join("·");
-  return {
+  return ensureHotTopicFields({
     id,
     title: seed.title,
     desc: `${seed.desc}（监测：${sources}）`,
     heat: seed.heat,
     track: seed.track,
     format: seed.format,
-  };
+    platform: seed.sources[0],
+    angle: seed.angle,
+  });
 }
 
 export function getDailyHotTopics(dateKey: string, batch = 0): HotTopicItem[] {

@@ -55,10 +55,20 @@ export async function POST(req: Request) {
     const gen = await generatePublishPack({
       topic,
       platform: String(body.platform || "抖音"),
-      track: String(body.track || "职场成长"),
+      track: String(body.track || body.accountType || "情感号"),
       goal: String(body.goal || "涨粉"),
       style: String(body.style || "温柔"),
-      withXhs: Boolean(body.withXhs),
+      withXhs: Boolean(body.withXhs ?? body.platform === "小红书"),
+      extraNote: String(body.extraNote || "").trim() || undefined,
+      accountType: String(body.accountType || body.track || "情感号"),
+      hotTopicContext: body.topicId
+        ? {
+            topicId: String(body.topicId),
+            summary: String(body.hotTopicSummary || ""),
+            angles: body.hotTopicAngles,
+            targetUsers: body.hotTopicTargetUsers,
+          }
+        : undefined,
     });
     result = gen.result;
     usedMock = gen.usedMock;

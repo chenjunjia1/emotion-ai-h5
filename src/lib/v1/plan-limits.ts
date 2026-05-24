@@ -16,7 +16,7 @@ export const FEATURE_LIMITS: Record<
     topicBox: 1,
     titleGacha: 1,
     viralScore: 1,
-    hotTopicView: 99,
+    hotTopicView: 5,
     hotTopicGen: 1,
     publishReminders: 3,
   },
@@ -47,15 +47,16 @@ export const FEATURE_LIMITS: Record<
 };
 
 export const QUOTA_COST_V1 = {
-  publish_pack: 5,
-  hot_topic_pack: 3,
-  topic_box: 1,
-  account: 5,
-  account_test: 3,
-  viral: 3,
-  reply: 1,
-  score: 1,
-  review: 2,
+  publish_pack: 30,
+  hot_topic_pack: 10,
+  topic_box: 5,
+  account: 30,
+  account_test: 10,
+  viral: 5,
+  reply: 5,
+  score: 5,
+  review: 40,
+  emotion_chat: 5,
 } as const;
 
 export type QuotaAction = keyof typeof QUOTA_COST_V1;

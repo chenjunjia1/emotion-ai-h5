@@ -107,6 +107,7 @@ export function mockPublishPack(input: {
       "第一条就踩坑了，感谢",
       "已关注，等更新",
     ],
+    tags: [`#${track}`, "#起号", "#运营陪跑", "#短视频", "#创作灵感"],
     publishTime: "工作日 12:00-13:00 或 19:00-21:00",
     publishTips: "发布前检查敏感词；标题与封面关键词一致；首评30分钟内发布效果更好。",
     safetyScore: 86,
@@ -203,6 +204,10 @@ export function mockGodReplies(comment: string) {
 export function mockPostReview(input: Record<string, string | number>) {
   const views = Number(input.views) || 0;
   const likes = Number(input.likes) || 0;
+  const comments = Number(input.comments) || 0;
+  const saves = Number(input.saves) || 0;
+  const shares = Number(input.shares) || 0;
+  const completionRate = Number(input.completionRate) || 0;
   const title = String(input.title ?? "").trim() || "未命名内容";
   const er = views > 0 ? likes / views : 0;
 
@@ -212,10 +217,20 @@ export function mockPostReview(input: Record<string, string | number>) {
     const erScore = Math.min(55, er * 1200);
     performanceScore = Math.min(99, Math.max(35, Math.round(viewScore + erScore)));
   }
+  if (completionRate > 0 && completionRate < 35) performanceScore = Math.max(35, performanceScore - 8);
+  if (comments > likes * 0.15) performanceScore = Math.min(99, performanceScore + 3);
+
+  const titleScore = Math.min(95, Math.max(55, performanceScore + (title.length % 7) - 3));
+  const pacingScore = Math.min(92, Math.max(50, performanceScore - 4 + (completionRate > 40 ? 5 : 0)));
+  const interactionScore = Math.min(
+    90,
+    Math.max(45, Math.round(performanceScore * 0.85 + (comments + saves) / Math.max(views, 1) * 200))
+  );
 
   const problems: string[] = [];
   if (er < 0.03) problems.push("点赞/播放比偏低，结尾互动钩子可加强");
   if (views < 500) problems.push("曝光偏少，标题与封面可再强化点击欲");
+  if (completionRate > 0 && completionRate < 40) problems.push("完播率偏低，前3秒钩子需要更强");
   if (problems.length === 0) problems.push("可尝试固定发布时间，培养粉丝习惯");
 
   const nextTopics = [
@@ -226,8 +241,29 @@ export function mockPostReview(input: Record<string, string | number>) {
   ];
   const nextTopic = nextTopics[title.length % nextTopics.length] ?? nextTopics[0];
 
+  const advantages =
+    performanceScore >= 75
+      ? `选题「${title.slice(0, 12)}」有共鸣，${comments > 0 ? "评论互动不错，" : ""}内容节奏整体顺畅。`
+      : "内容方向有基础盘，账号类型与选题匹配度尚可。";
+
+  const coreProblems =
+    completionRate > 0 && completionRate < 40
+      ? "前3秒钩子偏弱，完播率拖后腿，标题吸引力还有提升空间。"
+      : er < 0.03
+        ? "互动率偏低，首评预埋与结尾提问需要加强。"
+        : "曝光与互动仍有优化空间，建议强化开头与标题。";
+
   return {
     performanceScore,
+    titleScore,
+    pacingScore,
+    interactionScore,
+    titleScoreLabel: titleScore >= 80 ? "好" : titleScore >= 65 ? "一般" : "偏低",
+    pacingScoreLabel: pacingScore >= 80 ? "好" : pacingScore >= 65 ? "一般" : "偏低",
+    interactionScoreLabel:
+      interactionScore >= 80 ? "好" : interactionScore >= 65 ? "一般" : "偏低",
+    advantages,
+    coreProblems,
     summary:
       performanceScore >= 75
         ? `「${title.slice(0, 16)}${title.length > 16 ? "…" : ""}」方向对了！互动率约 ${(er * 100).toFixed(1)}%，可复用这套结构再发 2 条。`
@@ -239,6 +275,9 @@ export function mockPostReview(input: Record<string, string | number>) {
         : "下一条建议用「反常识痛点」标题 + 结尾留开放式问题，并尝试 19:00–22:00 发布。",
     nextTopic,
     engagementRate: Math.round(er * 1000) / 10,
+    hookAdvice: "开头 3 秒用具体场景或数字，降低划走率。",
+    publishTimeAdvice: String(input.publishTime || "晚上 19-22点") + " 发布更容易获得初始流量。",
+    titleAdvice: "标题加入痛点词或反差结构，提升点击率。",
     input,
   };
 }
@@ -319,6 +358,28 @@ export function mockEmotionChat(input: {
         text: `${prefix}要不这样：你方便的时候我们语音 5 分钟？比打字更不容易误会。`,
       },
     ],
+  };
+}
+
+export function mockOperationConsultant(input: {
+  chat: string;
+  relationship: string;
+  goal: string;
+  style: string;
+}) {
+  const q = input.chat.trim().slice(0, 40) || "起号";
+  return {
+    analysis: `围绕「${q}」：建议先锁定一个细分赛道（如治愈日常/职场成长），用真实 vlog 拍 3 条测试完播。标题用「数字+反差+结果」，前 3 秒直接抛痛点。`,
+    todayTopics: ["下班后的治愈时刻", "普通人30天改变", "一人食探店vlog"],
+    titleSuggestions: [
+      "打工人下班后的第1小时，我在做什么",
+      "30天微小改变，生活真的不一样了",
+      "别卷了，这样发日常反而更涨粉",
+    ],
+    contentStructure: ["0-3s 抛痛点", "4-20s 展示过程", "21-30s 提问互动"],
+    publishTips: ["19:00-22:00 发布", "首评预埋开放式问题"],
+    recommendPublishPack: true,
+    recommendHotTopic: "下班后的治愈时刻",
   };
 }
 

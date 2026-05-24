@@ -1,3 +1,4 @@
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import type {
   HistoryItem,
   Order,
@@ -405,29 +406,51 @@ export async function apiGetInspirationTitles(batch = 0): Promise<{
   return { titles: data.titles, items: data.items, meta: data.meta, batch: data.batch };
 }
 
-export async function apiGetHotTopics(batch = 0): Promise<{
-  items?: {
-    id: string;
-    title: string;
-    desc: string;
-    heat: string;
-    track: string;
-    format: string;
-  }[];
-  meta?: {
-    date: string;
-    total: number;
-    updatedAt: string;
-    sources: string[];
-    note: string;
-  };
-  batch?: number;
-  error?: string;
-}> {
-  const res = await fetch(`/api/v1/hot-topics?batch=${batch}`, { credentials: "include" });
+export async function apiGetHotTopics(batch = 0) {
+  const res = await fetch(`/api/hot-topics?limit=20&page=${batch + 1}`, {
+    credentials: "include",
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
-  return { items: data.items, meta: data.meta, batch: data.batch };
+  return {
+    items: data.items,
+    meta: data.meta
+      ? {
+          date: data.meta.batchDate,
+          total: data.meta.total,
+          updatedAt: data.meta.updatedAt,
+          sources: ["DailyHotApi", "AI"],
+          note: data.meta.message ?? "",
+          stale: data.meta.stale,
+        }
+      : undefined,
+    batch,
+  };
+}
+
+export async function apiGetHotTopicsTop(): Promise<{
+  items?: HotTopicItem[];
+  meta?: { updatedAt?: string; stale?: boolean; message?: string };
+  error?: string;
+}> {
+  const res = await fetch("/api/hot-topics/top", { credentials: "include" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { items: data.items, meta: data.meta };
+}
+
+export async function apiGetHotTopicDetail(id: string): Promise<{
+  item?: HotTopicItem;
+  related?: HotTopicItem[];
+  meta?: Record<string, unknown>;
+  error?: string;
+}> {
+  const res = await fetch(`/api/hot-topics/${encodeURIComponent(id)}`, {
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { item: data.item, related: data.related, meta: data.meta };
 }
 
 export interface InviteRecordDto {

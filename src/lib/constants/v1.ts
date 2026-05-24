@@ -8,11 +8,11 @@ export const MEMBERSHIP_MARKETING: Record<
   { tagline: string; perks: string[]; forWho: string }
 > = {
   pro: {
-    tagline: "天天发得出去，再也不被 3 灵感卡住",
+    tagline: "天天发得出去，每日 200 灵感够用",
     perks: [
-      "每天约 8 条完整发布包（选题+标题+脚本+封面文案）",
-      "爆品包、情绪私信助攻、发完复盘 — 创作全流程开通",
-      "生成失败不扣灵感，只为真正能发的内容付费",
+      "每天约 6 条完整发布包（30灵感/条）",
+      "热点无限查看 + AI运营顾问每天50次",
+      "内容复盘、内容库无限保存",
     ],
     forWho: "适合：想日更起号的个人创作者",
   },
@@ -39,25 +39,36 @@ export const MEMBERSHIP_MARKETING: Record<
 export const MOCK_SMS_CODE = "1234";
 
 export const QUOTA_COST: Record<string, number> = {
-  account: 5,
-  publish_pack: 5,
-  hot_topic_pack: 3,
-  daily: 5,
-  topic_box: 1,
-  account_test: 3,
-  viral: 3,
-  reply: 1,
-  score: 1,
-  review: 2,
-  emotion_chat: 2,
+  account: 30,
+  publish_pack: 30,
+  hot_topic_pack: 10,
+  daily: 30,
+  topic_box: 5,
+  account_test: 10,
+  viral: 5,
+  reply: 5,
+  score: 5,
+  review: 40,
+  emotion_chat: 5,
+  publish_regen: 20,
+  publish_restyle: 10,
 };
 
 export const PLAN_QUOTA: Record<string, number> = {
-  free: 3,
-  pro: 40,
+  free: 30,
+  pro: 200,
   premium: 120,
   studio: 500,
 };
+
+/** 免费用户每日可查看热点条数 */
+export const FREE_HOT_TOPIC_VIEW = 5;
+/** 免费用户内容库最多保存条数 */
+export const FREE_LIBRARY_MAX = 5;
+/** 免费用户每日 AI 运营顾问次数 */
+export const FREE_OPS_CHAT_DAILY = 3;
+/** Pro 用户每日 AI 运营顾问次数 */
+export const PRO_OPS_CHAT_DAILY = 50;
 
 /** @deprecated V1 已移除视频币，保留类型兼容 */
 export const VIDEO_COIN_COST = {
@@ -73,8 +84,8 @@ export const PRODUCTS: ProductDef[] = [
     productName: "Pro会员 30天",
     amount: 39,
     plan: "pro",
-    quota: 40,
-    desc: "Pro会员·日更起号·每日40灵感",
+    quota: 200,
+    desc: "Pro会员·日更起号·每日200灵感",
   },
   {
     productType: "membership",
@@ -97,9 +108,9 @@ export const PRODUCTS: ProductDef[] = [
     productName: "Pro年卡 365天",
     amount: 299,
     plan: "pro",
-    quota: 40,
+    quota: 300,
     membershipDays: 365,
-    desc: "Pro年卡·省约17%·每日40灵感",
+    desc: "Pro年卡·省约17%·每日300灵感",
   },
   {
     productType: "quota_pack",
@@ -150,7 +161,9 @@ export const STORAGE_AI_PROFILE = "sv-v1-ai-profile";
 
 export const INVITE_REGISTER_REWARD = 10;
 export const INVITE_MEMBER_REWARD = 30;
-/** 新用户首次注册赠送灵感，可体验一次完整发布包（消耗 5） */
-export const NEW_USER_WELCOME_BONUS = 5;
+/** 新用户首次注册赠送灵感 */
+export const NEW_USER_WELCOME_BONUS = 100;
+/** 每日登录赠送灵感（与会员每日额度叠加逻辑见服务端刷新） */
+export const DAILY_LOGIN_BONUS = 30;
 /** 邀请人每月最多获得注册奖励的邀请人数（超出仍注册成功，但不发奖励） */
 export const INVITE_MONTHLY_CAP = 30;

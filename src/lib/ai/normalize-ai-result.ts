@@ -179,6 +179,9 @@ export function normalizePublishPackResult(
     coverCopy: pickString(o, ["coverCopy", "封面文案"]) ?? fallback.coverCopy,
     firstComment: pickString(o, ["firstComment", "首评"]) ?? fallback.firstComment,
     commentReplies,
+    tags: Array.isArray(o.tags)
+      ? (o.tags as unknown[]).map(String)
+      : fallback.tags,
     publishTime: pickString(o, ["publishTime", "发布时间"]) ?? fallback.publishTime,
     publishTips: pickString(o, ["publishTips", "发布建议"]) ?? fallback.publishTips,
     safetyScore:
@@ -190,6 +193,12 @@ export function normalizePublishPackResult(
     safetyLevel:
       pickString(o, ["safetyLevel", "安全等级"]) ?? fallback.safetyLevel,
   };
+}
+
+import { normalizeReviewResult as normalizeReviewShape } from "@/lib/review/result-shape";
+
+export function normalizeReviewResult(raw: Record<string, unknown>): Record<string, unknown> {
+  return normalizeReviewShape(raw);
 }
 
 /** 页面展示：避免 String(undefined) === "undefined" */

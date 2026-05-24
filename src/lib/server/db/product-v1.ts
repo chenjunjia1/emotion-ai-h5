@@ -1,3 +1,4 @@
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getDailyHotTopics } from "@/lib/hot-topics/resolve-daily";
 import {
@@ -5,14 +6,7 @@ import {
   shuffleTitlesByBatch,
 } from "@/lib/publish-pack/resolve-daily-inspiration";
 
-export interface HotTopicItem {
-  id: string;
-  title: string;
-  desc: string;
-  heat: string;
-  track: string;
-  format: string;
-}
+export type { HotTopicItem } from "@/lib/hot-topics/types";
 
 export interface InviteRecordRow {
   id: string;

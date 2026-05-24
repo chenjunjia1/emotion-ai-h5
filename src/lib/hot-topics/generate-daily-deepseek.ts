@@ -1,7 +1,8 @@
 import { resolveDeepSeekBaseUrl } from "@/lib/security/deepseek-url";
 import { hasDeepSeekKey } from "@/lib/ai/deepseek";
-import type { HotTopicItem } from "@/lib/server/db/product-v1";
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { getDailyHotTopics } from "@/lib/hot-topics/resolve-daily";
+import { ensureHotTopicFields, ensureHotTopicFieldsList } from "@/lib/content/hot-topic-fields";
 
 const DEFAULT_MODEL = "deepseek-chat";
 const TRACKS = [
@@ -137,14 +138,18 @@ function normalizeRawItems(raw: unknown): HotTopicItem[] {
         ? `${angle}（监测：${sources.join("·")}）`
         : `短视频爆品选题（监测：${sources.join("·")}）`;
 
-    items.push({
-      id: `ai-${i}`,
-      title,
-      desc,
-      heat: pickHeat(o.heat),
-      track: pickTrack(o.track),
-      format: pickFormat(o.format),
-    });
+    items.push(
+      ensureHotTopicFields({
+        id: `ai-${i}`,
+        title,
+        desc,
+        heat: pickHeat(o.heat),
+        track: pickTrack(o.track),
+        format: pickFormat(o.format),
+        platform: sources[0],
+        angle: angle || undefined,
+      })
+    );
   }
 
   return items;
@@ -197,7 +202,15 @@ export async function generateDailyHotTopicsWithDeepSeek(
     }
 
     if (deduped.length >= minCount) {
-      return { items: deduped.slice(0, Math.max(minCount, deduped.length)), source: "deepseek" };
+      return {
+        items: ensureHotTopicFieldsList(
+          deduped.slice(0, Math.max(minCount, deduped.length)).map((item, i) => ({
+            ...item,
+            id: `${dateKey}-${i}`,
+          }))
+        ),
+        source: "deepseek",
+      };
     }
 
     const pool = getDailyHotTopics(dateKey, 0);
@@ -210,7 +223,7 @@ export async function generateDailyHotTopicsWithDeepSeek(
     }
 
     return {
-      items: deduped,
+      items: ensureHotTopicFieldsList(deduped),
       source: deduped.length >= minCount ? "deepseek" : "fallback",
     };
   } catch (e) {

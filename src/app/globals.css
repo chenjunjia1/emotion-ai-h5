@@ -1112,6 +1112,70 @@ button {
     animation: play-entry-shimmer 3.5s ease-in-out infinite;
   }
 
+  .daily-status-shimmer {
+    animation: daily-status-shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes daily-status-shimmer {
+    0%,
+    100% {
+      box-shadow: 0 0 0 rgba(255, 79, 139, 0);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(255, 79, 139, 0.15);
+    }
+  }
+
+  .hot-card-enter {
+    animation: hot-card-enter 0.45s ease both;
+  }
+
+  @keyframes hot-card-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .trend-card-enter,
+  .case-card-enter {
+    animation: trend-card-enter 0.4s ease both;
+  }
+
+  @keyframes trend-card-enter {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .home-section-enter {
+    animation: home-section-enter 0.5s ease both;
+  }
+
+  @keyframes home-section-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .home-hot-spotlight {
+    animation: home-section-enter 0.45s ease both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .banner-gradient-pack,
     .banner-gradient-invite,

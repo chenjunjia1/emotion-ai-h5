@@ -16,6 +16,7 @@ import {
   MOCK_SMS_CODE,
   PLAN_QUOTA,
   NEW_USER_WELCOME_BONUS,
+  FREE_LIBRARY_MAX,
   PRODUCTS,
   QUOTA_COST,
   STORAGE_FEEDBACKS,
@@ -132,6 +133,12 @@ interface AppContextValue {
     style: string;
     withXhs?: boolean;
     quotaAction?: keyof typeof QUOTA_COST;
+    extraNote?: string;
+    accountType?: string;
+    topicId?: string;
+    hotTopicSummary?: string;
+    hotTopicAngles?: string[];
+    hotTopicTargetUsers?: string[];
   }) => Promise<{ result?: Record<string, unknown>; risk: RiskResult }>;
   generateViral: (
     title: string,
@@ -314,8 +321,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       output?: Record<string, unknown>,
       opts?: { id?: string }
     ) => {
-      setHistories((list) =>
-        [
+      setHistories((list) => {
+        const next = [
           {
             id: opts?.id ?? String(Date.now()),
             type,
@@ -324,8 +331,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             output,
           },
           ...list,
-        ].slice(0, 50)
-      );
+        ];
+        const u = readUserLocal();
+        if (u?.plan === "free" && next.length > FREE_LIBRARY_MAX) {
+          return next.slice(0, FREE_LIBRARY_MAX);
+        }
+        return next.slice(0, 50);
+      });
     },
     []
   );
@@ -617,6 +629,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       style: string;
       withXhs?: boolean;
       quotaAction?: keyof typeof QUOTA_COST;
+      extraNote?: string;
+      accountType?: string;
+      topicId?: string;
+      hotTopicSummary?: string;
+      hotTopicAngles?: string[];
+      hotTopicTargetUsers?: string[];
     }) => {
       const topic = input.topic.trim();
       const quotaAction = input.quotaAction ?? "publish_pack";
@@ -639,6 +657,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           style: input.style,
           withXhs: input.withXhs,
           quotaAction,
+          extraNote: input.extraNote,
+          accountType: input.accountType,
+          topicId: input.topicId,
+          hotTopicSummary: input.hotTopicSummary,
+          hotTopicAngles: input.hotTopicAngles,
+          hotTopicTargetUsers: input.hotTopicTargetUsers,
         });
         if (res.error) {
           if (res.error === "quota_insufficient") openQuotaModal();

@@ -1,4 +1,4 @@
-import type { HotTopicItem } from "@/lib/server/db/product-v1";
+import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { STORAGE_HOT_TOPICS } from "@/lib/constants/v1";
 import { mockHotTopics } from "@/lib/mock/content-v1";
 
