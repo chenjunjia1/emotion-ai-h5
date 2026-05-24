@@ -61,6 +61,9 @@ export async function listActiveHotTopics(opts: {
     } else {
       q = q.eq("platform", opts.platform);
     }
+  } else {
+    // 推荐 Tab 只展示各平台热榜，不含小红书二次改写（避免与抖音 Tab 重复）
+    q = q.neq("platform", "xiaohongshu_inspiration");
   }
 
   if (opts.category && opts.category !== "全部") {

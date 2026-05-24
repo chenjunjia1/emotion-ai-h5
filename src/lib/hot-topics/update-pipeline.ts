@@ -97,7 +97,8 @@ export async function runHotTopicsUpdatePipeline(
       })),
       buildMockRawFromRows(mockRows),
       batchDate,
-      6
+      6,
+      new Set(mockRows.filter((r) => r.platform === "douyin").map((r) => r.raw_title))
     );
     const merged = [...mockRows, ...xhsRows];
     const save = await replaceHotTopicsBatch(batchDate, merged);
@@ -119,7 +120,13 @@ export async function runHotTopicsUpdatePipeline(
     return toInsertRow(p, rawItem, batchDate, i);
   });
 
-  const xhsRows = buildXhsInspirationRows(processed, raw, batchDate, 6);
+  const xhsRows = buildXhsInspirationRows(
+    processed,
+    raw,
+    batchDate,
+    6,
+    new Set(rows.filter((r) => r.platform === "douyin").map((r) => r.raw_title))
+  );
   const merged: HotTopicInsert[] = [...rows];
   const seenTitles = new Set(rows.map((r) => r.display_title));
   for (const x of xhsRows) {

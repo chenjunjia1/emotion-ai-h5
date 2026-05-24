@@ -1,5 +1,6 @@
 import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { ensureHotTopicFields } from "@/lib/content/hot-topic-fields";
+import { resolveHotTopicCover } from "@/lib/content/hot-topic-covers";
 
 /** 热点展示扩展字段（UI 层） */
 export type HotTopicDisplay = HotTopicItem & {
@@ -65,7 +66,7 @@ export function enrichHotTopic(item: HotTopicItem, index = 0): HotTopicDisplay {
 
   return {
     ...base,
-    coverImage: base.coverImage!,
+    coverImage: resolveHotTopicCover(base),
     coverGradient: COVERS[h % COVERS.length],
     viralScore: base.viralScore!,
     platform: base.platform!,

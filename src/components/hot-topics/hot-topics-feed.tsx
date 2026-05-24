@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Bookmark, RefreshCw, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/contexts/app-context";
@@ -12,31 +12,31 @@ import { FEATURE_LIMITS } from "@/lib/v1/plan-limits";
 import { cn } from "@/lib/utils";
 
 export const PLATFORM_TABS = [
-  { id: "all", label: "推荐" },
-  { id: "douyin", label: "抖音爆款" },
-  { id: "xhs", label: "小红书灵感" },
-  { id: "web", label: "全网热搜" },
+  { id: "all", label: "\u63a8\u8350" },
+  { id: "douyin", label: "\u6296\u97f3\u7206\u6b3e" },
+  { id: "xhs", label: "\u5c0f\u7ea2\u4e66\u7075\u611f" },
+  { id: "web", label: "\u5168\u7f51\u70ed\u641c" },
 ] as const;
 
 export type HotTopicsTabId = (typeof PLATFORM_TABS)[number]["id"];
 
 const CATEGORY_FILTERS = [
-  "全部",
-  "情感",
-  "职场",
-  "生活",
-  "宠物",
-  "美食",
-  "学生",
-  "宝妈",
-  "副业",
-  "穿搭",
-  "探店",
-  "AI工具",
+  "\u5168\u90e8",
+  "\u60c5\u611f",
+  "\u804c\u573a",
+  "\u751f\u6d3b",
+  "\u5ba0\u7269",
+  "\u7f8e\u98df",
+  "\u5b66\u751f",
+  "\u5b9d\u5988",
+  "\u526f\u4e1a",
+  "\u7a7f\u642d",
+  "\u63a2\u5e97",
+  "AI\u5de5\u5177",
 ] as const;
 
 function matchCategory(item: HotTopicDisplay, cat: string): boolean {
-  if (cat === "全部") return true;
+  if (cat === "\u5168\u90e8") return true;
   const hay = `${item.title}${item.track}${item.category ?? ""}${item.desc}${item.targetUsers.join("")}`;
   return hay.includes(cat);
 }
@@ -82,25 +82,13 @@ export function HotTopicsFeed({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-[24px] bg-gradient-to-br from-[#FF4F8B] via-[#FF7AAE] to-[#FF9A4D] p-4 text-white shadow-lg">
-        <p className="text-sm font-black">{tr("hotTopicsBannerTitle")}</p>
-        <p className="mt-1 text-[11px] text-white/90">{tr("hotTopicsBannerDesc")}</p>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-          {[
-            { n: String(Math.max(filtered.length, items.length, 20)), l: "今日精选" },
-            { n: "08:00", l: "每日更新" },
-            { n: "6+", l: "平台热榜" },
-          ].map((s) => (
-            <div key={s.l} className="rounded-xl bg-white/15 px-1 py-2 backdrop-blur-sm">
-              <p className="text-sm font-black">{s.n}</p>
-              <p className="text-[9px] font-bold text-white/85">{s.l}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+    <Wrapper className="space-y-3">
+      <Wrapper className="overflow-hidden rounded-[20px] bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-3 py-2.5 text-white shadow-md">
+        <p className="text-[13px] font-black">{tr("hotTopicsBannerTitle")}</p>
+        <p className="mt-0.5 text-[10px] text-white/90">{tr("hotTopicsBannerDesc")}</p>
+      </Wrapper>
 
-      <div className="flex items-center justify-between gap-2 text-[11px] text-[#8A94A6]">
+      <Wrapper className="flex items-center justify-between gap-2 text-[11px] text-[#8A94A6]">
         <span>
           {tr("hotTopicsUpdatedAt")} {updatedAt.split(" ")[1] ?? updatedAt ?? "08:00"}
         </span>
@@ -113,9 +101,9 @@ export function HotTopicsFeed({
           <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
           {tr("hotTopicsRefresh")}
         </button>
-      </div>
+      </Wrapper>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-none">
+      <Wrapper className="flex gap-2 overflow-x-auto scrollbar-none">
         {PLATFORM_TABS.map((t) => (
           <button
             key={t.id}
@@ -131,9 +119,9 @@ export function HotTopicsFeed({
             {t.label}
           </button>
         ))}
-      </div>
+      </Wrapper>
 
-      <div className="flex flex-wrap gap-1.5">
+      <Wrapper className="flex flex-wrap gap-1.5">
         {CATEGORY_FILTERS.map((c) => (
           <button
             key={c}
@@ -149,26 +137,26 @@ export function HotTopicsFeed({
             {c}
           </button>
         ))}
-      </div>
+      </Wrapper>
 
-      <div className="space-y-3">
+      <Wrapper className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-[#FFD0E8] bg-white/80 px-4 py-10 text-center">
-            <p className="text-sm font-black text-[#1F2937]">该分类暂无匹配热点</p>
+          <Wrapper className="rounded-[22px] border border-dashed border-[#FFD0E8] bg-white/80 px-4 py-10 text-center">
+            <p className="text-sm font-black text-[#1F2937]">{"\u8be5\u5206\u7c7b\u6682\u65e0\u5339\u914d\u70ed\u70b9"}</p>
             <p className="mt-1 text-[11px] text-[#8A94A6]">
               {tab === "xhs"
-                ? "小红书灵感由全网热榜 AI 改写，点「换一批热点」拉取最新"
-                : "试试切换其他 Tab 或刷新热点"}
+                ? "\u5c0f\u7ea2\u4e66\u7075\u611f\u7531\u5168\u7f51\u70ed\u699c AI \u6539\u5199\uff0c\u70b9\u300c\u6362\u4e00\u6279\u70ed\u70b9\u300d\u62c9\u53d6\u6700\u65b0"
+                : "\u8bd5\u8bd5\u5207\u6362\u5176\u4ed6 Tab \u6216\u5237\u65b0\u70ed\u70b9"}
             </p>
-          </div>
+          </Wrapper>
         ) : null}
         {filtered.map((item, index) => {
           const locked = user?.plan === "free" && index >= viewLimit;
           const showProBanner = user?.plan === "free" && index === viewLimit;
           return (
-            <div key={item.id}>
+            <Wrapper key={item.id}>
               {showProBanner ? (
-                <div className="mb-3 rounded-[18px] border border-[#FFD0E8] bg-gradient-to-r from-[#FFF4F7] to-[#FFF3E8] px-4 py-3 text-center">
+                <Wrapper className="mb-3 rounded-[18px] border border-[#FFD0E8] bg-gradient-to-r from-[#FFF4F7] to-[#FFF3E8] px-4 py-3 text-center">
                   <p className="text-[11px] font-bold text-[#1F2937]">{tr("homeHotFreeLimit")}</p>
                   <Link
                     href="/profile?pricing=1"
@@ -176,7 +164,7 @@ export function HotTopicsFeed({
                   >
                     {tr("hotTopicsUnlockPro")}
                   </Link>
-                </div>
+                </Wrapper>
               ) : null}
               <article
                 className={cn(
@@ -184,43 +172,36 @@ export function HotTopicsFeed({
                   locked && "opacity-75"
                 )}
               >
-                <div className="flex gap-3">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#FFE0EC]">
+                <Wrapper className="flex gap-3">
+                  <Wrapper className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#FFE0EC]">
                     <HotTopicCover item={item} className="rounded-xl" iconSize={18} />
                     <span className="absolute left-1 top-1 rounded-md bg-black/45 px-1 py-0.5 text-[9px] font-black text-white">
                       TOP {index + 1}
                     </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
+                  </Wrapper>
+                  <Wrapper className="min-w-0 flex-1">
+                    <Wrapper className="flex items-start gap-2">
                       <h3 className="flex-1 text-[13px] font-black text-[#1F2937]">{item.title}</h3>
                       {item.isNew ? (
                         <span className="shrink-0 rounded-md bg-[#FF4F8B] px-1.5 py-0.5 text-[9px] font-black text-white">
-                          新
+                          {"\u65b0"}
                         </span>
                       ) : null}
-                    </div>
+                    </Wrapper>
                     {item.rawTitle && item.rawTitle !== item.title ? (
                       <p className="mt-0.5 line-clamp-1 text-[10px] text-[#FF9A4D]">
-                        热榜原文：{item.rawTitle}
+                        {"\u70ed\u699c\u539f\u6587\uff1a"}
+                        {item.rawTitle}
                       </p>
                     ) : null}
                     <p className="mt-1 line-clamp-2 text-[10px] text-[#8A94A6]">{item.desc}</p>
-                    <p className="mt-1 text-[10px] text-[#8A94A6]">
-                      {tr("homeHotHeat")} {item.heatValue} · {item.platform}
-                    </p>
-                    <p className="mt-1 text-[10px] text-[#8A94A6]">
-                      {tr("hotTopicDetailTarget")}：{item.targetUsers.join(" / ")}
-                    </p>
-                    <p className="mt-1 line-clamp-1 text-[10px] text-[#FF9A4D]">
-                      AI：{item.recommendAngles.join(" · ")}
-                    </p>
                     <p className="mt-1 text-[10px] font-bold text-[#FF4F8B]">
-                      {tr("homeHotViral")} {item.viralScore}%
+                      {item.heatValue} {"\u00b7"} {item.platform} {"\u00b7"} {tr("homeHotViral")}{" "}
+                      {item.viralScore}%
                     </p>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-2">
+                  </Wrapper>
+                </Wrapper>
+                <Wrapper className="mt-3 flex items-center gap-2">
                   <Link
                     href={`/hot-topics/${encodeURIComponent(item.id)}`}
                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF3E8] text-[#FF9A4D]"
@@ -236,12 +217,22 @@ export function HotTopicsFeed({
                     <Sparkles size={14} />
                     {locked ? tr("hotTopicsUnlockPro") : tr("homeHotGen")}
                   </button>
-                </div>
+                </Wrapper>
               </article>
-            </div>
+            </Wrapper>
           );
         })}
-      </div>
-    </div>
+      </Wrapper>
+    </Wrapper>
   );
+}
+
+function Wrapper({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return <div className={className}>{children}</div>;
 }

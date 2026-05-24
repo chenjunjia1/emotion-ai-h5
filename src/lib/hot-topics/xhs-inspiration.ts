@@ -48,12 +48,17 @@ export function buildXhsInspirationRows(
   processed: AiProcessedHotTopic[],
   rawList: RawHotFromApi[],
   batchDate: string,
-  limit = 6
+  limit = 6,
+  excludeRawTitles: Set<string> = new Set()
 ): HotTopicInsert[] {
-  const picked = processed.filter(isXhsCandidate).slice(0, limit);
+  const pool = processed.filter((p) => !excludeRawTitles.has(p.raw_title.trim()));
+  const preferWeb = pool.filter((p) => p.platform !== "douyin");
+  const source = preferWeb.length >= limit ? preferWeb : pool;
+
+  const picked = source.filter(isXhsCandidate).slice(0, limit);
   if (picked.length < limit) {
     const seen = new Set(picked.map((p) => p.raw_title));
-    for (const p of processed) {
+    for (const p of source) {
       if (picked.length >= limit) break;
       if (seen.has(p.raw_title)) continue;
       seen.add(p.raw_title);

@@ -34,9 +34,10 @@ const COVER_BY_KEYWORD: [RegExp, string][] = [
 ];
 
 const DEFAULT_COVER = UNSPLASH("photo-1611162617213-7d7a39e9b1b7");
+export const DEFAULT_COVER_URL = DEFAULT_COVER;
 
 /** 分类 → 封面（与 hot_topics.category 对齐） */
-const COVER_BY_CATEGORY: Record<string, string> = {
+export const COVER_BY_CATEGORY: Record<string, string> = {
   情感: UNSPLASH("photo-1518199266791-5375a83190b7"),
   职场: UNSPLASH("photo-1521737711867-e3b97375f902"),
   生活: UNSPLASH("photo-1499750310107-5fef28a66643"),
@@ -94,4 +95,10 @@ export function resolveHotTopicCover(
   if (COVER_BY_TRACK[track]) return pickVariant(COVER_BY_TRACK[track], `${track}-${title}`);
 
   return pickVariant(DEFAULT_COVER, title || track);
+}
+
+/** picsum 备用（Unsplash 加载失败时） */
+export function picsumCoverFallback(seed: string): string {
+  const id = hashStr(seed || "hot") % 1000;
+  return `https://picsum.photos/seed/emotion-${id}/240/240`;
 }

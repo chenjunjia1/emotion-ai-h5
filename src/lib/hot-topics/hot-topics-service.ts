@@ -10,13 +10,30 @@ import {
   HOT_TOPIC_TOP_LIMIT,
   recordToItem,
   type HotTopicItem,
+  type HotTopicRecord,
 } from "@/lib/hot-topics/types";
 import { buildMockHotTopicRows } from "@/lib/hot-topics/mock-hot-topics-seed";
 import { buildXhsInspirationRows } from "@/lib/hot-topics/xhs-inspiration";
+import { ensureHotTopicFields } from "@/lib/content/hot-topic-fields";
 import { isServerBackendEnabled } from "@/lib/server/config";
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** 推荐列表按 raw_title 去重，保留爆款分最高的一条 */
+function dedupeRecommendRows(rows: HotTopicRecord[]): HotTopicRecord[] {
+  const map = new Map<string, HotTopicRecord>();
+  for (const row of rows) {
+    const key = row.raw_title.trim();
+    const prev = map.get(key);
+    if (!prev || row.viral_score > prev.viral_score) map.set(key, row);
+  }
+  return [...map.values()].sort((a, b) => b.viral_score - a.viral_score || b.heat_score - a.heat_score);
+}
+
+function toDisplayItems(rows: HotTopicRecord[]): HotTopicItem[] {
+  return rows.map((row) => ensureHotTopicFields(recordToItem(row)));
 }
 
 function mockItems(limit: number, platform?: string, category?: string): HotTopicItem[] {
@@ -51,12 +68,14 @@ function mockItems(limit: number, platform?: string, category?: string): HotTopi
     all = all.filter((r) => `${r.display_title}${r.category}${r.summary}`.includes(category));
   }
   return all.slice(0, limit).map((r, i) =>
-    recordToItem({
-      ...r,
-      id: `mock-${platform ?? "all"}-${i}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    ensureHotTopicFields(
+      recordToItem({
+        ...r,
+        id: `mock-${platform ?? "all"}-${i}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+    )
   );
 }
 
@@ -81,7 +100,11 @@ export async function fetchHotTopicsForApi(opts: {
   }
 
   await ensureHotTopicsSeeded();
-  const { items, batchDate, isToday } = await listActiveHotTopics(opts);
+  let { items, batchDate, isToday } = await listActiveHotTopics(opts);
+
+  if (!opts.platform || opts.platform === "all") {
+    items = dedupeRecommendRows(items);
+  }
 
   if (items.length === 0) {
     const fallback = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT, opts.platform, opts.category);
@@ -99,7 +122,7 @@ export async function fetchHotTopicsForApi(opts: {
   }
 
   return {
-    items: items.map(recordToItem),
+    items: toDisplayItems(items),
     meta: {
       batchDate: batchDate ?? todayDate(),
       isToday,

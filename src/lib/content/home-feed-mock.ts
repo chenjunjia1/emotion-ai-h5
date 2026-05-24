@@ -1,5 +1,7 @@
 /** 首页互动模块 — 模拟数据 + 跳转参数 */
 
+import { COVER_BY_CATEGORY, DEFAULT_COVER_URL } from "@/lib/content/hot-topic-covers";
+
 export type TrendingGeneration = {
   id: string;
   label: string;
@@ -12,6 +14,7 @@ export type TrendingGeneration = {
   baseUsers: number;
   grad: string;
   chip: string;
+  coverImage: string;
 };
 
 export type AiSuggestTag = {
@@ -34,7 +37,20 @@ export type SuccessCase = {
   likes: string;
   targetUsers: string;
   grad: string;
+  coverImage: string;
 };
+
+function coverForTopic(topic: string, category = "生活"): string {
+  for (const [cat, url] of Object.entries(COVER_BY_CATEGORY)) {
+    if (topic.includes(cat) || category === cat) return url;
+  }
+  if (/穿搭|OOTD/i.test(topic)) return COVER_BY_CATEGORY["穿搭"];
+  if (/宠物|猫/i.test(topic)) return COVER_BY_CATEGORY["宠物"];
+  if (/美食|探店/i.test(topic)) return COVER_BY_CATEGORY["美食"];
+  if (/职场|打工/i.test(topic)) return COVER_BY_CATEGORY["职场"];
+  if (/情感|共鸣/i.test(topic)) return COVER_BY_CATEGORY["情感"];
+  return DEFAULT_COVER_URL;
+}
 
 export const TRENDING_GENERATIONS: TrendingGeneration[] = [
   {
@@ -49,6 +65,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 12300,
     grad: "from-[#FF8EC4] to-[#FF5C8A]",
     chip: "刚刚有人在用",
+    coverImage: coverForTopic("情绪共鸣日常", "情感"),
   },
   {
     id: "t2",
@@ -62,6 +79,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 8700,
     grad: "from-[#FFB86C] to-[#FF9A4D]",
     chip: "热度上升中",
+    coverImage: coverForTopic("下班后的治愈时刻", "治愈"),
   },
   {
     id: "t3",
@@ -75,6 +93,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 7200,
     grad: "from-[#FFC46B] to-[#FF9A6B]",
     chip: "1小时+128人",
+    coverImage: coverForTopic("猫咪治愈瞬间", "宠物"),
   },
   {
     id: "t4",
@@ -88,6 +107,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 6100,
     grad: "from-[#FF9EC4] to-[#FF7AAE]",
     chip: "种草向",
+    coverImage: coverForTopic("平价穿搭反差", "穿搭"),
   },
   {
     id: "t5",
@@ -101,6 +121,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 5800,
     grad: "from-[#FFD4A8] to-[#FF9A4D]",
     chip: "本地生活",
+    coverImage: coverForTopic("一人食探店", "美食"),
   },
   {
     id: "t6",
@@ -114,6 +135,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 4900,
     grad: "from-[#C4B5FD] to-[#FF7AAE]",
     chip: "慢节奏",
+    coverImage: coverForTopic("独处日常vlog", "生活"),
   },
   {
     id: "t7",
@@ -127,6 +149,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 4600,
     grad: "from-[#93C5FD] to-[#6366F1]",
     chip: "收藏向",
+    coverImage: coverForTopic("打工人效率提升", "职场"),
   },
   {
     id: "t8",
@@ -140,6 +163,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 4300,
     grad: "from-[#FDA4AF] to-[#FF4F8B]",
     chip: "图文向",
+    coverImage: coverForTopic("平价好物种草", "生活"),
   },
 ];
 
@@ -175,6 +199,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "8.2w",
     targetUsers: "情感号 · 生活号",
     grad: "from-[#FF8EC4] to-[#FF5C8A]",
+    coverImage: coverForTopic("一个人也要好好生活", "情感"),
   },
   {
     id: "c2",
@@ -186,6 +211,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "6.5w",
     targetUsers: "宠物号 · 萌宠号",
     grad: "from-[#FFB86C] to-[#FF9A4D]",
+    coverImage: coverForTopic("猫咪治愈瞬间", "宠物"),
   },
   {
     id: "c3",
@@ -197,6 +223,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "4.1w",
     targetUsers: "美食号 · 探店号",
     grad: "from-[#FF9EC4] to-[#FF7AAE]",
+    coverImage: coverForTopic("一人食探店", "美食"),
   },
   {
     id: "c4",
@@ -208,6 +235,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "3.8w",
     targetUsers: "穿搭号 · 种草号",
     grad: "from-[#FFC46B] to-[#FF9A6B]",
+    coverImage: coverForTopic("平价穿搭反差", "穿搭"),
   },
   {
     id: "c5",
@@ -219,6 +247,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "2.9w",
     targetUsers: "职场号 · 成长号",
     grad: "from-[#A78BFA] to-[#FF7AAE]",
+    coverImage: coverForTopic("打工人效率提升", "职场"),
   },
 ];
 
