@@ -4,6 +4,8 @@ import "./globals.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.emovalue.top";
 
+const SHARE_IMAGE = "/wechat-share.jpg";
+
 export const metadata: Metadata = {
   title: "AI短视频运营灵感",
   description:
@@ -20,12 +22,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "zh_CN",
     url: SITE_URL,
-    // 微信链接分享缩略图须 <32KB；og-share.png 约 50KB 会显示灰块
+    // 微信链接分享：JPG 无透明底、<32KB（PNG 透明区会变黑块）
     images: [
       {
-        url: "/brand-avatar.png",
-        width: 512,
-        height: 512,
+        url: SHARE_IMAGE,
+        width: 300,
+        height: 300,
         alt: "AI短视频运营灵感",
       },
     ],
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI短视频运营灵感",
     description: "抽选题 · 写标题 · 出发布包 · 每日灵感",
-    images: ["/brand-avatar.png"],
+    images: [SHARE_IMAGE],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -60,6 +62,10 @@ export default function RootLayout({
     <html lang="zh-CN">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="image_src" href={`${SITE_URL}${SHARE_IMAGE}`} />
+        <meta itemProp="name" content="AI短视频运营灵感" />
+        <meta itemProp="image" content={`${SITE_URL}${SHARE_IMAGE}`} />
+        <meta itemProp="description" content="抽选题 · 写标题 · 出发布包 · 情绪聊天 · 每日灵感" />
       </head>
       <body className="bg-[#FFF7F0] text-slate-800 antialiased">
         <ClientLayout>{children}</ClientLayout>
