@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { guardApi } from "@/lib/security/api-guard";
-import { fetchHotTopicsForApi, fetchHotTopicsTopForApi } from "@/lib/hot-topics/hot-topics-service";
+import { fetchHotTopicsForApi, fetchHotTopicsTopForApi, HOT_TOPICS_DISPLAY_NOTE } from "@/lib/hot-topics/hot-topics-service";
 
 /** 兼容旧版 /api/v1/hot-topics，内部走 hot_topics 表 */
 export async function GET(req: Request) {
@@ -22,9 +22,12 @@ export async function GET(req: Request) {
       meta: {
         date: meta.batchDate,
         total: meta.total,
+        libraryTotal: meta.libraryTotal,
+        libraryLabel: meta.libraryLabel,
+        todayActive: meta.todayActive,
         updatedAt: meta.updatedAt,
-        sources: ["DailyHotApi", "AI"],
-        note: meta.message ?? "每天8点更新，全网热点AI筛选",
+        sources: ["TianAPI", "DailyHotApi", "AI"],
+        note: meta.message ?? HOT_TOPICS_DISPLAY_NOTE,
         stale: meta.stale,
       },
       batch: 0,

@@ -61,7 +61,6 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="image_src" href={`${SITE_URL}${SHARE_IMAGE}`} />
         <meta itemProp="name" content="AI短视频运营灵感" />
         <meta itemProp="image" content={`${SITE_URL}${SHARE_IMAGE}`} />

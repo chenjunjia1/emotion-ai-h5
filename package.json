@@ -1,6 +1,6 @@
 {
   "name": "emotion-ai-h5",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "engines": {
     "node": ">=20"
@@ -17,12 +17,20 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check:env": "node scripts/check-config.mjs",
+    "setup:hot-topics-env": "node scripts/setup-hot-topics-env.mjs",
+    "setup:pexels-env": "node scripts/setup-pexels-env.mjs",
+    "setup:tikhub-env": "node scripts/setup-tikhub-env.mjs",
     "verify:cron": "node scripts/verify-cron.mjs",
     "test:ingest": "node scripts/test-supabase-ingest.mjs",
     "test:deepseek": "node scripts/test-deepseek.mjs",
     "refresh:hot-topics": "node scripts/refresh-daily-hot-topics.mjs",
     "seed:hot-topics": "node scripts/seed-hot-topics.mjs",
+    "seed:hot-topics:force": "node scripts/seed-hot-topics.mjs --via-api --force",
     "refresh:hot-topics-v2": "node scripts/seed-hot-topics.mjs --via-api",
+    "refresh:xhs-notes": "node scripts/refresh-xhs-hot-notes.mjs",
+    "download:covers": "node scripts/download-cover-assets.mjs",
+    "download:covers:pexels": "node scripts/fetch-unsplash-covers.mjs",
+    "test:scene-covers": "node scripts/test-scene-covers.mjs",
     "test:full": "node scripts/test-full-app.mjs",
     "test:all": "npm run typecheck && npm run lint && npm run build && npm run verify:css && npm run verify:cron && npm run test:full && npm run test:ingest"
   },
@@ -31,11 +39,11 @@
     "@alicloud/openapi-client": "^0.4.15",
     "@supabase/supabase-js": "^2.106.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^11.18.2",
     "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.6.0",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {

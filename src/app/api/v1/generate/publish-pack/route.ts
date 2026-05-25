@@ -41,7 +41,13 @@ export async function POST(req: Request) {
   }
 
   const quotaAction =
-    body.quotaAction === "hot_topic_pack" ? "hot_topic_pack" : "publish_pack";
+    body.quotaAction === "hot_topic_pack"
+      ? "hot_topic_pack"
+      : body.quotaAction === "moments_regen_one"
+        ? "moments_regen_one"
+        : body.quotaAction === "publish_regen"
+          ? "publish_regen"
+          : "publish_pack";
   const cost = QUOTA_COST[quotaAction] ?? QUOTA_COST.publish_pack ?? 5;
   const q = await deductQuota(user.id, cost, quotaAction);
   if (!q.ok) {
@@ -61,6 +67,12 @@ export async function POST(req: Request) {
       withXhs: Boolean(body.withXhs ?? body.platform === "小红书"),
       extraNote: String(body.extraNote || "").trim() || undefined,
       accountType: String(body.accountType || body.track || "情感号"),
+      momentsContentTypes: Array.isArray(body.momentsContentTypes)
+        ? (body.momentsContentTypes as unknown[]).map(String)
+        : undefined,
+      momentsDirections: Array.isArray(body.momentsDirections)
+        ? (body.momentsDirections as unknown[]).map(String)
+        : undefined,
       hotTopicContext: body.topicId
         ? {
             topicId: String(body.topicId),
@@ -69,6 +81,7 @@ export async function POST(req: Request) {
             targetUsers: body.hotTopicTargetUsers,
           }
         : undefined,
+      inspirationRewriteOnly: Boolean(body.inspirationRewriteOnly),
     });
     result = gen.result;
     usedMock = gen.usedMock;

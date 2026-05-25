@@ -7,7 +7,7 @@ import { getPartnerAvatar } from "@/lib/onboarding/options";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-/** 个人中心头像：有 AI 身份则展示所选搭子形象 */
+/** 个人中心头像：有 AI 身份则展示所选助手形象 */
 export function ProfileUserAvatar({
   userId,
   className,

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ChevronRight, Flame, Users } from "lucide-react";
+import { ContentSceneCover } from "@/components/ui/content-scene-cover";
+import { aestheticForCategory } from "@/lib/content/cover-visuals";
 import { useApp } from "@/contexts/app-context";
 import {
   TRENDING_GENERATIONS,
@@ -16,36 +18,50 @@ export function HomeInspirationRail() {
   const { tr } = useApp();
 
   const cards = useMemo(() => {
-    const trending = TRENDING_GENERATIONS.slice(0, 4).map((item) => ({
-      id: item.id,
-      title: item.label,
-      sub: `${formatLiveUsers(bumpLiveUsers(item.baseUsers))} ${tr("homeTrendingUsing")}`,
-      href: buildPublishPackHref({
+    const trending = TRENDING_GENERATIONS.slice(0, 4).map((item) => {
+      const aesthetic = aestheticForCategory(item.accountType.replace("\u53f7", ""), item.topic);
+      return {
+        id: item.id,
+        title: item.label,
         topic: item.topic,
         accountType: item.accountType,
-        style: item.style,
-        platform: item.platform,
-        from: "home_trending",
-      }),
-      coverImage: item.coverImage,
-      badge: item.contentType,
-      kind: "live" as const,
-    }));
+        coverImage: item.coverImage,
+        coverGradient: item.grad || aesthetic.grad,
+        sub: `${formatLiveUsers(bumpLiveUsers(item.baseUsers))} ${tr("homeTrendingUsing")}`,
+        href: buildPublishPackHref({
+          topic: item.topic,
+          accountType: item.accountType,
+          style: item.style,
+          platform: item.platform,
+          from: "home_trending",
+        }),
+        badge: item.contentType,
+        kind: "live" as const,
+        cta: tr("homeInspirationGo"),
+      };
+    });
 
-    const cases = SUCCESS_CASES.slice(0, 2).map((c) => ({
-      id: c.id,
-      title: c.title,
-      sub: `${c.views} \u64ad\u653e \u00b7 ${c.likes} \u8d5e`,
-      href: buildPublishPackHref({
+    const cases = SUCCESS_CASES.slice(0, 2).map((c) => {
+      const aesthetic = aestheticForCategory(c.accountType.replace("\u53f7", ""), c.topic);
+      return {
+        id: c.id,
+        title: c.title,
         topic: c.topic,
         accountType: c.accountType,
-        style: c.style,
-        from: "home_case",
-      }),
-      coverImage: c.coverImage,
-      badge: c.accountType,
-      kind: "case" as const,
-    }));
+        coverImage: c.coverImage,
+        coverGradient: c.grad || aesthetic.grad,
+        sub: `${c.views} ${tr("homeCaseViews")} \u00b7 ${c.likes} ${tr("homeCaseLikes")}`,
+        href: buildPublishPackHref({
+          topic: c.topic,
+          accountType: c.accountType,
+          style: c.style,
+          from: "home_case",
+        }),
+        badge: tr("homeCasesTag"),
+        kind: "case" as const,
+        cta: tr("homeCaseGenSame"),
+      };
+    });
 
     return [...trending, ...cases];
   }, [tr]);
@@ -58,14 +74,16 @@ export function HomeInspirationRail() {
             <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-[#FF4F8B] to-[#FF9A4D] text-white">
               <Flame size={12} />
             </span>
-            <h2 className="text-[14px] font-black text-[#1F2937]">{"\u7075\u611f\u5feb\u9009"}</h2>
+            <h2 className="text-[14px] font-black text-[#1F2937]">{tr("homeInspirationTitle")}</h2>
           </div>
-          <p className="mt-0.5 pl-7 text-[10px] text-[#8A94A6]">
-            {"\u5b9e\u65f6\u70ed\u95e8 + \u7206\u6b3e\u6848\u4f8b\uff0c\u70b9\u5373\u751f\u6210"}
-          </p>
+          <p className="mt-0.5 pl-7 text-[10px] text-[#8A94A6]">{tr("homeInspirationSub")}</p>
         </div>
-        <Link href="/hot-topics" className="shrink-0 text-[10px] font-black text-[#FF4F8B]">
-          {"\u66f4\u591a\u70ed\u70b9 \u203a"}
+        <Link
+          href="/hot-topics"
+          className="flex shrink-0 items-center gap-0.5 text-[10px] font-black text-[#FF4F8B]"
+        >
+          {tr("homeInspirationMore")}
+          <ChevronRight size={12} />
         </Link>
       </div>
 
@@ -78,12 +96,17 @@ export function HomeInspirationRail() {
             style={{ animationDelay: `${i * 0.04}s` }}
           >
             <div className="relative h-[68px] overflow-hidden">
-              <img
-                src={card.coverImage}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="lazy"
-                referrerPolicy="no-referrer"
+              <ContentSceneCover
+                item={{
+                  id: card.id,
+                  title: card.title,
+                  topic: card.topic,
+                  accountType: card.accountType,
+                  coverImage: card.coverImage,
+                  coverGradient: card.coverGradient,
+                }}
+                className="h-full"
+                priority={i < 3}
               />
               <span className="absolute left-1.5 top-1.5 rounded-md bg-black/45 px-1.5 py-0.5 text-[8px] font-bold text-white backdrop-blur-sm">
                 {card.badge}
@@ -91,11 +114,11 @@ export function HomeInspirationRail() {
               {card.kind === "live" ? (
                 <span className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5 rounded-md bg-black/40 px-1 py-0.5 text-[8px] font-bold text-white">
                   <Users size={8} />
-                  {"\u70ed"}
+                  {tr("homeInspirationHot")}
                 </span>
               ) : (
                 <span className="absolute bottom-1.5 right-1.5 rounded-md bg-[#FF4F8B]/85 px-1 py-0.5 text-[8px] font-bold text-white">
-                  {"\u540c\u6b3e"}
+                  {tr("homeCasesTag")}
                 </span>
               )}
             </div>
@@ -105,7 +128,7 @@ export function HomeInspirationRail() {
               </h3>
               <p className="mt-1 line-clamp-1 text-[9px] font-bold text-[#FF9A4D]">{card.sub}</p>
               <p className="mt-1.5 flex items-center justify-end gap-0.5 text-[9px] font-black text-[#FF4F8B]">
-                {"\u53bb\u751f\u6210"}
+                {card.cta}
                 <ChevronRight size={10} />
               </p>
             </div>

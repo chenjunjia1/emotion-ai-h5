@@ -6,6 +6,7 @@ type ScoreInput = {
   category: string;
   title: string;
   platform: string;
+  contentValueScore?: number;
 };
 
 /** viral_score = 热度 + 创作门槛 + 共鸣 + 平台适配，控制在 60-95 */
@@ -29,6 +30,8 @@ export function computeViralScore(input: ScoreInput): number {
   else score += 8;
 
   if (input.category && input.category !== "生活") score += 10;
+
+  if (input.contentValueScore != null && input.contentValueScore >= 75) score += 5;
 
   return Math.min(95, Math.max(60, Math.round(score)));
 }

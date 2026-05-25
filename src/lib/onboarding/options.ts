@@ -30,7 +30,7 @@ export type OnboardingTrackId = (typeof ONBOARDING_TRACKS)[number]["id"];
 
 
 
-/** AI 搭子形象（onboarding 选择 + 个人中心展示） */
+/** AI 助手形象（onboarding 选择 + 个人中心展示） */
 
 export const AI_PARTNER_AVATARS = [
 
@@ -108,7 +108,7 @@ export const AI_PARTNER_AVATARS = [
 
     defaultName: "小宇",
 
-    role: "创作搭子型",
+    role: "创作助手型",
 
     desc: "适合短视频、口播、标题优化",
 

@@ -17,6 +17,7 @@ import {
   mockTopicBlindBox,
   mockViralScore,
 } from "@/lib/mock/content-v1";
+import { mockMomentsPack, normalizeMomentsPackResult } from "@/lib/publish-pack/moments-result";
 import {
   mockAccountPackage,
   mockDailyVideo,
@@ -77,14 +78,21 @@ export async function generatePublishPack(input: {
   withXhs?: boolean;
   extraNote?: string;
   accountType?: string;
+  momentsContentTypes?: string[];
+  momentsDirections?: string[];
   hotTopicContext?: {
     topicId?: string;
     summary?: string;
     angles?: unknown;
     targetUsers?: unknown;
   };
+  inspirationRewriteOnly?: boolean;
 }): Promise<{ result: Record<string, unknown>; usedMock: boolean; fastPath?: boolean }> {
+  const isMoments = input.platform === "朋友圈";
   const hotCtx = input.hotTopicContext;
+  const rewriteHint = input.inspirationRewriteOnly
+    ? "【重要】用户仅提供小红书热门灵感方向，你必须完全原创改写，禁止复用、抄袭或近似照搬任何原文标题/正文/标签。图片建议使用用户自拍或 Pexels 素材，勿直接使用小红书原图。"
+    : "";
   const userPayload = {
     topic: input.topic,
     platform: input.platform,
@@ -94,20 +102,47 @@ export async function generatePublishPack(input: {
     withXhs: input.withXhs,
     extraNote: input.extraNote,
     accountType: input.accountType,
+    momentsContentTypes: input.momentsContentTypes,
+    momentsDirections: input.momentsDirections,
     hotTopicSummary: hotCtx?.summary,
     hotTopicAngles: hotCtx?.angles,
     hotTopicTargetUsers: hotCtx?.targetUsers,
   };
 
-  const budget =
-    input.topic.length > 20
+  const budget = isMoments
+    ? { ...AI_GENERATE_BUDGET.publish_pack, maxTokens: 2200 }
+    : input.topic.length > 20
       ? AI_GENERATE_BUDGET.publish_pack
       : { ...AI_GENERATE_BUDGET.publish_pack, maxTokens: 1200 };
+
+  if (isMoments) {
+    const { result, usedMock, fastPath } = await generateWithBudget({
+      budget,
+      system:
+        "你是朋友圈文案和私域运营专家。只输出 JSON：packType(moments), topic, platform(朋友圈), momentsCopies(3条含label/category/content), imageSuggestions(3组含category/scene/style/keywords), gridSuggestions(9条含slot/title/content), emojiVersions(simple/cute/premium), commentReplies(3条含comment/reply), publishTime(recommended/reason/otherSlots数组含time/suitable)。文案自然口语化，适合微信朋友圈，可直接复制。",
+      user: JSON.stringify(userPayload),
+      mock: () =>
+        mockMomentsPack({
+          topic: input.topic,
+          contentTypes: input.momentsContentTypes,
+          directions: input.momentsDirections,
+          extraNote: input.extraNote,
+        }) as unknown as Record<string, unknown>,
+      normalize: (raw) =>
+        normalizeMomentsPackResult(raw, {
+          topic: input.topic,
+          contentTypes: input.momentsContentTypes,
+          directions: input.momentsDirections,
+          extraNote: input.extraNote,
+        }) as unknown as Record<string, unknown>,
+    });
+    return { result, usedMock, fastPath };
+  }
 
   const { result, usedMock, fastPath } = await generateWithBudget({
     budget,
     system:
-      "你是短视频运营教练。只输出 JSON：packName, topic, platform, track, titles(3条), recommendedTitle, script30s(约120字口播), xhsNote(可选80字), coverCopy, firstComment, commentReplies(3条), tags(10个话题标签), publishTime, publishTips, shootTips(拍摄画面建议), safetyScore(数字), safetyLevel。结合热点解读与切入方向创作。",
+      `${rewriteHint}你是短视频运营教练。只输出 JSON：packName, topic, platform, track, titles(3条), recommendedTitle, script30s(约120字口播), xhsNote(可选80字), coverCopy, firstComment, commentReplies(3条), tags(10个话题标签), publishTime, publishTips, shootTips(拍摄画面建议), imageSuggestions(3条文字建议，勿引用小红书原图), safetyScore(数字), safetyLevel。结合热点解读与切入方向创作。`,
     user: JSON.stringify(userPayload),
     mock: () => mockPublishPack(input) as Record<string, unknown>,
     normalize: (raw) => normalizePublishPackResult(raw, input),

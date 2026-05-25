@@ -11,7 +11,7 @@ function isAuthorized(req: Request): boolean {
   return req.headers.get("x-cron-secret") === secret;
 }
 
-/** 手动刷新：DailyHotApi → AI 加工 → hot_topics 入库 */
+/** 手动刷新：TianAPI → DailyHotApi 备用 → AI 加工 → hot_topics 入库 */
 export async function POST(req: Request) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const dateKey = url.searchParams.get("date")?.trim() || new Date().toISOString().slice(0, 10);
 
   const result = await runHotTopicsUpdatePipeline(dateKey);
-  if (!result.ok) {
+  if (!result.ok && result.source !== "cached") {
     return NextResponse.json({ error: "update_failed", ...result }, { status: 500 });
   }
 

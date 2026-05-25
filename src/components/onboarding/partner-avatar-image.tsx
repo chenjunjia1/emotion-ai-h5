@@ -12,7 +12,7 @@ const SVG_FALLBACK: Record<AiAvatarId, string> = {
   "cap-boy": "/avatars/cap-boy.svg",
 };
 
-/** 搭子头像：高清 PNG（3D 盲盒风），失败回退 SVG */
+/** AI 助手头像：高清 PNG（3D 盲盒风），失败回退 SVG */
 export function PartnerAvatarImage({
   id,
   className,

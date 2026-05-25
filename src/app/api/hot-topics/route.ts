@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { guardApi } from "@/lib/security/api-guard";
 import { fetchHotTopicsForApi } from "@/lib/hot-topics/hot-topics-service";
-import { HOT_TOPIC_LIST_LIMIT } from "@/lib/hot-topics/types";
+import { HOT_TOPIC_API_MAX_LIMIT, HOT_TOPIC_PAGE_SIZE } from "@/lib/hot-topics/types";
 
 export async function GET(req: Request) {
   const guard = guardApi(req, { scope: "hot-topics-list", ipLimit: 120, ipWindowMs: 60_000 });
@@ -11,8 +11,8 @@ export async function GET(req: Request) {
   const platform = url.searchParams.get("platform") ?? undefined;
   const category = url.searchParams.get("category") ?? undefined;
   const limit = Math.min(
-    50,
-    Number(url.searchParams.get("limit") ?? HOT_TOPIC_LIST_LIMIT) || HOT_TOPIC_LIST_LIMIT
+    HOT_TOPIC_API_MAX_LIMIT,
+    Math.max(1, Number(url.searchParams.get("limit") ?? HOT_TOPIC_PAGE_SIZE) || HOT_TOPIC_PAGE_SIZE)
   );
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
 

@@ -51,12 +51,25 @@ async function main() {
     "http://localhost:3000"
   ).replace(/\/$/, "");
 
+  /** 本地开发优先 localhost，避免 .env 里正式域名导致刷新打到线上 */
+  let resolvedBase = base;
+  if (viaApi && !process.env.BASE_URL) {
+    try {
+      const probe = await fetch("http://localhost:3000/api/v1/hot-topics?limit=1", {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (probe.ok) resolvedBase = "http://localhost:3000";
+    } catch {
+      /* use base */
+    }
+  }
+
   const qs = new URLSearchParams({ date: dateKey });
   if (force) qs.set("force", "1");
 
   const url = viaApi
-    ? `${base}/api/cron/refresh-hot-topics?${qs}`
-    : `${base}/api/admin/update-hot-topics?${qs}`;
+    ? `${resolvedBase}/api/cron/refresh-hot-topics?${qs}`
+    : `${resolvedBase}/api/admin/update-hot-topics?${qs}`;
 
   console.log(`\n🔥 刷新今日热点 → ${url}\n`);
 
@@ -73,9 +86,9 @@ async function main() {
   }
 
   console.log("✅ 成功:", JSON.stringify(body, null, 2));
-  console.log("\n验收:");
-  console.log(`  curl "${base}/api/hot-topics/top"`);
-  console.log(`  浏览器 ${base.replace(/\/$/, "")}/hot-topics\n`);
+  console.log(`\n验收:`);
+  console.log(`  curl "${resolvedBase}/api/hot-topics/top"`);
+  console.log(`  浏览器 ${resolvedBase.replace(/\/$/, "")}/hot-topics\n`);
 }
 
 main().catch((e) => {

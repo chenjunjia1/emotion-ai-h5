@@ -26,10 +26,19 @@ function loadEnv() {
 
 const env = loadEnv();
 const secret = env.CRON_SECRET?.trim();
-const base = (process.env.BASE_URL || env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+let base = (process.env.BASE_URL || env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
   /\/$/,
   ""
 );
+
+if (!process.env.BASE_URL) {
+  try {
+    const probe = await fetch("http://localhost:3000/", { signal: AbortSignal.timeout(2000) });
+    if (probe.ok) base = "http://localhost:3000";
+  } catch {
+    /* keep base */
+  }
+}
 
 if (!secret || secret.length < 16) {
   console.error("❌ CRON_SECRET 未配置或过短，请在 .env.local 填写 ≥16 位随机字符串");

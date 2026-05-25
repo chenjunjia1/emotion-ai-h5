@@ -2,7 +2,7 @@ export type LibraryFilter = "all" | "pack" | "topic" | "review" | "emotion";
 
 export function historyFilterForType(type: string): LibraryFilter | null {
   if (type.includes("情绪")) return "emotion";
-  if (type.includes("发布包") || type.includes("账号") || type.includes("爆品")) return "pack";
+  if (type.includes("发布包") || type.includes("账号") || type.includes("爆品") || type.includes("朋友圈")) return "pack";
   if (type.includes("盲盒") || type.includes("选题")) return "topic";
   if (type.includes("复盘")) return "review";
   return null;

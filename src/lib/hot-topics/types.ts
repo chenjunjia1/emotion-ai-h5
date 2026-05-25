@@ -15,7 +15,10 @@ export interface HotTopicRecord {
   viral_score: number;
   source_url: string | null;
   is_new: boolean;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "rejected";
+  reject_reason: string | null;
+  safe_score: number;
+  content_value_score: number;
   updated_batch_date: string;
   created_at: string;
   updated_at: string;
@@ -69,7 +72,12 @@ export type AiProcessedHotTopic = {
   platform: string;
 };
 
-export const HOT_TOPIC_LIST_LIMIT = 30;
+/** 单次 API 默认拉取条数（分页） */
+export const HOT_TOPIC_PAGE_SIZE = 50;
+/** 单次请求最大条数 */
+export const HOT_TOPIC_API_MAX_LIMIT = 200;
+/** @deprecated 旧每日上限，现由 HOT_TOPIC_LIBRARY_MIN 控制库规模 */
+export const HOT_TOPIC_LIST_LIMIT = HOT_TOPIC_API_MAX_LIMIT;
 export const HOT_TOPIC_TOP_LIMIT = 3;
 
 export const DAILY_HOT_PLATFORMS = [

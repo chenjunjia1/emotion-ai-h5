@@ -412,7 +412,7 @@ export async function apiGetHotTopics(opts?: {
   category?: string;
 }) {
   const batch = opts?.batch ?? 0;
-  const params = new URLSearchParams({ limit: "30", page: String(batch + 1) });
+  const params = new URLSearchParams({ limit: "50", page: String(batch + 1) });
   if (opts?.platform && opts.platform !== "all") params.set("platform", opts.platform);
   if (opts?.category && opts.category !== "全部") params.set("category", opts.category);
 
@@ -427,9 +427,12 @@ export async function apiGetHotTopics(opts?: {
       ? {
           date: data.meta.batchDate,
           total: data.meta.total,
+          libraryTotal: data.meta.libraryTotal ?? data.meta.total,
+          todayFeatured: data.meta.todayFeatured,
+          libraryLabel: data.meta.libraryLabel,
           updatedAt: data.meta.updatedAt,
-          sources: ["DailyHotApi", "AI"],
-          note: data.meta.message ?? "",
+          sources: data.meta?.sources ?? ["TianAPI", "DailyHotApi", "AI"],
+          note: data.meta?.message ?? data.meta?.note ?? "",
           stale: data.meta.stale,
         }
       : undefined,

@@ -10,6 +10,7 @@ import {
 } from "@/lib/constants/v1";
 import type { User } from "@/lib/types/v1";
 import type { HotTopicItem } from "@/lib/hot-topics/types";
+import { readHotTopicsForToday } from "@/lib/hot-topics/read-cached";
 import {
   mockAccountPersonalityTest,
   mockEmotionChat,
@@ -152,7 +153,9 @@ export function useProduct() {
   } = useApp();
   const [growth, setGrowth] = useState<GrowthState>(loadGrowth);
   const [dailyUsage, setDailyUsage] = useState<DailyUsage>(loadDailyUsage);
-  const [hotTopics, setHotTopics] = useState<HotTopicItem[]>([]);
+  const [hotTopics, setHotTopics] = useState<HotTopicItem[]>(() =>
+    typeof window !== "undefined" ? readHotTopicsForToday() : []
+  );
   const [lastTopicBox, setLastTopicBox] = useState<Record<string, unknown> | null>(
     null
   );
@@ -251,6 +254,7 @@ export function useProduct() {
     };
 
     if (serverMode) {
+      loadLocal();
       const timeoutId = window.setTimeout(loadRemote, 0) as unknown as number;
       return () => {
         cancelled = true;
@@ -504,6 +508,9 @@ export function useProduct() {
         hotTopicSummary: input.hotTopicSummary as string | undefined,
         hotTopicAngles: input.hotTopicAngles as string[] | undefined,
         hotTopicTargetUsers: input.hotTopicTargetUsers as string[] | undefined,
+        inspirationRewriteOnly: Boolean(input.inspirationRewriteOnly),
+        momentsContentTypes: input.momentsContentTypes as string[] | undefined,
+        momentsDirections: input.momentsDirections as string[] | undefined,
       });
       if (!result) return null;
       if (serverMode) {

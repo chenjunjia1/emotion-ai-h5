@@ -1,15 +1,14 @@
-import { fetchAllDailyHotTopicsWithStats } from "@/lib/hot-topics/daily-hot-api-client";
+import { fetchHotTopicsFromProviders } from "@/lib/hot-topics/fetch-hot-providers";
+import { processHotTopicsWithAi } from "@/lib/hot-topics/ai-process-hot-topics";
 import {
-  processHotTopicsWithAi,
-  toInsertRow,
-} from "@/lib/hot-topics/ai-process-hot-topics";
-import { HOT_TOPIC_LIST_LIMIT, DAILY_HOT_PLATFORMS } from "@/lib/hot-topics/types";
-import {
-  buildMockHotTopicRows,
-  buildMockRawFromRows,
-} from "@/lib/hot-topics/mock-hot-topics-seed";
+  buildBulkHotTopicLibrary,
+  buildFullHotTopicLibrary,
+  HOT_TOPIC_FEATURED_MAX,
+  HOT_TOPIC_LIBRARY_MIN,
+} from "@/lib/hot-topics/bulk-library-generator";
 import { sampleHotTopicsPerPlatform } from "@/lib/hot-topics/platform-sampling";
 import { buildXhsInspirationRows } from "@/lib/hot-topics/xhs-inspiration";
+import { buildYouthCuratedSupplement } from "@/lib/hot-topics/youth-curated-supplement";
 import {
   countActiveHotTopics,
   replaceHotTopicsBatch,
@@ -23,146 +22,179 @@ function todayDate(): string {
 
 export type UpdateHotTopicsResult = {
   ok: boolean;
-  source: "dailyhotapi" | "mock" | "hybrid" | "fallback";
+  source: "tianapi" | "dailyhotapi" | "mock" | "hybrid" | "fallback" | "cached";
   count: number;
+  activeCount?: number;
+  rejectedCount?: number;
   batchDate: string;
   platformStats?: Record<string, number>;
+  filterStats?: {
+    raw: number;
+    keywordRejected: number;
+    aiRejected: number;
+    active: number;
+  };
+  primary?: string;
+  fallbackUsed?: boolean;
+  skippedUpdate?: boolean;
   error?: string;
+  message?: string;
 };
 
-function mockRawForPlatform(batchDate: string, platform: string, count = 4): RawHotFromApi[] {
-  return buildMockHotTopicRows(batchDate)
-    .filter((r) => r.platform === platform)
-    .slice(0, count)
-    .map((r) => ({
-      title: r.raw_title,
-      desc: r.summary,
-      hot: r.heat_score,
-      platform: r.platform,
-      url: r.source_url ?? undefined,
-    }));
-}
-
-/** 各平台至少保留 perPlatform 条；API 某平台为空时用 mock 补齐 */
-function buildRawWithPlatformFallback(
-  apiItems: RawHotFromApi[],
-  stats: Record<string, number>,
+async function saveProcessedBatch(
+  raw: RawHotFromApi[],
   batchDate: string,
-  perPlatform = 4
-): { raw: RawHotFromApi[]; usedMockPlatforms: string[] } {
-  const sampled = sampleHotTopicsPerPlatform(apiItems, perPlatform);
-  const usedMockPlatforms: string[] = [];
-  const out = [...sampled];
-
-  for (const platform of DAILY_HOT_PLATFORMS) {
-    const have = out.filter((r) => r.platform === platform).length;
-    if (have >= perPlatform) continue;
-    const need = perPlatform - have;
-    const filler = mockRawForPlatform(batchDate, platform, need);
-    if (filler.length) usedMockPlatforms.push(platform);
-    out.push(...filler);
-  }
-
-  const apiTotal = Object.values(stats).reduce((a, b) => a + b, 0);
-  if (apiTotal === 0) {
-    return {
-      raw: buildMockRawFromRows(buildMockHotTopicRows(batchDate)),
-      usedMockPlatforms: [...DAILY_HOT_PLATFORMS],
-    };
-  }
-
-  return { raw: out, usedMockPlatforms };
-}
-
-/** 拉取 → 按平台采样 → AI 加工 → 入库 */
-export async function runHotTopicsUpdatePipeline(
-  batchDate = todayDate()
+  ingestSource: UpdateHotTopicsResult["source"],
+  platformStats: Record<string, number>
 ): Promise<UpdateHotTopicsResult> {
-  const { items, stats } = await fetchAllDailyHotTopicsWithStats();
-  const apiTotal = Object.values(stats).reduce((a, b) => a + b, 0);
-
-  if (apiTotal === 0) {
-    const mockRows = buildMockHotTopicRows(batchDate);
-    const xhsRows = buildXhsInspirationRows(
-      mockRows.map((r) => ({
-        raw_title: r.raw_title,
-        display_title: r.display_title,
-        summary: r.summary,
-        category: r.category,
-        tags: r.tags,
-        target_users: r.target_users,
-        recommend_angles: r.recommend_angles,
-        viral_score: r.viral_score,
-        platform: r.platform,
-      })),
-      buildMockRawFromRows(mockRows),
-      batchDate,
-      6,
-      new Set(mockRows.filter((r) => r.platform === "douyin").map((r) => r.raw_title))
-    );
-    const merged = [...mockRows, ...xhsRows];
-    const save = await replaceHotTopicsBatch(batchDate, merged);
-    return {
-      ok: save.ok,
-      source: "mock",
-      count: save.count,
-      batchDate,
-      platformStats: stats,
-      error: save.error,
-    };
-  }
-
-  const { raw, usedMockPlatforms } = buildRawWithPlatformFallback(items, stats, batchDate, 4);
-  const processed = await processHotTopicsWithAi(raw, 28);
-
-  const rows: HotTopicInsert[] = processed.map((p, i) => {
-    const rawItem = raw.find((r) => r.title === p.raw_title && r.platform === p.platform) ?? raw[i] ?? raw[0];
-    return toInsertRow(p, rawItem, batchDate, i);
-  });
+  const { active, rejected, processed, stats } = await processHotTopicsWithAi(
+    raw,
+    72,
+    batchDate
+  );
 
   const xhsRows = buildXhsInspirationRows(
     processed,
     raw,
     batchDate,
-    6,
-    new Set(rows.filter((r) => r.platform === "douyin").map((r) => r.raw_title))
+    10,
+    new Set(active.filter((r) => r.platform === "douyin").map((r) => r.raw_title))
   );
-  const merged: HotTopicInsert[] = [...rows];
-  const seenTitles = new Set(rows.map((r) => r.display_title));
+
+  const merged: HotTopicInsert[] = [...active];
+  const seenTitles = new Set(active.map((r) => r.display_title));
   for (const x of xhsRows) {
-    if (merged.length >= HOT_TOPIC_LIST_LIMIT) break;
+    if (merged.filter((r) => r.status === "active").length >= HOT_TOPIC_FEATURED_MAX) break;
     if (seenTitles.has(x.display_title)) continue;
     seenTitles.add(x.display_title);
-    merged.push(x);
+    merged.push({
+      ...x,
+      safe_score: Math.max(80, x.safe_score ?? 82),
+      content_value_score: Math.max(60, x.content_value_score ?? 68),
+      reject_reason: null,
+    });
   }
 
-  if (merged.length === 0) {
-    const mockRows = buildMockHotTopicRows(batchDate);
+  const activeSoFar = merged.filter((r) => r.status === "active");
+  const supplement = buildYouthCuratedSupplement(batchDate, activeSoFar, HOT_TOPIC_FEATURED_MAX);
+  for (const row of supplement) {
+    if (merged.filter((r) => r.status === "active").length >= HOT_TOPIC_FEATURED_MAX) break;
+    if (seenTitles.has(row.display_title)) continue;
+    merged.push(row);
+    seenTitles.add(row.display_title);
+  }
+
+  const featured = merged.filter((r) => r.status === "active");
+  featured.forEach((r, i) => {
+    r.is_new = i < 12;
+  });
+
+  const libraryRows = buildBulkHotTopicLibrary(batchDate, featured, HOT_TOPIC_LIBRARY_MIN);
+  const allActive = [...featured, ...libraryRows];
+  const allRows = [...allActive, ...rejected];
+
+  if (allActive.length === 0) {
+    const cached = await countActiveHotTopics();
+    if (cached >= 3) {
+      return {
+        ok: true,
+        source: "cached",
+        count: cached,
+        batchDate,
+        platformStats,
+        filterStats: stats,
+        skippedUpdate: true,
+        message: "过滤后无合格热点，保留数据库最近一次成功更新",
+      };
+    }
+    const mockRows = buildFullHotTopicLibrary(batchDate);
     const save = await replaceHotTopicsBatch(batchDate, mockRows);
     return {
       ok: save.ok,
       source: "fallback",
       count: save.count,
       batchDate,
-      platformStats: stats,
+      platformStats,
+      filterStats: stats,
       error: save.error,
     };
   }
 
-  const save = await replaceHotTopicsBatch(batchDate, merged);
+  const save = await replaceHotTopicsBatch(batchDate, allRows);
+  const activeCount = allActive.length;
+
   return {
     ok: save.ok,
-    source: usedMockPlatforms.length ? "hybrid" : "dailyhotapi",
+    source: ingestSource,
     count: save.count,
+    activeCount,
+    rejectedCount: rejected.length,
     batchDate,
-    platformStats: stats,
+    platformStats,
+    filterStats: stats,
     error: save.error,
+    message:
+      rejected.length > 0
+        ? `已入库 ${activeCount} 条可展示热点，${rejected.length} 条已标记 rejected`
+        : undefined,
+  };
+}
+
+/** TianAPI → DailyHotApi 备用 → 过滤 → AI 加工 → 入库 */
+export async function runHotTopicsUpdatePipeline(
+  batchDate = todayDate()
+): Promise<UpdateHotTopicsResult> {
+  const fetched = await fetchHotTopicsFromProviders();
+  const apiTotal = fetched.items.length;
+
+  if (apiTotal === 0) {
+    const cached = await countActiveHotTopics();
+    if (cached >= 3) {
+      console.warn(
+        "[hot-topics] TianAPI + DailyHotApi both empty, keeping last successful batch:",
+        cached
+      );
+      return {
+        ok: true,
+        source: "cached",
+        count: cached,
+        batchDate,
+        platformStats: fetched.stats,
+        primary: fetched.primary,
+        fallbackUsed: fetched.fallbackUsed,
+        skippedUpdate: true,
+        message: "热点源暂时不可用，继续展示数据库最近一次成功更新",
+        error: fetched.error,
+      };
+    }
+
+    const merged = buildFullHotTopicLibrary(batchDate);
+    const save = await replaceHotTopicsBatch(batchDate, merged);
+    return {
+      ok: save.ok,
+      source: "mock",
+      count: save.count,
+      batchDate,
+      platformStats: fetched.stats,
+      error: save.error,
+      message: "首次初始化使用演示热点，配置 TianAPI 后将自动切换真实数据",
+    };
+  }
+
+  /** 仅用 API 真实数据，不再用 mock 补齐平台 */
+  const raw = sampleHotTopicsPerPlatform(fetched.items, 8);
+
+  const result = await saveProcessedBatch(raw, batchDate, fetched.source, fetched.stats);
+
+  return {
+    ...result,
+    primary: fetched.primary,
+    fallbackUsed: fetched.fallbackUsed,
   };
 }
 
 let refreshInFlight: Promise<UpdateHotTopicsResult> | null = null;
 
-/** 若今日批次未更新则触发一次刷新（并发去重） */
 export async function ensureHotTopicsFresh(batchDate = todayDate()): Promise<void> {
   const { getLatestBatchDate } = await import("@/lib/server/db/hot-topics-db");
   const latest = await getLatestBatchDate();
@@ -178,7 +210,7 @@ export async function ensureHotTopicsFresh(batchDate = todayDate()): Promise<voi
 
 export async function ensureHotTopicsSeeded(): Promise<boolean> {
   const n = await countActiveHotTopics();
-  if (n >= 3) {
+  if (n >= HOT_TOPIC_LIBRARY_MIN) {
     void ensureHotTopicsFresh().catch((e) => console.warn("[ensureHotTopicsFresh]", e));
     return true;
   }

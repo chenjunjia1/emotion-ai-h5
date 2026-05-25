@@ -2,17 +2,16 @@
 
 /**
  * 首页奶油风轮播
- * 顺序：① 多平台发片 ② 今日选题盲盒 ③ 开通 Pro（免费）/ 仅两屏（已会员）
- * 邀请好友见页面底部卡片
+ * 顺序：① 多平台发片 ② 邀请好友 ③ 开通 Pro（免费）/ 仅两屏（已会员）
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { useApp } from "@/contexts/app-context";
-import { useProduct } from "@/hooks/use-product";
+import { InviteFriendsModal } from "@/components/modals/invite-friends-modal";
 import {
   bannerMemberTitleLines,
+  bannerTitleLines,
   CreamBannerSlide,
 } from "@/components/home/cream-banner-slide";
 import { PLAN_QUOTA, PRODUCTS } from "@/lib/constants/v1";
@@ -20,14 +19,17 @@ import { cn } from "@/lib/utils";
 
 const INTERVAL_MS = 5000;
 
-type SlideId = "creator" | "blindbox" | "member";
+type SlideId = "creator" | "invite" | "member";
 
 /** 轮播动图未上传时用 CSS 插画，避免 404 */
-const MOTION: Partial<Record<SlideId, string>> = {};
+const MOTION: Partial<Record<SlideId, string>> = {
+  invite: "/banner/invite-motion.gif",
+};
 
 const GRADIENTS: Record<SlideId, string> = {
   creator: "from-[#FF4D6D] via-[#FF6B8A] to-[#FFB347]",
-  blindbox: "from-[#FF6B6B] via-[#FF7AAE] to-[#FFC46B]",
+  /** 邀请屏：暖金→蜜桃粉，与项目粉橙主色一致，略偏礼物感 */
+  invite: "from-[#FFC46B] via-[#FF8FAB] to-[#FF4F8B]",
   member: "from-[#FFB347] via-[#FF6B8A] to-[#FF5C7A]",
 };
 
@@ -57,18 +59,13 @@ function BannerSlideShell({
 export function HomeCreamCarousel() {
   const router = useRouter();
   const { tr, showToast, user, setLoginOpen } = useApp();
-  const { dailyUsage, featureLimits } = useProduct();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-
-  const topicBoxRemain = Math.max(0, featureLimits.topicBox - dailyUsage.topicBox);
-  const topicBoxHighlight = tr("topicBoxRemain")
-    .replace("{remain}", String(topicBoxRemain))
-    .replace("{limit}", String(featureLimits.topicBox));
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const showMemberSlide = user == null || user.plan === "free";
   const slides = useMemo<SlideId[]>(
-    () => (showMemberSlide ? ["creator", "blindbox", "member"] : ["creator", "blindbox"]),
+    () => (showMemberSlide ? ["creator", "invite", "member"] : ["creator", "invite"]),
     [showMemberSlide]
   );
   const slidesKey = slides.join("-");
@@ -94,11 +91,6 @@ export function HomeCreamCarousel() {
     router.push("/publish-pack");
   };
 
-  const onBlindbox = () => {
-    showToast(tr("bannerBlindboxToast"));
-    router.push("/topic-box");
-  };
-
   const onMember = () => {
     if (!user) {
       setLoginOpen(true);
@@ -109,6 +101,9 @@ export function HomeCreamCarousel() {
   };
 
   const memberLines = bannerMemberTitleLines(tr("memberPromoTitle"));
+  const inviteLines = bannerTitleLines(tr("banner2Title"));
+
+  const onInvite = () => setInviteOpen(true);
 
   const renderSlide = (id: SlideId) => {
     switch (id) {
@@ -131,26 +126,21 @@ export function HomeCreamCarousel() {
             />
           </BannerSlideShell>
         );
-      case "blindbox":
+      case "invite":
         return (
-          <BannerSlideShell gradient={GRADIENTS.blindbox}>
+          <BannerSlideShell gradient={GRADIENTS.invite}>
             <CreamBannerSlide
-              tag={tr("featTopicBox")}
+              tag={tr("banner2Tag")}
               tagEmoji="🎁"
-              highlight={topicBoxHighlight}
-              line1={tr("bannerBlindboxTitle")}
-              line2={tr("bannerBlindboxTitleLine2")}
-              desc={tr("bannerBlindboxDesc")}
-              cta={tr("bannerBlindboxCta")}
-              onCta={onBlindbox}
-              onShellClick={onBlindbox}
-              motionSrc={MOTION.blindbox ?? ""}
-              visual="blindbox"
-              perkChips={[
-                tr("bannerBlindboxPerk1"),
-                tr("bannerBlindboxPerk2"),
-                tr("bannerBlindboxPerk3"),
-              ]}
+              line1={inviteLines.line1}
+              line2={inviteLines.line2 || undefined}
+              desc={tr("banner2Desc")}
+              cta={tr("banner2Cta")}
+              onCta={onInvite}
+              onShellClick={onInvite}
+              motionSrc={MOTION.invite ?? ""}
+              visual="invite"
+              perkChips={["各得 10 点灵感", "小红书 · 抖音 · 视频号"]}
             />
           </BannerSlideShell>
         );
@@ -192,18 +182,18 @@ export function HomeCreamCarousel() {
       aria-label={tr("bannerCarouselLabel")}
     >
       <div className="relative h-full overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={slides[index]}
-            className="absolute inset-0 overflow-hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
+        {slides.map((id, i) => (
+          <div
+            key={id}
+            className={cn(
+              "absolute inset-0 overflow-hidden transition-opacity duration-200 ease-out",
+              i === index ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
+            )}
+            aria-hidden={i !== index}
           >
-            {renderSlide(slides[index])}
-          </motion.div>
-        </AnimatePresence>
+            {renderSlide(id)}
+          </div>
+        ))}
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5">
@@ -220,6 +210,8 @@ export function HomeCreamCarousel() {
           />
         ))}
       </div>
+
+      <InviteFriendsModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
     </section>
   );
 }

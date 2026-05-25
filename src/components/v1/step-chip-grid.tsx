@@ -9,6 +9,7 @@ export function StepChipGrid({
   value,
   onChange,
   columns = 4,
+  hint,
 }: {
   step: number;
   title: string;
@@ -16,13 +17,15 @@ export function StepChipGrid({
   value: string;
   onChange: (v: string) => void;
   columns?: 3 | 4;
+  hint?: string;
 }) {
   return (
     <section>
-      <p className="mb-2 text-[12px] font-black text-[#1F2937]">
+      <p className="mb-1 text-[12px] font-black text-[#1F2937]">
         <span className="mr-1 text-[#FF4F8B]">{step}.</span>
         {title}
       </p>
+      {hint ? <p className="mb-2 text-[10px] text-[#8A94A6]">{hint}</p> : <div className="mb-1" />}
       <div className={cn("grid gap-2", columns === 4 ? "grid-cols-4" : "grid-cols-3")}>
         {options.map((opt) => {
           const active = value === opt;

@@ -27,12 +27,17 @@ export async function POST(req: Request) {
   }
 
   const result = await runHotTopicsUpdatePipeline(batchDate);
-  if (!result.ok) {
+  if (!result.ok && result.source !== "cached") {
     return NextResponse.json({ error: "refresh_failed", ...result }, { status: 500 });
   }
 
   return NextResponse.json({
-    refreshed: true,
+    refreshed: !result.skippedUpdate,
     ...result,
+    message:
+      result.message ??
+      (result.skippedUpdate
+        ? "热点源暂时不可用，继续展示最近一次成功更新"
+        : "今日热点已更新"),
   });
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { BookOpen, ChevronRight, Flame, Sparkles, Wand2 } from "lucide-react";
 import { BlindBoxMiniIcon } from "@/components/icons/blind-box-mini-icon";
 import { AppShell } from "@/components/layout/app-shell";
@@ -35,8 +36,24 @@ const STAT_CELLS = [
 ] as const;
 
 export default function HistoryPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-slate-400">加载中…</div>}>
+      <HistoryInner />
+    </Suspense>
+  );
+}
+
+function HistoryInner() {
+  const params = useSearchParams();
   const { histories, tr, user, refreshUser } = useApp();
   const [filter, setFilter] = useState<LibraryFilter>("all");
+
+  useEffect(() => {
+    const q = params.get("filter");
+    if (q === "pack" || q === "topic" || q === "emotion" || q === "review") {
+      setFilter(q);
+    }
+  }, [params]);
 
   useEffect(() => {
     if (isClientServerMode() && user) void refreshUser();
@@ -123,7 +140,7 @@ export default function HistoryPage() {
                 const inner = (
                   <Card
                     className={cn(
-                      "library-list-item overflow-hidden transition active:scale-[0.99]",
+                      "library-list-item cv-auto overflow-hidden transition active:scale-[0.99]",
                       "ring-1",
                       meta.ring
                     )}

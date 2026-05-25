@@ -6,6 +6,8 @@ import {
   saveDailyInspirationTitles,
 } from "@/lib/server/db/product-v1";
 import { countActiveHotTopics } from "@/lib/server/db/hot-topics-db";
+import { countXhsHotNotesInDb } from "@/lib/server/db/xhs-hot-notes-db";
+import { aggregateXhsHotNotes } from "@/lib/xhs/aggregate-xhs-hot-notes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,19 +45,23 @@ export async function GET(req: Request) {
 
   let hotSkipped = false;
   let inspSkipped = false;
+  let xhsSkipped = false;
 
   if (!force) {
     const existingHot = await countActiveHotTopics();
-    hotSkipped = existingHot >= 28;
+    hotSkipped = existingHot >= 24;
     const existingInsp = await getDailyInspirationTitlesFromDb(dateKey);
     inspSkipped = Boolean(existingInsp && existingInsp.length >= 30);
-    if (hotSkipped && inspSkipped) {
+    const existingXhs = await countXhsHotNotesInDb(dateKey);
+    xhsSkipped = existingXhs >= 10;
+    if (hotSkipped && inspSkipped && xhsSkipped) {
       return NextResponse.json({
         ok: true,
         skipped: true,
         date: dateKey,
         hotTopics: existingHot,
         inspirationTitles: existingInsp!.length,
+        xhsHotNotes: existingXhs,
         message: "今日数据已齐全，传 ?force=1 强制覆盖",
       });
     }
@@ -65,7 +71,7 @@ export async function GET(req: Request) {
 
   if (!hotSkipped || force) {
     const hot = await runHotTopicsUpdatePipeline(dateKey);
-    if (!hot.ok) {
+    if (!hot.ok && hot.source !== "cached") {
       return NextResponse.json(
         { error: "hot_topics_save_failed", detail: hot.error, ...hot },
         { status: 500 }
@@ -88,6 +94,22 @@ export async function GET(req: Request) {
     result.inspirationTitles = { count: titles.length, source, sample: titles.slice(0, 3) };
   } else {
     result.inspirationTitles = { skipped: true };
+  }
+
+  if (!xhsSkipped || force) {
+    if (!process.env.TIKHUB_API_KEY?.trim()) {
+      result.xhsHotNotes = { skipped: true, reason: "no_tikhub_key" };
+    } else {
+      const xhs = await aggregateXhsHotNotes({ force: true, dateKey });
+      result.xhsHotNotes = {
+        count: xhs.notes.length,
+        source: xhs.source,
+        cached: xhs.cached,
+        sample: xhs.notes.slice(0, 2).map((n) => n.title),
+      };
+    }
+  } else {
+    result.xhsHotNotes = { skipped: true };
   }
 
   return NextResponse.json(result);

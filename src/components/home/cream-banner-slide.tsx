@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 
 export type BannerVisualVariant = "creator" | "blindbox" | "invite" | "gacha" | "member";
 
-const PLATFORM_BADGES = ["抖音", "小红书", "视频号", "B站"] as const;
-
 const BLINDBOX_TOPICS = [
   { emoji: "💼", label: "职场" },
   { emoji: "🐱", label: "宠物" },
@@ -158,19 +156,6 @@ function BannerHero({
         )}
       </div>
 
-      {variant === "creator" && (
-        <div className="absolute -bottom-0.5 left-1/2 flex -translate-x-1/2 gap-0.5">
-          {PLATFORM_BADGES.map((p, i) => (
-            <span
-              key={p}
-              className="rounded-md bg-white/90 px-1 py-px text-[6px] font-bold text-[#FF5C8A] shadow-sm"
-              style={{ transform: `rotate(${i === 1 ? 0 : i === 0 ? -4 : 4}deg)` }}
-            >
-              {p}
-            </span>
-          ))}
-        </div>
-      )}
       {variant === "invite" && (
         <>
           <span

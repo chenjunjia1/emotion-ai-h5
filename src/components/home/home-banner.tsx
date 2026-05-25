@@ -1,3 +1,3 @@
 "use client";
 
-export { HomeCreamCarousel as HomeBanner } from "./home-cream-carousel";
+export { HomeCreamCarousel as HomeBanner } from "@/components/home/home-cream-carousel";

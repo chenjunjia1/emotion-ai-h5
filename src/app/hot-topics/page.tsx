@@ -1,120 +1,106 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
-import { SectionTitle } from "@/components/section-title";
-import { HotTopicsFeed, type HotTopicsTabId } from "@/components/hot-topics/hot-topics-feed";
-import { useApp } from "@/contexts/app-context";
-import { apiGetHotTopics, apiRefreshHotTopics } from "@/lib/client/server-api";
-import type { HotTopicItem } from "@/lib/hot-topics/types";
-import { sortByHeat } from "@/lib/content/heat-level";
+import { HotTopicsPageHero } from "@/components/hot-topics/hot-topics-page-hero";
+import { HotTopicsStatsStrip } from "@/components/hot-topics/hot-topics-stats-strip";
+import { XhsHotNotesFeed } from "@/components/hot-topics/xhs-hot-notes-feed";
+import { apiGetXhsHotNotes } from "@/lib/xhs/xhs-client-api";
+import {
+  clearXhsHotNotesClientCache,
+  getXhsHotNotesClientCache,
+  setXhsHotNotesClientCache,
+} from "@/lib/xhs/xhs-hot-notes-cache";
+import type { XhsFeedTab } from "@/lib/xhs/xhs-page-tabs";
+import { XHS_FEED_TABS } from "@/lib/xhs/xhs-page-tabs";
+import type { XhsHotNote } from "@/lib/xhs/types";
 
-type HotMeta = {
-  date: string;
-  total: number;
-  updatedAt: string;
-  stale?: boolean;
-  message?: string;
-};
+function HotTopicsPageFallback() {
+  return (
+    <AppShell>
+      <HotTopicsPageHero />
+      <HotTopicsStatsStrip />
+      <div className="py-8 text-center text-[11px] text-[#9CA3AF]">加载灵感库…</div>
+    </AppShell>
+  );
+}
 
-export default function HotTopicsPage() {
-  const { tr } = useApp();
-  const [items, setItems] = useState<HotTopicItem[]>([]);
-  const [meta, setMeta] = useState<HotMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<HotTopicsTabId>("all");
-  const [category, setCategory] = useState("全部");
+function HotTopicsPageContent() {
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const initialTab =
+    tabFromUrl && XHS_FEED_TABS.some((t) => t.id === tabFromUrl)
+      ? (tabFromUrl as XhsFeedTab)
+      : "hot";
 
-  const loadTopics = useCallback(
-    async (nextTab: HotTopicsTabId, nextCategory: string) => {
-      const r = await apiGetHotTopics({
-        platform: nextTab,
-        category: nextCategory,
-      });
-      if (r.items?.length) {
-        setItems(sortByHeat(r.items));
-        setMeta({
-          date: r.meta?.date ?? new Date().toISOString().slice(0, 10),
-          total: r.meta?.total ?? r.items.length,
-          updatedAt: r.meta?.updatedAt ?? "08:00",
-          stale: r.meta?.stale,
-          message: r.meta?.note,
-        });
+  const [xhsTab, setXhsTab] = useState<XhsFeedTab>(initialTab);
+  const [xhsNotes, setXhsNotes] = useState<XhsHotNote[]>([]);
+  const [xhsLoading, setXhsLoading] = useState(true);
+  const [xhsError, setXhsError] = useState<string | null>(null);
+
+  const loadXhsNotes = useCallback(async (force = false) => {
+    if (!force) {
+      const hit = getXhsHotNotesClientCache();
+      if (hit?.data?.length) {
+        setXhsNotes(hit.data);
+        setXhsLoading(false);
+        setXhsError(null);
         return;
       }
-      setItems([]);
-      setMeta(
-        r.meta
-          ? {
-              date: r.meta.date ?? new Date().toISOString().slice(0, 10),
-              total: 0,
-              updatedAt: r.meta.updatedAt ?? "08:00",
-              stale: r.meta.stale,
-              message: r.meta.note,
-            }
-          : null
-      );
-    },
-    []
-  );
+    }
+
+    setXhsLoading(true);
+    setXhsError(null);
+    const res = await apiGetXhsHotNotes(force);
+    if (!res.success || !res.data?.length) {
+      setXhsError(res.message ?? "暂无小红书热门图文");
+      setXhsNotes([]);
+      setXhsLoading(false);
+      return;
+    }
+    setXhsNotes(res.data);
+    setXhsHotNotesClientCache(res);
+    setXhsLoading(false);
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      await loadTopics(tab, category);
-      if (!cancelled) setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [loadTopics, tab, category]);
+    void loadXhsNotes(false);
+  }, [loadXhsNotes]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await apiRefreshHotTopics(true);
-      await loadTopics(tab, category);
-    } finally {
-      setRefreshing(false);
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && XHS_FEED_TABS.some((t) => t.id === tab)) {
+      setXhsTab(tab as XhsFeedTab);
     }
+  }, [searchParams]);
+
+  const onRetryXhs = () => {
+    clearXhsHotNotesClientCache();
+    void loadXhsNotes(true);
   };
 
   return (
     <AppShell>
-      <SectionTitle
-        eyebrow="🔥"
-        title={tr("hotTopicsPageTitle")}
-        desc={tr("hotTopicsPageDesc")}
+      <HotTopicsPageHero />
+      <HotTopicsStatsStrip />
+
+      <XhsHotNotesFeed
+        notes={xhsNotes}
+        tab={xhsTab}
+        onTabChange={setXhsTab}
+        onRetry={onRetryXhs}
+        loading={xhsLoading}
+        error={xhsError}
       />
-
-      {meta?.stale && meta.message ? (
-        <p className="mb-3 rounded-2xl bg-[#FFF3E8] px-3 py-2 text-center text-[11px] font-bold text-[#FF9A4D]">
-          {meta.message}
-        </p>
-      ) : null}
-
-      {loading && items.length === 0 ? (
-        <p className="py-8 text-center text-xs text-slate-500">{tr("loading")}</p>
-      ) : (
-        <HotTopicsFeed
-          items={items}
-          tab={tab}
-          category={category}
-          onTabChange={setTab}
-          onCategoryChange={setCategory}
-          onRefresh={() => void onRefresh()}
-          refreshing={refreshing || loading}
-          updatedAt={meta?.updatedAt ?? "08:00"}
-        />
-      )}
-
-      {items.length > 0 && (
-        <p className="mt-4 text-center text-[10px] text-[#8A94A6]">
-          每天 8 点更新 · 抖音 / 微博 / 百度 / B站 / 头条 / 知乎 各平台热榜
-        </p>
-      )}
     </AppShell>
+  );
+}
+
+export default function HotTopicsPage() {
+  return (
+    <Suspense fallback={<HotTopicsPageFallback />}>
+      <HotTopicsPageContent />
+    </Suspense>
   );
 }

@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: blob:",
+        "img-src 'self' data: blob: https://images.pexels.com https://*.xhscdn.com https://*.xiaohongshu.com",
         "connect-src 'self' https://*.supabase.co https://api.deepseek.com",
         "frame-ancestors 'none'",
       ].join("; ")

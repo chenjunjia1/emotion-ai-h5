@@ -1,63 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  isPlaceholderHotCover,
-  picsumCoverFallback,
-  resolveHotTopicCover,
-} from "@/lib/content/hot-topic-covers";
-import type { HotTopicDisplay } from "@/lib/content/hot-topic-enrichment";
+import { useMemo } from "react";
+import { ShortVideoCover } from "@/components/ui/short-video-cover";
+import { coverPresetForListItem } from "@/lib/content/unique-topic-covers";
+import type { ShortVideoCoverPreset } from "@/lib/content/short-video-covers";
 
-type HotTopicCoverProps = {
-  item: Pick<
-    HotTopicDisplay,
-    "coverImage" | "coverGradient" | "title" | "track" | "category" | "id"
-  >;
-  className?: string;
-  iconSize?: number;
+type CoverItem = {
+  coverImage?: string;
+  title?: string;
+  topic?: string;
+  track?: string;
+  category?: string;
+  accountType?: string;
+  id?: string;
+  coverGradient?: string;
+  displayTitle?: string;
 };
 
-export function HotTopicCover({ item, className, iconSize = 16 }: HotTopicCoverProps) {
-  const primary = useMemo(() => {
-    if (item.coverImage?.startsWith("http") && !isPlaceholderHotCover(item.coverImage)) {
-      return item.coverImage;
-    }
-    return resolveHotTopicCover(item);
-  }, [item]);
+/** 热点卡片封面 — 优先传入的去重 preset，否则按标题+id 匹配 */
+export function HotTopicCover({
+  item,
+  preset: presetProp,
+  className,
+  priority = false,
+  iconSize: _iconSize,
+}: {
+  item: CoverItem;
+  preset?: ShortVideoCoverPreset;
+  className?: string;
+  iconSize?: number;
+  priority?: boolean;
+}) {
+  void _iconSize;
 
-  const [src, setSrc] = useState(primary);
-  const [failed, setFailed] = useState(false);
-
-  if (!failed && src) {
-    return (
-      <img
-        src={src}
-        alt={item.title}
-        className={cn("h-full w-full object-cover", className)}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          if (src !== picsumCoverFallback(item.id || item.title)) {
-            setSrc(picsumCoverFallback(item.id || item.title));
-            return;
-          }
-          setFailed(true);
-        }}
-      />
-    );
-  }
+  const preset = useMemo(() => {
+    if (presetProp) return presetProp;
+    const title = item.displayTitle ?? item.title ?? item.topic ?? "";
+    const category = item.category ?? item.track ?? "";
+    return coverPresetForListItem({
+      id: item.id ?? title,
+      title,
+      category,
+      track: item.track,
+    });
+  }, [presetProp, item]);
 
   return (
-    <div
-      className={cn(
-        "flex h-full w-full items-center justify-center bg-gradient-to-br",
-        item.coverGradient,
-        className
-      )}
-    >
-      <Sparkles size={iconSize} className="text-white" />
-    </div>
+    <ShortVideoCover
+      preset={preset}
+      className={className}
+      priority={priority}
+      fill
+    />
   );
 }

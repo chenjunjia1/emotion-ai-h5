@@ -50,8 +50,9 @@ export const QUOTA_COST: Record<string, number> = {
   score: 5,
   review: 40,
   emotion_chat: 5,
-  publish_regen: 20,
+  publish_regen: 10,
   publish_restyle: 10,
+  moments_regen_one: 5,
 };
 
 export const PLAN_QUOTA: Record<string, number> = {

@@ -50,8 +50,79 @@ button {
     display: none;
   }
 
+  /** 长列表离屏跳过绘制，滑动更顺 */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 96px;
+  }
+
   .home-hero {
     box-shadow: 0 12px 40px rgba(217, 70, 143, 0.22);
+  }
+
+  /* AI 助手顶栏 Banner */
+  .buddy-hero-orb {
+    animation: buddy-hero-orb 5s ease-in-out infinite;
+  }
+
+  @keyframes buddy-hero-orb {
+    0%,
+    100% {
+      transform: scale(1) translate(0, 0);
+      opacity: 0.55;
+    }
+    50% {
+      transform: scale(1.08) translate(4px, -4px);
+      opacity: 0.85;
+    }
+  }
+
+  .buddy-hero-shine {
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: buddy-hero-shine 4s ease-in-out infinite;
+  }
+
+  @keyframes buddy-hero-shine {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .buddy-hero-icon-float {
+    animation: buddy-hero-icon-float 3s ease-in-out infinite;
+  }
+
+  @keyframes buddy-hero-icon-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .buddy-hero-cta {
+    animation: buddy-hero-cta-pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes buddy-hero-cta-pulse {
+    0%,
+    100% {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+    50% {
+      box-shadow: 0 8px 28px rgba(255, 79, 139, 0.35);
+    }
   }
 
   /* —— 首页动效 Banner（CSS 动图感，非 GIF）—— */
@@ -706,6 +777,41 @@ button {
     animation: profile-avatar-float 3.2s ease-in-out infinite;
   }
 
+  .notify-bell-unread {
+    box-shadow: 0 2px 12px rgba(255, 79, 139, 0.2);
+  }
+
+  .notify-dot-pulse {
+    animation: notify-dot-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes notify-dot-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.85;
+    }
+  }
+
+  .notify-sms-bubble {
+    animation: notify-sms-in 0.35s ease-out;
+  }
+
+  @keyframes notify-sms-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .notify-bell-wiggle {
     animation: notify-bell-wiggle 2.8s ease-in-out infinite;
   }
@@ -1157,6 +1263,35 @@ button {
     }
   }
 
+  .home-section-card {
+    @apply overflow-hidden rounded-[20px] border border-[#FFE8F0]/90 bg-white shadow-[0_4px_20px_rgba(255,107,138,0.07)];
+  }
+
+  .home-flow > * {
+    animation: play-entry-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .home-flow > *:nth-child(1) {
+    animation-delay: 0s;
+  }
+  .home-flow > *:nth-child(2) {
+    animation-delay: 0.04s;
+  }
+  .home-flow > *:nth-child(3) {
+    animation-delay: 0.08s;
+  }
+  .home-flow > *:nth-child(4) {
+    animation-delay: 0.12s;
+  }
+
+  .home-flow-stable > * {
+    animation: none !important;
+  }
+
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 280px;
+  }
+
   .home-section-enter {
     animation: home-section-enter 0.5s ease both;
   }
@@ -1251,8 +1386,83 @@ button {
     .play-cta-nudge,
     .fortune-tip-flip,
     .fortune-stat-bump,
-    .fortune-stat-pop {
+    .fortune-stat-pop,
+    .home-hero-banner-float,
+    .home-hero-cta,
+    .home-flow > *,
+    .nav-publish-fab {
       animation: none;
+    }
+  }
+
+  @media (hover: hover) {
+    .nav-publish-fab {
+      animation: none;
+    }
+  }
+
+  .home-play-circle {
+    transition: transform 0.2s ease;
+  }
+
+  .home-play-circle:active {
+    transform: scale(0.94);
+  }
+
+  .home-hero-cta {
+    animation: home-hero-cta-pulse 2.8s ease-in-out infinite;
+  }
+
+  @keyframes home-hero-cta-pulse {
+    0%,
+    100% {
+      box-shadow: 0 6px 18px rgba(255, 255, 255, 0.5);
+    }
+    50% {
+      box-shadow: 0 8px 22px rgba(255, 255, 255, 0.65);
+    }
+  }
+
+  .home-hero-banner-float {
+    animation: home-hero-float 4s ease-in-out infinite;
+  }
+
+  @keyframes home-hero-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .home-hot-card-enter {
+    animation: home-hot-card-enter 0.55s ease both;
+  }
+
+  @keyframes home-hot-card-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .nav-publish-fab {
+    animation: nav-publish-fab-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes nav-publish-fab-pulse {
+    0%,
+    100% {
+      box-shadow: 0 4px 16px rgba(255, 36, 66, 0.28);
+    }
+    50% {
+      box-shadow: 0 6px 20px rgba(255, 36, 66, 0.4);
     }
   }
 }

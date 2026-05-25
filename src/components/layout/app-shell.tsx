@@ -7,21 +7,26 @@ import { cn } from "@/lib/utils";
 export function AppShell({
   children,
   showHeader = true,
+  homePage = false,
 }: {
   children: ReactNode;
   showHeader?: boolean;
+  /** 首页奶油粉渐变背景 */
+  homePage?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "mx-auto min-h-screen w-full max-w-[430px] bg-gradient-to-b pb-28",
-        "md:my-4 md:min-h-[calc(100vh-2rem)] md:overflow-x-hidden md:overflow-y-auto md:rounded-[2rem] md:border md:border-orange-100/80 md:shadow-xl",
-        theme.bg
+        "mx-auto min-h-screen w-full max-w-[430px] pb-28",
+        homePage
+          ? "bg-gradient-to-b from-[#FFF6FA] via-[#FFFBF8] to-[#FFF0F5]"
+          : cn("bg-gradient-to-b", theme.bg),
+        "md:my-4 md:min-h-[calc(100vh-2rem)] md:overflow-x-hidden md:overflow-y-auto md:rounded-[2rem] md:border md:border-orange-100/80 md:shadow-xl"
       )}
-      style={{ backgroundColor: theme.pageBg }}
+      style={homePage ? undefined : { backgroundColor: theme.pageBg }}
     >
-      {showHeader ? <AppHeader /> : null}
-      <main className="px-4 pb-2 pt-2">{children}</main>
+      {showHeader ? <AppHeader homePage={homePage} /> : null}
+      <main className={homePage ? "px-3.5 pb-2 pt-1" : "px-4 pb-2 pt-2"}>{children}</main>
       <SiteFooter />
     </div>
   );

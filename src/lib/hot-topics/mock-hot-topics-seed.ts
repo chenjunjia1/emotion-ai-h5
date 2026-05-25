@@ -313,6 +313,9 @@ export function buildMockHotTopicRows(batchDate: string): HotTopicInsert[] {
         source_url: null,
         is_new: rank < 6,
         status: "active" as const,
+        reject_reason: null,
+        safe_score: 90,
+        content_value_score: 78,
         updated_batch_date: batchDate,
       });
       rank++;

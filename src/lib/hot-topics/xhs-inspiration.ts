@@ -91,6 +91,9 @@ export function buildXhsInspirationRows(
       source_url: raw?.url ?? null,
       is_new: i < 3,
       status: "active" as const,
+      reject_reason: null,
+      safe_score: 88,
+      content_value_score: 75,
       updated_batch_date: batchDate,
     };
   });

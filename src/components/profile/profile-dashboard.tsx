@@ -9,8 +9,8 @@ import {
   Gift,
   Heart,
   History,
-  Pencil,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 import { HintTip } from "@/components/ui/hint-tip";
 import {
@@ -95,7 +95,7 @@ export function ProfileHeroCard({
   const hintOk = tr("profileHintOk");
   const hintAria = tr("profileHintAria");
   const levelHint = getProfileLevelHintContent(growth.xp);
-  const showMemberCta = Boolean(onOpenPricing);
+  const canUpgrade = user.plan === "free" && onOpenPricing;
 
   return (
     <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF7AAE] via-[#FF9EC4] to-[#FFB347] p-[1px] shadow-[0_16px_40px_rgba(255,122,174,0.28)]">
@@ -112,12 +112,10 @@ export function ProfileHeroCard({
 
         <div className="relative flex items-start gap-3">
           <div className="profile-avatar-float flex shrink-0 flex-col items-center">
-            <Link href="/profile/edit" className="block active:scale-[0.98]" aria-label={tr("profileEditProfile")}>
-              <ProfileUserAvatar
-                userId={user.id}
-                className="h-[4.25rem] w-[4.25rem] ring-[3px] ring-white shadow-lg"
-              />
-            </Link>
+            <ProfileUserAvatar
+              userId={user.id}
+              className="h-[4.25rem] w-[4.25rem] ring-[3px] ring-white shadow-lg"
+            />
             {companion ? (
               <span className="mt-1 rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-[#FF5C8A] shadow-sm ring-1 ring-[#FF7AAE]/25">
                 陪跑中
@@ -125,19 +123,10 @@ export function ProfileHeroCard({
             ) : null}
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-bold text-[#FF7AAE]">{tr("profileEyebrow")}</p>
-              <Link
-                href="/profile/edit"
-                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[#FF7AAE] shadow-sm ring-1 ring-[#FF7AAE]/20 active:scale-95"
-              >
-                <Pencil size={11} />
-                {tr("profileEditProfile")}
-              </Link>
-            </div>
+            <p className="text-[10px] font-bold text-[#FF7AAE]">{tr("profileEyebrow")}</p>
             <div className="flex flex-wrap items-center gap-1.5">
               <h2 className="text-lg font-black text-slate-800">{displayName}</h2>
-              {showMemberCta && user.plan === "free" ? (
+              {canUpgrade ? (
                 <button
                   type="button"
                   onClick={onOpenPricing}
@@ -161,16 +150,6 @@ export function ProfileHeroCard({
                   {planLabel}
                 </span>
               )}
-              {showMemberCta && user.plan !== "free" ? (
-                <button
-                  type="button"
-                  onClick={onOpenPricing}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[#FFE8A8] to-[#FFC46B] px-2 py-0.5 text-[9px] font-black text-[#E85D04] shadow-sm ring-1 ring-[#FFE8A8]/90 active:scale-95"
-                >
-                  <Crown size={10} />
-                  {tr("profileRenewCta")}
-                </button>
-              ) : null}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <span
@@ -192,6 +171,20 @@ export function ProfileHeroCard({
                 ariaLabel={hintAria}
               />
             </div>
+            {!companion ? (
+              <Link
+                href="/onboarding"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = "/onboarding";
+                }}
+                className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-bold text-[#FF7AAE] active:opacity-70"
+              >
+                <UserRound size={12} />
+                {tr("profileEditIdentity")}
+                <ChevronRight size={12} />
+              </Link>
+            ) : null}
           </div>
         </div>
 

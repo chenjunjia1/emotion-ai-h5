@@ -4,28 +4,49 @@ import {
   getLatestBatchDate,
   getRelatedHotTopics,
   listActiveHotTopics,
+  countActiveHotTopics,
+  countFeaturedHotTopics,
 } from "@/lib/server/db/hot-topics-db";
 import {
-  HOT_TOPIC_LIST_LIMIT,
+  HOT_TOPIC_API_MAX_LIMIT,
+  HOT_TOPIC_PAGE_SIZE,
   HOT_TOPIC_TOP_LIMIT,
   recordToItem,
   type HotTopicItem,
   type HotTopicRecord,
 } from "@/lib/hot-topics/types";
-import { buildMockHotTopicRows } from "@/lib/hot-topics/mock-hot-topics-seed";
-import { buildXhsInspirationRows } from "@/lib/hot-topics/xhs-inspiration";
 import { ensureHotTopicFields } from "@/lib/content/hot-topic-fields";
 import { isServerBackendEnabled } from "@/lib/server/config";
+import { buildFullHotTopicLibrary } from "@/lib/hot-topics/bulk-library-generator";
+import { hotTopicLibraryMeta } from "@/lib/hot-topics/library-display";
+
+export type HotTopicsListMeta = ReturnType<typeof hotTopicLibraryMeta> & {
+  batchDate: string;
+  isToday: boolean;
+  stale: boolean;
+  total: number;
+  todayFeatured?: number;
+  updatedAt: string;
+  message?: string;
+  sources?: string[];
+};
+
+function metaWithLibrary(todayActive: number, base: Omit<HotTopicsListMeta, keyof ReturnType<typeof hotTopicLibraryMeta> | "total">): HotTopicsListMeta {
+  return { ...hotTopicLibraryMeta(todayActive), ...base, total: todayActive };
+}
+
+export const HOT_TOPICS_DISPLAY_NOTE =
+  "每日 8 点更新 · 跟拍就能火 · 抖音 / 小红书 / 朋友圈";
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** 推荐列表按 raw_title 去重，保留爆款分最高的一条 */
+/** 推荐列表按展示标题去重（同题只留爆款分最高的一条） */
 function dedupeRecommendRows(rows: HotTopicRecord[]): HotTopicRecord[] {
   const map = new Map<string, HotTopicRecord>();
   for (const row of rows) {
-    const key = row.raw_title.trim();
+    const key = row.display_title.trim();
     const prev = map.get(key);
     if (!prev || row.viral_score > prev.viral_score) map.set(key, row);
   }
@@ -38,24 +59,7 @@ function toDisplayItems(rows: HotTopicRecord[]): HotTopicItem[] {
 
 function mockItems(limit: number, platform?: string, category?: string): HotTopicItem[] {
   const batchDate = todayDate();
-  const mockRows = buildMockHotTopicRows(batchDate);
-  const xhs = buildXhsInspirationRows(
-    mockRows.map((r) => ({
-      raw_title: r.raw_title,
-      display_title: r.display_title,
-      summary: r.summary,
-      category: r.category,
-      tags: r.tags,
-      target_users: r.target_users,
-      recommend_angles: r.recommend_angles,
-      viral_score: r.viral_score,
-      platform: r.platform,
-    })),
-    mockRows.map((r) => ({ title: r.raw_title, platform: r.platform, hot: r.heat_score })),
-    batchDate,
-    6
-  );
-  let all = [...mockRows, ...xhs];
+  let all = buildFullHotTopicLibrary(batchDate);
   if (platform && platform !== "all") {
     if (platform === "xhs") all = all.filter((r) => r.platform === "xiaohongshu_inspiration");
     else if (platform === "web")
@@ -79,6 +83,24 @@ function mockItems(limit: number, platform?: string, category?: string): HotTopi
   );
 }
 
+async function recoverFromDatabase(limit: number, platform?: string, category?: string) {
+  const broad = await listActiveHotTopics({
+    platform,
+    category,
+    limit: Math.max(limit, HOT_TOPIC_API_MAX_LIMIT),
+  });
+  if (broad.items.length > 0) {
+    const batchDate = broad.batchDate ?? (await getLatestBatchDate());
+    return {
+      items: toDisplayItems(broad.items),
+      batchDate,
+      isToday: batchDate === todayDate(),
+      stale: batchDate !== todayDate(),
+    };
+  }
+  return null;
+}
+
 export async function fetchHotTopicsForApi(opts: {
   platform?: string;
   category?: string;
@@ -86,15 +108,21 @@ export async function fetchHotTopicsForApi(opts: {
   page?: number;
 }) {
   if (!isServerBackendEnabled()) {
-    const items = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT, opts.platform, opts.category);
+    const pageSize = opts.limit ?? HOT_TOPIC_PAGE_SIZE;
+    const items = mockItems(pageSize, opts.platform, opts.category);
+    const libRows = buildFullHotTopicLibrary(todayDate());
     return {
       items,
       meta: {
-        batchDate: todayDate(),
-        isToday: true,
-        stale: false,
-        total: items.length,
-        updatedAt: `${todayDate()} 08:00`,
+        ...metaWithLibrary(libRows.length, {
+          batchDate: todayDate(),
+          isToday: true,
+          stale: false,
+          updatedAt: `${todayDate()} 08:00`,
+          message: HOT_TOPICS_DISPLAY_NOTE,
+          sources: ["TianAPI", "DailyHotApi", "AI"],
+        }),
+        todayFeatured: libRows.filter((r) => r.is_new).length,
       },
     };
   }
@@ -107,30 +135,57 @@ export async function fetchHotTopicsForApi(opts: {
   }
 
   if (items.length === 0) {
-    const fallback = mockItems(opts.limit ?? HOT_TOPIC_LIST_LIMIT, opts.platform, opts.category);
+    const recovered = await recoverFromDatabase(
+      opts.limit ?? HOT_TOPIC_API_MAX_LIMIT,
+      opts.platform,
+      opts.category
+    );
+    if (recovered && recovered.items.length > 0) {
+      const total = await countActiveHotTopics();
+      const n = total || recovered.items.length;
+      return {
+        items: recovered.items,
+        meta: metaWithLibrary(n, {
+          batchDate: recovered.batchDate ?? todayDate(),
+          isToday: recovered.isToday,
+          stale: true,
+          updatedAt: `${recovered.batchDate ?? todayDate()} 08:00`,
+          message: "热点源暂时不可用，展示数据库最近一次成功更新",
+          sources: ["TianAPI", "DailyHotApi", "AI"],
+        }),
+      };
+    }
+
+    const fallback = mockItems(opts.limit ?? HOT_TOPIC_PAGE_SIZE, opts.platform, opts.category);
     return {
       items: fallback,
-      meta: {
+      meta: metaWithLibrary(fallback.length, {
         batchDate: todayDate(),
         isToday: false,
         stale: true,
-        total: fallback.length,
         updatedAt: `${todayDate()} 08:00`,
-        message: "热点数据正在更新中，先为你展示最近热点。",
-      },
+        message: "热点数据正在更新中，先为你展示演示热点",
+        sources: ["TianAPI", "DailyHotApi", "AI"],
+      }),
     };
   }
 
+  const display = toDisplayItems(items);
+  const batchForCount = batchDate ?? todayDate();
+  const libraryTotal = await countActiveHotTopics(batchForCount);
+  const todayFeatured = await countFeaturedHotTopics(batchForCount);
+
   return {
-    items: toDisplayItems(items),
-    meta: {
+    items: display,
+    meta: metaWithLibrary(libraryTotal || display.length, {
+      todayFeatured,
       batchDate: batchDate ?? todayDate(),
       isToday,
       stale: !isToday,
-      total: items.length,
       updatedAt: `${batchDate ?? todayDate()} 08:00`,
-      message: isToday ? undefined : "热点数据正在更新中，先为你展示最近热点。",
-    },
+      message: isToday ? HOT_TOPICS_DISPLAY_NOTE : "展示数据库最近一次成功更新 · 每日8点自动刷新",
+      sources: ["TianAPI", "DailyHotApi", "AI"],
+    }),
   };
 }
 
@@ -155,21 +210,26 @@ export async function fetchHotTopicDetailForApi(id: string) {
   await ensureHotTopicsSeeded();
   const row = await getHotTopicById(id);
   if (!row) {
-    const fallback = mockItems(1)[0];
+    const recovered = await recoverFromDatabase(20);
+    const item = recovered?.items[0] ?? mockItems(1)[0];
     return {
-      item: fallback,
-      related: mockItems(4).slice(1, 4),
+      item,
+      related: (recovered?.items ?? mockItems(4)).filter((t) => t.id !== item.id).slice(0, 3),
       meta: { isToday: false, stale: true },
     };
   }
 
   const relatedRows = await getRelatedHotTopics(row.id, row.category, 3);
-  const batchDate = await getLatestBatchDate();
-  const isToday = batchDate === todayDate();
+  const latestBatch = await getLatestBatchDate();
+  const isToday = latestBatch === todayDate();
 
   return {
     item: recordToItem(row),
     related: relatedRows.map(recordToItem),
-    meta: { isToday, stale: !isToday, batchDate },
+    meta: {
+      isToday,
+      stale: !isToday,
+      batchDate: latestBatch ?? row.updated_batch_date,
+    },
   };
 }

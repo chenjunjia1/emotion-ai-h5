@@ -103,11 +103,40 @@ if (pay && alipayReady(env)) {
 }
 
 if (env.CRON_SECRET && env.CRON_SECRET.length >= 16) {
-  console.log("✅ CRON_SECRET 已配置（每日爆品定时任务）");
+  console.log("✅ CRON_SECRET 已配置（每日热点定时任务）");
   console.log("   · vercel.json: 0 0 * * * → 北京时间每天 08:00");
   console.log("   · 本地验收: npm run verify:cron");
+  console.log("   · 手动刷新: node scripts/seed-hot-topics.mjs --via-api --force");
 } else {
-  console.log("⚠️  CRON_SECRET 未配置：Vercel Cron 调用 /api/cron/refresh-hot-topics 将 401");
+  console.log("⚠️  CRON_SECRET 未配置：运行 node scripts/setup-hot-topics-env.mjs");
+}
+
+if (env.TIANAPI_KEY && env.TIANAPI_KEY.length >= 8) {
+  console.log("✅ TIANAPI_KEY 已配置（热点主源：抖音/微博/百度/头条）");
+} else {
+  console.log("ℹ️  TIANAPI_KEY 未填：热点将自动使用 DailyHotApi 备用源");
+}
+
+if (env.PEXELS_API_KEY && env.PEXELS_API_KEY.length >= 8) {
+  console.log("✅ PEXELS_API_KEY 已配置（/hot-topics 与首页 TOP3 封面走 Pexels）");
+} else {
+  console.log("ℹ️  PEXELS_API_KEY 未填：热点封面使用 public/images/topics/ 本地兜底");
+  console.log("   · 申请: https://www.pexels.com/api/");
+  console.log("   · 一键写入空行: npm run setup:pexels-env");
+}
+
+if (env.TIKHUB_API_KEY && env.TIKHUB_API_KEY.length >= 8) {
+  console.log("✅ TIKHUB_API_KEY 已配置（小红书热门图文灵感库）");
+} else {
+  console.log("ℹ️  TIKHUB_API_KEY 未填：/hot-topics 小红书灵感区不可用");
+  console.log("   · 申请: https://tikhub.io/");
+  console.log("   · 一键写入空行: npm run setup:tikhub-env");
+}
+
+if (env.DAILY_HOT_API_BASE_URL) {
+  console.log(`✅ DAILY_HOT_API_BASE_URL: ${env.DAILY_HOT_API_BASE_URL}`);
+} else {
+  console.log("ℹ️  DAILY_HOT_API_BASE_URL 未填：使用默认 https://api-hot.imsyy.top");
 }
 
 const vercelJson = resolve(root, "vercel.json");

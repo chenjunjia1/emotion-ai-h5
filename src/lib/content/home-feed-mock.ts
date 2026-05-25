@@ -1,6 +1,11 @@
 /** 首页互动模块 — 模拟数据 + 跳转参数 */
 
-import { COVER_BY_CATEGORY, DEFAULT_COVER_URL } from "@/lib/content/hot-topic-covers";
+import {
+  coverPresetForTopic,
+  titleLinesFromCardTitle,
+} from "@/lib/content/scene-cover-presets";
+import type { ShortVideoCoverPreset, ShortVideoCoverStyle } from "@/lib/content/short-video-covers";
+import { inferCoverStyle } from "@/lib/content/short-video-covers";
 
 export type TrendingGeneration = {
   id: string;
@@ -15,6 +20,8 @@ export type TrendingGeneration = {
   grad: string;
   chip: string;
   coverImage: string;
+  coverStyle: ShortVideoCoverStyle;
+  coverPreset: ShortVideoCoverPreset;
 };
 
 export type AiSuggestTag = {
@@ -38,19 +45,108 @@ export type SuccessCase = {
   targetUsers: string;
   grad: string;
   coverImage: string;
+  coverStyle: ShortVideoCoverStyle;
+  coverPreset: ShortVideoCoverPreset;
 };
 
-function coverForTopic(topic: string, category = "生活"): string {
-  for (const [cat, url] of Object.entries(COVER_BY_CATEGORY)) {
-    if (topic.includes(cat) || category === cat) return url;
-  }
-  if (/穿搭|OOTD/i.test(topic)) return COVER_BY_CATEGORY["穿搭"];
-  if (/宠物|猫/i.test(topic)) return COVER_BY_CATEGORY["宠物"];
-  if (/美食|探店/i.test(topic)) return COVER_BY_CATEGORY["美食"];
-  if (/职场|打工/i.test(topic)) return COVER_BY_CATEGORY["职场"];
-  if (/情感|共鸣/i.test(topic)) return COVER_BY_CATEGORY["情感"];
-  return DEFAULT_COVER_URL;
+function coverForItem(
+  id: string,
+  topic: string,
+  accountType: string,
+  label: string,
+  titleLines?: string[]
+): { coverImage: string; coverStyle: ShortVideoCoverStyle; coverPreset: ShortVideoCoverPreset } {
+  const coverStyle = inferCoverStyle(topic, accountType, label);
+  const lines = titleLines ?? [];
+  const coverPreset = coverPresetForTopic(topic || label, id, lines, label);
+  return {
+    coverImage: coverPreset.image,
+    coverStyle,
+    coverPreset,
+  };
 }
+
+function trendingPick(
+  id: string,
+  label: string,
+  topic: string,
+  rest: Omit<TrendingGeneration, "id" | "label" | "topic" | "coverImage" | "coverStyle" | "coverPreset">
+): TrendingGeneration {
+  const coverPreset = coverPresetForTopic(topic, id, [], label);
+  return {
+    id,
+    label,
+    topic,
+    ...rest,
+    coverImage: coverPreset.image,
+    coverStyle: coverPreset.style,
+    coverPreset,
+  };
+}
+
+/** 首页横滑「大家都在生成」— 封面图与 label 场景一致 */
+export const HOME_TRENDING_PICKS: TrendingGeneration[] = [
+  trendingPick("ht1", "情绪共鸣文案", "情绪共鸣治愈日常", {
+    emoji: "💬",
+    contentType: "共鸣",
+    accountType: "情感号",
+    style: "情绪共鸣",
+    platform: "抖音",
+    baseUsers: 12300,
+    grad: "",
+    chip: "",
+  }),
+  trendingPick("ht2", "下班vlog脚本", "下班后的治愈时刻", {
+    emoji: "🌆",
+    contentType: "vlog",
+    accountType: "治愈号",
+    style: "松弛",
+    platform: "抖音",
+    baseUsers: 8700,
+    grad: "",
+    chip: "",
+  }),
+  trendingPick("ht3", "宠物治愈文案", "猫咪治愈瞬间", {
+    emoji: "🐱",
+    contentType: "萌宠",
+    accountType: "宠物号",
+    style: "温柔",
+    platform: "小红书",
+    baseUsers: 7200,
+    grad: "",
+    chip: "",
+  }),
+  trendingPick("ht4", "美食探店脚本", "一人食探店", {
+    emoji: "🍜",
+    contentType: "探店",
+    accountType: "美食号",
+    style: "真实",
+    platform: "抖音",
+    baseUsers: 6100,
+    grad: "",
+    chip: "",
+  }),
+  trendingPick("ht5", "朋友圈种草文案", "朋友圈种草氛围桌面", {
+    emoji: "☕",
+    contentType: "种草",
+    accountType: "生活号",
+    style: "真实",
+    platform: "朋友圈",
+    baseUsers: 5300,
+    grad: "",
+    chip: "",
+  }),
+  trendingPick("ht6", "职场成长干货", "打工人效率提升", {
+    emoji: "💼",
+    contentType: "干货",
+    accountType: "职场号",
+    style: "实用",
+    platform: "抖音",
+    baseUsers: 4800,
+    grad: "",
+    chip: "",
+  }),
+];
 
 export const TRENDING_GENERATIONS: TrendingGeneration[] = [
   {
@@ -65,7 +161,10 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 12300,
     grad: "from-[#FF8EC4] to-[#FF5C8A]",
     chip: "刚刚有人在用",
-    coverImage: coverForTopic("情绪共鸣日常", "情感"),
+    ...coverForItem("t1", "情绪共鸣日常", "情感号", "情绪共鸣文案", [
+      "成年人的崩溃",
+      "都是安静的",
+    ]),
   },
   {
     id: "t2",
@@ -79,7 +178,10 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 8700,
     grad: "from-[#FFB86C] to-[#FF9A4D]",
     chip: "热度上升中",
-    coverImage: coverForTopic("下班后的治愈时刻", "治愈"),
+    ...coverForItem("t2", "下班后的治愈时刻", "治愈号", "下班vlog脚本", [
+      "下班后的1小时",
+      "才是真正属于自己的",
+    ]),
   },
   {
     id: "t3",
@@ -93,7 +195,10 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 7200,
     grad: "from-[#FFC46B] to-[#FF9A6B]",
     chip: "1小时+128人",
-    coverImage: coverForTopic("猫咪治愈瞬间", "宠物"),
+    ...coverForItem("t3", "猫咪治愈瞬间", "宠物号", "宠物治愈文案", [
+      "猫咪真的能",
+      "治愈情绪",
+    ]),
   },
   {
     id: "t4",
@@ -107,7 +212,7 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 6100,
     grad: "from-[#FF9EC4] to-[#FF7AAE]",
     chip: "种草向",
-    coverImage: coverForTopic("平价穿搭反差", "穿搭"),
+    ...coverForItem("t4", "平价穿搭反差", "穿搭号", "穿搭反差脚本"),
   },
   {
     id: "t5",
@@ -121,35 +226,44 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 5800,
     grad: "from-[#FFD4A8] to-[#FF9A4D]",
     chip: "本地生活",
-    coverImage: coverForTopic("一人食探店", "美食"),
+    ...coverForItem("t5", "一人食探店", "美食号", "美食探店脚本", [
+      "一人食火锅",
+      "也是治愈时刻",
+    ]),
   },
   {
     id: "t6",
-    label: "独处日常vlog",
-    emoji: "☕",
-    topic: "独处日常vlog",
-    contentType: "日常vlog",
+    label: "朋友圈种草文案",
+    emoji: "🌸",
+    topic: "朋友圈种草日常",
+    contentType: "种草文案",
     accountType: "生活号",
-    style: "松弛",
-    platform: "视频号",
-    baseUsers: 4900,
-    grad: "from-[#C4B5FD] to-[#FF7AAE]",
-    chip: "慢节奏",
-    coverImage: coverForTopic("独处日常vlog", "生活"),
+    style: "真实",
+    platform: "朋友圈",
+    baseUsers: 5300,
+    grad: "from-[#FDA4AF] to-[#FF4F8B]",
+    chip: "生活好物",
+    ...coverForItem("t6", "朋友圈种草", "生活号", "朋友圈种草文案", [
+      "周末桌面",
+      "氛围感摆拍",
+    ]),
   },
   {
     id: "t7",
-    label: "职场干货口播",
+    label: "职场成长干货",
     emoji: "💼",
     topic: "打工人效率提升",
     contentType: "干货口播",
     accountType: "职场号",
     style: "实用",
     platform: "抖音",
-    baseUsers: 4600,
+    baseUsers: 4800,
     grad: "from-[#93C5FD] to-[#6366F1]",
     chip: "收藏向",
-    coverImage: coverForTopic("打工人效率提升", "职场"),
+    ...coverForItem("t7", "打工人效率提升", "职场号", "职场成长干货", [
+      "打工人桌面",
+      "效率提升3招",
+    ]),
   },
   {
     id: "t8",
@@ -163,19 +277,27 @@ export const TRENDING_GENERATIONS: TrendingGeneration[] = [
     baseUsers: 4300,
     grad: "from-[#FDA4AF] to-[#FF4F8B]",
     chip: "图文向",
-    coverImage: coverForTopic("平价好物种草", "生活"),
+    ...coverForItem("t8", "平价好物种草", "生活号", "小红书种草笔记"),
   },
 ];
 
+/** 首页默认展示的标签（与效果图一致） */
+export const HOME_AI_SUGGEST_TAGS: AiSuggestTag[] = [
+  { id: "s1", label: "情绪共鸣", topic: "情绪共鸣日常", accountType: "情感号", style: "情绪共鸣", emoji: "💗", chipClass: "from-[#FFF0F5] to-[#FFE8F0] text-[#FF4F8B] ring-[#FFD0E8]" },
+  { id: "s2", label: "治愈向", topic: "下班后的治愈时刻", accountType: "治愈号", style: "松弛", emoji: "🌙", chipClass: "from-[#FAF5FF] to-[#F3E8FF] text-[#9333EA] ring-[#E9D5FF]" },
+  { id: "s3", label: "搞笑反转", topic: "打工人搞笑日常", accountType: "生活号", style: "搞笑", emoji: "😂", chipClass: "from-[#FFFBEB] to-[#FEF9C3] text-[#CA8A04] ring-[#FEF08A]" },
+  { id: "s4", label: "宠物萌趣", topic: "猫咪治愈瞬间", accountType: "宠物号", style: "温柔", emoji: "🐾", chipClass: "from-[#FFF7ED] to-[#FFEDD5] text-[#C2410C] ring-[#FED7AA]" },
+  { id: "s5", label: "下班vlog", topic: "下班vlog一人食", accountType: "生活号", style: "真实", emoji: "🏠", chipClass: "from-[#EFF6FF] to-[#DBEAFE] text-[#2563EB] ring-[#BFDBFE]" },
+  { id: "s6", label: "小红书种草", topic: "平价好物种草", accountType: "生活号", style: "真实", emoji: "🌸", chipClass: "from-[#FFF0F5] to-[#FFE4EC] text-[#BE185D] ring-[#FBCFE8]" },
+  { id: "a2", label: "探店美食", topic: "宝藏小店探店", accountType: "美食号", style: "真实", emoji: "🍲", chipClass: "from-[#FFF8F0] to-[#FFF3E8] text-[#FF9A4D] ring-[#FFE0C8]" },
+  { id: "a4", label: "穿搭种草", topic: "百元穿搭出片", accountType: "穿搭号", style: "高级", emoji: "👠", chipClass: "from-[#FFF0F5] to-[#FFE4EC] text-[#BE185D] ring-[#FBCFE8]" },
+];
+
 export const AI_SUGGEST_TAG_POOL: AiSuggestTag[] = [
-  { id: "s1", label: "情绪类", topic: "情绪共鸣日常", accountType: "情感号", style: "情绪共鸣", emoji: "💗", chipClass: "from-[#FFF0F5] to-[#FFE8F0] text-[#FF4F8B] ring-[#FFD0E8]" },
-  { id: "s2", label: "治愈类", topic: "下班后的治愈时刻", accountType: "治愈号", style: "松弛", emoji: "🌙", chipClass: "from-[#FFF8F0] to-[#FFF3E8] text-[#FF9A4D] ring-[#FFE0C8]" },
-  { id: "s3", label: "反差类", topic: "普通人30天改变", accountType: "成长号", style: "反差", emoji: "⚡", chipClass: "from-[#F5F3FF] to-[#EDE9FE] text-[#7C3AED] ring-[#DDD6FE]" },
-  { id: "s4", label: "宠物萌趣类", topic: "猫咪治愈瞬间", accountType: "宠物号", style: "温柔", emoji: "🐾", chipClass: "from-[#FFF7ED] to-[#FFEDD5] text-[#EA580C] ring-[#FED7AA]" },
-  { id: "s5", label: "下班vlog类", topic: "下班vlog一人食", accountType: "生活号", style: "真实", emoji: "🏠", chipClass: "from-[#ECFEFF] to-[#CFFAFE] text-[#0891B2] ring-[#A5F3FC]" },
-  { id: "s6", label: "小红书种草类", topic: "平价好物种草", accountType: "生活号", style: "真实", emoji: "🌸", chipClass: "from-[#FFF0F5] to-[#FFE4EC] text-[#DB2777] ring-[#FBCFE8]" },
+  ...HOME_AI_SUGGEST_TAGS,
+  { id: "s3x", label: "反差类", topic: "普通人30天改变", accountType: "成长号", style: "反差", emoji: "⚡", chipClass: "" },
   { id: "a1", label: "职场成长类", topic: "打工人逆袭故事", accountType: "职场号", style: "实用", emoji: "📈", chipClass: "from-[#EFF6FF] to-[#DBEAFE] text-[#2563EB] ring-[#BFDBFE]" },
-  { id: "a2", label: "美食探店类", topic: "宝藏小店探店", accountType: "美食号", style: "真实", emoji: "🍲", chipClass: "from-[#FFF7ED] to-[#FFEDD5] text-[#C2410C] ring-[#FED7AA]" },
+  { id: "a2b", label: "美食探店类", topic: "宝藏小店探店", accountType: "美食号", style: "真实", emoji: "🍲", chipClass: "from-[#FFF7ED] to-[#FFEDD5] text-[#C2410C] ring-[#FED7AA]" },
   { id: "a3", label: "学习打卡类", topic: "30天自律改变", accountType: "学生号", style: "实用", emoji: "📚", chipClass: "from-[#F0FDF4] to-[#DCFCE7] text-[#16A34A] ring-[#BBF7D0]" },
   { id: "a4", label: "穿搭种草类", topic: "百元穿搭出片", accountType: "穿搭号", style: "高级", emoji: "👠", chipClass: "from-[#FFF0F5] to-[#FFE4EC] text-[#BE185D] ring-[#FBCFE8]" },
   { id: "a5", label: "情感治愈类", topic: "一个人也要好好生活", accountType: "情感号", style: "温柔", emoji: "🫶", chipClass: "from-[#FFF0F5] to-[#FFE8F0] text-[#FF4F8B] ring-[#FFD0E8]" },
@@ -199,7 +321,10 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "8.2w",
     targetUsers: "情感号 · 生活号",
     grad: "from-[#FF8EC4] to-[#FF5C8A]",
-    coverImage: coverForTopic("一个人也要好好生活", "情感"),
+    ...coverForItem("c1", "一个人也要好好生活", "情感号", "情感号", [
+      "成年人的崩溃",
+      "都是安静的",
+    ]),
   },
   {
     id: "c2",
@@ -211,7 +336,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "6.5w",
     targetUsers: "宠物号 · 萌宠号",
     grad: "from-[#FFB86C] to-[#FF9A4D]",
-    coverImage: coverForTopic("猫咪治愈瞬间", "宠物"),
+    ...coverForItem("c2", "猫咪治愈瞬间", "宠物号", "宠物号", ["猫咪真的能", "治愈情绪"]),
   },
   {
     id: "c3",
@@ -223,7 +348,10 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "4.1w",
     targetUsers: "美食号 · 探店号",
     grad: "from-[#FF9EC4] to-[#FF7AAE]",
-    coverImage: coverForTopic("一人食探店", "美食"),
+    ...coverForItem("c3", "一人食探店", "美食号", "美食号", [
+      "深圳人下班",
+      "都吃什么",
+    ]),
   },
   {
     id: "c4",
@@ -235,7 +363,7 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "3.8w",
     targetUsers: "穿搭号 · 种草号",
     grad: "from-[#FFC46B] to-[#FF9A6B]",
-    coverImage: coverForTopic("平价穿搭反差", "穿搭"),
+    ...coverForItem("c4", "平价穿搭反差", "穿搭号", "穿搭号"),
   },
   {
     id: "c5",
@@ -247,8 +375,50 @@ export const SUCCESS_CASES: SuccessCase[] = [
     likes: "2.9w",
     targetUsers: "职场号 · 成长号",
     grad: "from-[#A78BFA] to-[#FF7AAE]",
-    coverImage: coverForTopic("打工人效率提升", "职场"),
+    ...coverForItem("c5", "打工人效率提升", "职场号", "职场号"),
   },
+];
+
+function showcaseCase(
+  id: string,
+  accountType: string,
+  title: string,
+  topic: string,
+  style: string,
+  views: string,
+  likes: string
+): SuccessCase {
+  const lines = titleLinesFromCardTitle(title);
+  const coverPreset = coverPresetForTopic(topic, id, lines, title);
+  return {
+    id,
+    accountType,
+    title,
+    topic,
+    style,
+    views,
+    likes,
+    targetUsers: accountType,
+    grad: "",
+    coverImage: coverPreset.image,
+    coverStyle: coverPreset.style,
+    coverPreset,
+  };
+}
+
+/** 首页「大家都在用」— 封面图 + 叠字与标题一致 */
+export const HOME_SHOWCASE_CASES: SuccessCase[] = [
+  showcaseCase(
+    "c1",
+    "情感号",
+    "成年人的崩溃都是安静的",
+    "成年人的崩溃都是安静的",
+    "情绪共鸣",
+    "3.2w",
+    "8.2w"
+  ),
+  showcaseCase("c2", "宠物号", "猫咪真的能治愈情绪", "猫咪治愈瞬间", "温柔", "5.6w", "6.5w"),
+  showcaseCase("c3", "美食号", "深圳人下班都吃什么", "深圳人下班都吃什么", "真实", "2.8w", "4.1w"),
 ];
 
 /** 刷新时随机增加人数，制造动态感 */

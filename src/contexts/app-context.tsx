@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { debouncedSaveJson } from "@/lib/debounce-storage";
+import { mockMomentsPack } from "@/lib/publish-pack/moments-result";
 import {
   MOCK_SMS_CODE,
   PLAN_QUOTA,
@@ -139,6 +140,9 @@ interface AppContextValue {
     hotTopicSummary?: string;
     hotTopicAngles?: string[];
     hotTopicTargetUsers?: string[];
+    inspirationRewriteOnly?: boolean;
+    momentsContentTypes?: string[];
+    momentsDirections?: string[];
   }) => Promise<{ result?: Record<string, unknown>; risk: RiskResult }>;
   generateViral: (
     title: string,
@@ -183,9 +187,7 @@ const smsState: Record<string, { lastSent: number; dayCount: number; failCount: 
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");
-  const [user, setUser] = useState<User | null>(() =>
-    typeof window !== "undefined" ? readUserLocal() : null
-  );
+  const [user, setUser] = useState<User | null>(null);
   const [histories, setHistories] = useState<HistoryItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tasks, setTasks] = useState<VideoTask[]>([]);
@@ -635,10 +637,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hotTopicSummary?: string;
       hotTopicAngles?: string[];
       hotTopicTargetUsers?: string[];
+      momentsContentTypes?: string[];
+      momentsDirections?: string[];
+      inspirationRewriteOnly?: boolean;
     }) => {
       const topic = input.topic.trim();
       const quotaAction = input.quotaAction ?? "publish_pack";
-      const historyLabel = quotaAction === "hot_topic_pack" ? "爆品内容包" : "完整发布包";
+      const historyLabel =
+        quotaAction === "hot_topic_pack"
+          ? "爆品内容包"
+          : input.platform === "朋友圈"
+            ? "朋友圈文案"
+            : "完整发布包";
       const risk = checkContentRisk(topic);
       addRiskRecord(historyLabel, topic, risk);
       if (!canGenerate(risk.level)) {
@@ -663,6 +673,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           hotTopicSummary: input.hotTopicSummary,
           hotTopicAngles: input.hotTopicAngles,
           hotTopicTargetUsers: input.hotTopicTargetUsers,
+          momentsContentTypes: input.momentsContentTypes,
+          momentsDirections: input.momentsDirections,
+          inspirationRewriteOnly: input.inspirationRewriteOnly,
         });
         if (res.error) {
           if (res.error === "quota_insufficient") openQuotaModal();
@@ -680,14 +693,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { risk: res.risk ?? risk };
       }
 
-      const pack = mockPublishPack({
-        topic,
-        platform: input.platform,
-        track: input.track,
-        goal: input.goal,
-        style: input.style,
-        withXhs: input.withXhs,
-      });
+      const pack =
+        input.platform === "朋友圈"
+          ? mockMomentsPack({
+              topic,
+              contentTypes: input.momentsContentTypes,
+              directions: input.momentsDirections,
+              extraNote: input.extraNote,
+            })
+          : mockPublishPack({
+              topic,
+              platform: input.platform,
+              track: input.track,
+              goal: input.goal,
+              style: input.style,
+              withXhs: input.withXhs,
+            });
       deductQuota(quotaAction, historyLabel);
       addHistory(historyLabel, topic, pack as Record<string, unknown>);
       return { result: pack as Record<string, unknown>, risk };
