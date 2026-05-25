@@ -2,7 +2,7 @@
 
 /**
  * 首页奶油风轮播
- * 顺序：① 多平台发片 ② 邀请好友 ③ 开通 Pro（免费）/ 仅两屏（已会员）
+ * 顺序：① 多平台发片 ② 1分钟发布包 ③ 邀请好友 ④ 开通 Pro（仅免费用户）
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,12 +14,13 @@ import {
   bannerTitleLines,
   CreamBannerSlide,
 } from "@/components/home/cream-banner-slide";
+import { HomePublishPackCarouselSlide } from "@/components/home/home-publish-pack-entry";
 import { PLAN_QUOTA, PRODUCTS } from "@/lib/constants/v1";
 import { cn } from "@/lib/utils";
 
 const INTERVAL_MS = 5000;
 
-type SlideId = "creator" | "invite" | "member";
+type SlideId = "creator" | "publishPack" | "invite" | "member";
 
 /** 轮播动图未上传时用 CSS 插画，避免 404 */
 const MOTION: Partial<Record<SlideId, string>> = {
@@ -28,6 +29,8 @@ const MOTION: Partial<Record<SlideId, string>> = {
 
 const GRADIENTS: Record<SlideId, string> = {
   creator: "from-[#FF4D6D] via-[#FF6B8A] to-[#FFB347]",
+  /** 发布包屏：紫粉→珊瑚，突出核心功能 */
+  publishPack: "from-[#A855F7] via-[#EC4899] to-[#FF6B8A]",
   /** 邀请屏：暖金→蜜桃粉，与项目粉橙主色一致，略偏礼物感 */
   invite: "from-[#FFC46B] via-[#FF8FAB] to-[#FF4F8B]",
   member: "from-[#FFB347] via-[#FF6B8A] to-[#FF5C7A]",
@@ -64,10 +67,11 @@ export function HomeCreamCarousel() {
   const [inviteOpen, setInviteOpen] = useState(false);
 
   const showMemberSlide = user == null || user.plan === "free";
-  const slides = useMemo<SlideId[]>(
-    () => (showMemberSlide ? ["creator", "invite", "member"] : ["creator", "invite"]),
-    [showMemberSlide]
-  );
+  const slides = useMemo<SlideId[]>(() => {
+    const base: SlideId[] = ["creator", "publishPack", "invite"];
+    if (showMemberSlide) base.push("member");
+    return base;
+  }, [showMemberSlide]);
   const slidesKey = slides.join("-");
 
   useEffect(() => {
@@ -124,6 +128,12 @@ export function HomeCreamCarousel() {
               perkChips={[tr("bannerCreatorPerk1"), tr("bannerCreatorPerk2")]}
               withDailyTicker
             />
+          </BannerSlideShell>
+        );
+      case "publishPack":
+        return (
+          <BannerSlideShell gradient={GRADIENTS.publishPack}>
+            <HomePublishPackCarouselSlide />
           </BannerSlideShell>
         );
       case "invite":
