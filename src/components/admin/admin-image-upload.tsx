@@ -29,6 +29,15 @@ function uploadErrorMessage(error?: string): string {
     case "storage_upload_failed":
       return "云存储上传失败，请确认 Supabase Storage 桶 uploads 已设为 Public";
     default:
+      if (error?.startsWith("supabase_bucket:")) {
+        return `存储桶创建失败：${error.replace("supabase_bucket:", "")}`;
+      }
+      if (error?.startsWith("supabase_storage:")) {
+        return `云存储：${error.replace("supabase_storage:", "")}`;
+      }
+      if (error?.startsWith("supabase_bucket_missing:")) {
+        return `存储桶不存在：${error.split(":").slice(1).join(":")}`;
+      }
       return error ? `上传失败：${error}` : "上传失败，请重试";
   }
 }

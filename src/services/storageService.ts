@@ -10,6 +10,7 @@ import {
   isSupportedAdminImageMime,
   sniffImageMime,
 } from "@/lib/media/sniff-image-mime";
+import { ensureSupabaseUploadsBucket } from "@/lib/supabase/ensure-uploads-bucket";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export type StorageUploadResult = {
@@ -98,12 +99,18 @@ async function uploadToSupabaseStorage(
   const bucket = getSupabaseStorageBucket();
   const objectKey = key.replace(/^\/+/, "");
 
+  await ensureSupabaseUploadsBucket(db, bucket);
+
   const { error } = await db.storage.from(bucket).upload(objectKey, buffer, {
     contentType,
     upsert: true,
     cacheControl: "public, max-age=31536000, immutable",
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const hint =
+      /not found|does not exist/i.test(error.message) ? "supabase_bucket_missing" : "";
+    throw new Error(hint ? `${hint}:${error.message}` : `supabase_storage:${error.message}`);
+  }
 
   const { data } = db.storage.from(bucket).getPublicUrl(objectKey);
   const publicUrl = data.publicUrl;
@@ -143,7 +150,8 @@ export async function uploadImageBuffer(
     } catch (e) {
       console.warn("[storageService] Supabase Storage upload failed:", e);
       if (!canWriteLocalPublicDir()) {
-        throw new Error("storage_upload_failed");
+        const detail = e instanceof Error ? e.message : "storage_upload_failed";
+        throw new Error(detail);
       }
     }
   }

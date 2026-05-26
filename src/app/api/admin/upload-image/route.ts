@@ -66,14 +66,14 @@ export async function POST(req: Request) {
                 : /ENOENT|read-only|EROFS/i.test(msg)
                   ? 503
                   : 500;
-        const error =
-          msg === "storage_not_configured" ||
-          /ENOENT|read-only|EROFS/i.test(msg)
-            ? "storage_not_configured"
-            : msg === "storage_upload_failed"
-              ? "storage_upload_failed"
-              : msg;
-        return NextResponse.json({ error }, { status });
+        let error = msg;
+        if (/ENOENT|read-only|EROFS/i.test(msg)) error = "storage_not_configured";
+        else if (msg.startsWith("supabase_bucket:") || msg.startsWith("supabase_storage:")) {
+          error = msg;
+        } else if (msg === "storage_upload_failed" || msg.startsWith("supabase_bucket_missing")) {
+          error = "storage_upload_failed";
+        }
+        return NextResponse.json({ error, detail: msg !== error ? msg : undefined }, { status });
       }
     },
     { ipLimit: 20 }
