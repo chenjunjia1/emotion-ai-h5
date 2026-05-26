@@ -2,6 +2,7 @@ import type { HomeCuratedPick } from "@/lib/content/home-curated-picks";
 import { HOME_INSPIRATION_TOP3, buildHomePickHref } from "@/lib/content/home-curated-picks";
 import { coverPresetForTopic } from "@/lib/content/scene-cover-presets";
 import { assignUniqueCoverPresets } from "@/lib/content/unique-topic-covers";
+import { resolvePublicCoverUrl } from "@/lib/media/normalize-cover-url";
 import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
 import { pickHomeTop3Notes } from "@/lib/xhs/home-top3-picks";
 import { formatXhsCount } from "@/lib/xhs/xhs-feed-filters";
@@ -21,7 +22,7 @@ function mapXhsNoteToPick(note: XhsHotNote): HomeCuratedPick {
     heatValue: formatXhsCount(note.likedCount),
     viralScore,
     coverPreset: coverPresetForTopic(copy.headline, note.noteId, [], note.category),
-    coverImageUrl: note.images[0],
+    coverImageUrl: resolvePublicCoverUrl(note.images[0]),
     xhsNoteId: note.noteId,
     xhsCategory: note.category,
     xhsAngle: copy.angle,

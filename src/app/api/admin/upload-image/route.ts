@@ -44,10 +44,14 @@ export async function POST(req: Request) {
           "admin_panel"
         );
 
+        const persistUrl = result.storageUrl.startsWith("/")
+          ? result.storageUrl
+          : result.cdnUrl;
+
         return NextResponse.json({
           ok: true,
-          url: result.cdnUrl,
-          path: result.cdnUrl.startsWith("http") ? undefined : result.cdnUrl,
+          url: persistUrl,
+          path: result.storageUrl,
           key: result.key,
         });
       } catch (e) {

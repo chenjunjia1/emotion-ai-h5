@@ -1,4 +1,5 @@
 import type { XhsHotNote } from "@/lib/xhs/types";
+import { normalizeXhsNoteImages } from "@/lib/media/normalize-cover-url";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export function todayDateKey(): string {
@@ -18,7 +19,7 @@ export async function getXhsHotNotesFromDb(
     .maybeSingle();
 
   if (error || !data?.notes || !Array.isArray(data.notes)) return null;
-  const notes = data.notes as XhsHotNote[];
+  const notes = normalizeXhsNoteImages(data.notes as XhsHotNote[]);
   if (!notes.length) return null;
 
   return {
@@ -34,10 +35,12 @@ export async function saveXhsHotNotesToDb(
   const db = getSupabaseAdmin();
   if (!db) return { ok: false, error: "no_db" };
 
+  const normalized = normalizeXhsNoteImages(notes);
+
   const { error } = await db.from("xhs_hot_notes_daily").upsert(
     {
       topic_date: dateKey,
-      notes,
+      notes: normalized,
       note_count: notes.length,
       fetched_at: new Date().toISOString(),
     },

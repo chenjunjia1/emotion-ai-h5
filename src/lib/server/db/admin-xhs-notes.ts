@@ -4,6 +4,7 @@ import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
 import { filterXhsNotesByTab } from "@/lib/xhs/xhs-feed-filters";
 import type { XhsFeedTab } from "@/lib/xhs/xhs-page-tabs";
 import { XHS_FEED_TABS } from "@/lib/xhs/xhs-page-tabs";
+import { normalizeXhsNoteImages } from "@/lib/media/normalize-cover-url";
 import type { XhsHotNote, XhsNoteCategory } from "@/lib/xhs/types";
 
 function todayDateKey(): string {
@@ -143,7 +144,8 @@ export async function getXhsNotesForAdmin(
     return null;
   }
 
-  const notes = Array.isArray(data?.notes) ? (data.notes as XhsHotNote[]) : [];
+  const raw = Array.isArray(data?.notes) ? (data.notes as XhsHotNote[]) : [];
+  const notes = normalizeXhsNoteImages(raw);
   return {
     dateKey: String(data?.topic_date ?? dateKey),
     notes,
@@ -158,10 +160,12 @@ export async function saveXhsNotesForAdmin(
   const db = getSupabaseAdmin();
   if (!db) return { ok: false, error: "no_db" };
 
+  const normalized = normalizeXhsNoteImages(notes);
+
   const { error } = await db.from("xhs_hot_notes_daily").upsert(
     {
       topic_date: dateKey,
-      notes,
+      notes: normalized,
       note_count: notes.length,
       fetched_at: new Date().toISOString(),
     },

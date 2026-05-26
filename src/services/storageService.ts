@@ -34,10 +34,12 @@ function localFallback(buffer: Buffer, storageKey: string): StorageUploadResult 
   if (!existsSync(filePath)) writeFileSync(filePath, buffer);
   const path = `/generated/${filename}`;
   const base = getCdnBase().replace(/\/$/, "");
+  // 写入 Supabase 时只用相对路径，避免 localhost 污染生产库
+  const cdnUrl = base && !/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(base) ? `${base}${path}` : path;
   return {
     key: storageKey,
     storageUrl: path,
-    cdnUrl: base ? `${base}${path}` : path,
+    cdnUrl,
   };
 }
 
