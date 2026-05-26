@@ -19,12 +19,10 @@ export type StorageUploadResult = {
   key: string;
 };
 
+/** 仅真实 CDN 域名；勿用 NEXT_PUBLIC_APP_URL（主站不提供 /hot-topics/covers 静态文件） */
 function getCdnBase(): string {
   return (
-    process.env.CDN_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_CDN_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    ""
+    process.env.CDN_BASE_URL?.trim() || process.env.NEXT_PUBLIC_CDN_BASE_URL?.trim() || ""
   );
 }
 
@@ -172,7 +170,7 @@ export function extFromMime(mime: string): string {
   return "jpg";
 }
 
-/** 管理后台相册上传（热点封面等） */
+/** 管理后台相册上传（热点封面）— 固定走 Supabase，避免 COS/主站域名假 URL */
 export async function uploadAdminImageFile(
   buffer: Buffer,
   mime: string,
@@ -190,11 +188,25 @@ export async function uploadAdminImageFile(
     throw new Error("unsupported_type");
   }
   const ext = extFromMime(normalized);
-  return uploadImageBuffer(buffer, {
-    keyPrefix: opts?.keyPrefix ?? "admin/covers",
-    ext,
-    contentType: normalized,
-  });
+  const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 16);
+  const key = `${opts?.keyPrefix ?? "hot-topics/covers"}/${Date.now()}-${hash}.${ext}`;
+
+  if (isSupabaseStorageConfigured()) {
+    try {
+      return await uploadToSupabaseStorage(buffer, key, normalized);
+    } catch (e) {
+      console.warn("[storageService] admin Supabase upload failed:", e);
+      if (!canWriteLocalPublicDir()) {
+        throw e instanceof Error ? e : new Error("storage_upload_failed");
+      }
+    }
+  }
+
+  if (!canWriteLocalPublicDir()) {
+    throw new Error("supabase_not_configured");
+  }
+
+  return localFallback(buffer, key);
 }
 
 export async function uploadFromUrl(

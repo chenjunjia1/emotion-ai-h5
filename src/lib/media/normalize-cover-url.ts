@@ -47,21 +47,13 @@ function isLocalDevOrigin(): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(window.location.origin);
 }
 
-/** 误把 CDN_BASE 拼到本站域名、实际未上传的文件 */
-function isBrokenAppCoverUrl(url: string): boolean {
-  try {
-    const { pathname } = new URL(url);
-    return /^\/hot-topics\/covers\//.test(pathname);
-  } catch {
-    return false;
-  }
-}
+import { isFakeSiteCdnCoverUrl } from "@/lib/media/pick-cover-persist-url";
 
 /** 用户端展示用：dev-only 或无效则返回 undefined，触发 Pexels / 预设兜底 */
 export function resolvePublicCoverUrl(url: string | undefined): string | undefined {
   if (!url?.trim()) return undefined;
   if (isDevOnlyCoverUrl(url)) return undefined;
-  if (isBrokenAppCoverUrl(url)) return undefined;
+  if (isFakeSiteCdnCoverUrl(url)) return undefined;
   const normalized = normalizeStoredCoverUrl(url);
   if (
     normalized &&

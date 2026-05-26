@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAdminRoute } from "@/lib/server/admin-route";
 import { logAdminAction } from "@/lib/server/db/admin";
+import { pickAdminCoverPersistUrl } from "@/lib/media/pick-cover-persist-url";
 import { uploadAdminImageFile } from "@/services/storageService";
 
 export const runtime = "nodejs";
@@ -44,11 +45,7 @@ export async function POST(req: Request) {
           "admin_panel"
         );
 
-        const persistUrl = result.storageUrl.startsWith("http")
-          ? result.storageUrl
-          : result.storageUrl.startsWith("/")
-            ? result.storageUrl
-            : result.cdnUrl;
+        const persistUrl = pickAdminCoverPersistUrl(result);
 
         return NextResponse.json({
           ok: true,
@@ -58,6 +55,15 @@ export async function POST(req: Request) {
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "upload_failed";
+        if (msg === "invalid_cover_url") {
+          return NextResponse.json(
+            {
+              error: "invalid_cover_url",
+              detail: "未获得 Supabase 公网地址，请检查 Vercel 的 SUPABASE_SERVICE_ROLE_KEY",
+            },
+            { status: 503 }
+          );
+        }
         const status =
           msg === "unsupported_type"
             ? 415

@@ -28,6 +28,8 @@ function uploadErrorMessage(error?: string): string {
       return "Vercel 未配置 SUPABASE_SERVICE_ROLE_KEY，请在项目 Environment 添加后 Redeploy";
     case "storage_not_configured":
       return "线上无法写本地目录，请在 Supabase 创建公开桶 uploads（或配置 COS）";
+    case "invalid_cover_url":
+      return "未生成有效封面地址，请确认 Vercel 已配置 SUPABASE_SERVICE_ROLE_KEY 并 Redeploy";
     case "storage_upload_failed":
       return "云存储上传失败，请确认 Supabase Storage 桶 uploads 已设为 Public";
     default:
