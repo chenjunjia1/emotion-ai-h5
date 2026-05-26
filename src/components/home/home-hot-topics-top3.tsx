@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Flame } from "lucide-react";
 import { HotTopicPexelsCover } from "@/components/hot-topics/hot-topic-pexels-cover";
 import { useHotTopicPexelsCovers } from "@/components/hot-topics/use-hot-topic-pexels-covers";
+import { ShortVideoCover } from "@/components/ui/short-video-cover";
+import { xhsCoverDisplayUrl } from "@/lib/xhs/xhs-cover-url";
 import { useApp } from "@/contexts/app-context";
 import type { HomeCuratedPick } from "@/lib/content/home-curated-picks";
 import {
@@ -55,6 +57,8 @@ function Top3Skeleton() {
   );
 }
 
+type CoverStage = "remote" | "pexels" | "preset";
+
 function Top3Cover({
   pick,
   pexelsUrl,
@@ -64,25 +68,49 @@ function Top3Cover({
   pexelsUrl: TopicCoverImage | null | undefined;
   priority?: boolean;
 }) {
-  if (pick.coverImageUrl) {
+  const remoteSrc = xhsCoverDisplayUrl(pick.coverImageUrl);
+  const [stage, setStage] = useState<CoverStage>(() =>
+    remoteSrc ? "remote" : pexelsUrl?.imageUrl ? "pexels" : "preset"
+  );
+
+  useEffect(() => {
+    setStage(remoteSrc ? "remote" : pexelsUrl?.imageUrl ? "pexels" : "preset");
+  }, [pick.id, remoteSrc, pexelsUrl?.imageUrl]);
+
+  if (stage === "remote" && remoteSrc) {
+    const isLocal = remoteSrc.startsWith("/") && !remoteSrc.startsWith("/api/xhs/");
     return (
       <img
-        src={pick.coverImageUrl}
+        src={remoteSrc}
         alt=""
         className="h-full w-full object-cover transition duration-300 group-active:scale-[1.03]"
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         draggable={false}
-        referrerPolicy="no-referrer"
+        referrerPolicy={isLocal ? undefined : "no-referrer"}
+        onError={() => setStage(pexelsUrl?.imageUrl ? "pexels" : "preset")}
       />
     );
   }
+
+  if (stage === "pexels" && pexelsUrl?.imageUrl) {
+    return (
+      <HotTopicPexelsCover
+        cover={pexelsUrl}
+        title={pick.title}
+        fill
+        showCredit={false}
+        priority={priority}
+        className="transition duration-300 group-active:scale-[1.03]"
+        onFailed={() => setStage("preset")}
+      />
+    );
+  }
+
   return (
-    <HotTopicPexelsCover
-      cover={pexelsUrl ?? null}
-      title={pick.title}
+    <ShortVideoCover
+      preset={pick.coverPreset}
       fill
-      showCredit={false}
       priority={priority}
       className="transition duration-300 group-active:scale-[1.03]"
     />
@@ -99,13 +127,11 @@ export function HomeHotTopicsTop3() {
 
   const pexelsItems = useMemo(
     () =>
-      picks
-        .filter((p) => !p.coverImageUrl)
-        .map((p) => ({
-          id: p.id,
-          title: p.title,
-          category: p.accountType.replace(/号$/u, ""),
-        })),
+      picks.map((p) => ({
+        id: p.id,
+        title: p.title,
+        category: p.accountType.replace(/号$/u, ""),
+      })),
     [picks]
   );
   const { covers: pexelsCovers } = useHotTopicPexelsCovers(pexelsItems);

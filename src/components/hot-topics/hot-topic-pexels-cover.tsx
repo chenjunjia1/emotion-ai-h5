@@ -12,6 +12,7 @@ export function HotTopicPexelsCover({
   size = 96,
   fill = false,
   showCredit = true,
+  onFailed,
 }: {
   cover: TopicCoverImage | null;
   title: string;
@@ -22,6 +23,7 @@ export function HotTopicPexelsCover({
   fill?: boolean;
   /** 是否显示摄影师署名（TOP3 叠字时可关） */
   showCredit?: boolean;
+  onFailed?: () => void;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -60,6 +62,7 @@ export function HotTopicPexelsCover({
           onError={() => {
             setError(true);
             setLoaded(true);
+            onFailed?.();
           }}
         />
       ) : null}

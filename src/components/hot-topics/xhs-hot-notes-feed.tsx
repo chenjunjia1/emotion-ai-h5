@@ -13,6 +13,7 @@ import { filterXhsNotesByTab, formatXhsCount } from "@/lib/xhs/xhs-client-api";
 import { formatXhsVibeLabel } from "@/lib/xhs/xhs-vibe-labels";
 import { buildXhsCardCopy, buildMomentsCardCopy } from "@/lib/xhs/xhs-display-copy";
 import { FEATURE_LIMITS } from "@/lib/v1/plan-limits";
+import { xhsCoverDisplayUrl } from "@/lib/xhs/xhs-cover-url";
 import { cn } from "@/lib/utils";
 
 function buildRewriteHref(note: XhsHotNote, tab: XhsFeedTab): string {
@@ -47,14 +48,16 @@ function XhsNoteCard({
   tab: XhsFeedTab;
 }) {
   const router = useRouter();
-  const cover = note.images[0];
+  const cover = xhsCoverDisplayUrl(note.images[0]);
   const isMoments = tab === "moments";
   const isLife = tab === "life";
   const isWeekend = tab === "weekend";
   const isFashion = tab === "fashion";
   const isWork = tab === "work";
   const copy = isMoments ? buildMomentsCardCopy(note) : buildXhsCardCopy(note);
-  const isLocalCover = Boolean(cover?.startsWith("/"));
+  const isLocalCover = Boolean(
+    cover?.startsWith("/") && !cover.startsWith("/api/xhs/")
+  );
 
   const vibeBadge = isMoments
     ? "朋友圈体"
