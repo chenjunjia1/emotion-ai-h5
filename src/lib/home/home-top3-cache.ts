@@ -180,23 +180,28 @@ export function loadHomeTop3(
 
 
 
-/** 仅用于开发自测 */
-
-export function resetHomeTop3CacheForTest(): void {
-
+/** 运营后台改热点后调用，使首页 TOP3 重新拉库（用户端靠 dataRevision + 后台刷新） */
+export function invalidateHomeTop3Cache(): void {
   cachedPicks = null;
-
   cachedAt = 0;
-
   inflight = null;
-
-  hasShownEnterAnim = false;
-
   if (typeof window !== "undefined") {
-
-    sessionStorage.removeItem(STORAGE_KEY);
-
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
+}
 
+/** 仅用于开发自测 */
+export function resetHomeTop3CacheForTest(): void {
+  cachedPicks = null;
+  cachedAt = 0;
+  inflight = null;
+  hasShownEnterAnim = false;
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem(STORAGE_KEY);
+  }
 }
 

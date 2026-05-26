@@ -2,38 +2,48 @@ import type { PlanType, ProductDef } from "../types/v1";
 
 export type MembershipPlan = Exclude<PlanType, "free">;
 
-/** 会员页展示文案：卖点 + 权益（与订单 desc 分离，避免功能罗列感） */
+/** 会员订阅页仅展示三档月卡（不含年卡） */
+export const MEMBERSHIP_TIER_PRODUCT_NAMES = [
+  "Pro会员 30天",
+  "高级会员 30天",
+  "工作室版 30天",
+] as const;
+
+/** 会员页展示文案：钩子 + 权益 + CTA（与订单 desc 分离） */
 export const MEMBERSHIP_MARKETING: Record<
   MembershipPlan,
-  { tagline: string; perks: string[]; forWho: string }
+  { hook: string; perks: string[]; forWho: string; cta: string; dailyHint?: string }
 > = {
   pro: {
-    tagline: "天天发得出去，每日 200 灵感够用",
+    hook: "把「今天发什么」交给我们，你只管轻松更新",
     perks: [
-      "快速文案不限次 · 高级图文包 9 折",
-      "高级图文 1 张约 72 灵感（原价 80）",
-      "热点无限查看 + AI 运营顾问每天 50 次",
-      "内容复盘、内容库无限保存",
+      "每日 200 灵感自动补充，节奏更从容",
+      "快速文案随心用，高级图文享 9 折",
+      "热点与 AI 助手，随时帮你理清思路",
     ],
-    forWho: "适合：想日更起号的个人创作者",
+    forWho: "适合 · 希望稳定更新的个人创作者",
+    cta: "¥39 开启 Pro 月卡",
+    dailyHint: "约 ¥1.3/天",
   },
   premium: {
-    tagline: "不只帮你发，还帮你想清楚下一步",
+    hook: "稳步成长路上，有人帮你看方向、排内容",
     perks: [
-      "灵感约为 Pro 3 倍，连续周更、多平台试错都够用",
-      "专属账号方案 + 7 天内容排期，少踩坑、少空转",
-      "深度复盘看懂数据，下一轮选题更准",
+      "7 天内容排期，账号方向更清晰",
+      "温柔复盘，看懂哪条值得继续发",
+      "高级图文更省灵感，周更可以慢慢试",
     ],
-    forWho: "适合：认真做号、要稳定增长的内容主",
+    forWho: "适合 · 认真经营账号、想稳步成长的你",
+    cta: "¥99 了解高级会员",
   },
   studio: {
-    tagline: "多号高频也不慌，团队按量创作",
+    hook: "多账号、多人协作时，灵感与工具都陪着你",
     perks: [
-      "每日 500 灵感，支撑多账号日更 + 大批量试稿",
-      "发布包、爆品、复盘不受个人档节奏限制",
-      "代运营 / 工作室效率拉满，灵感按结果扣",
+      "每日 500 灵感，多账号也能从容发",
+      "发布包 / 热点 / 复盘，团队一起用",
+      "按结果扣灵感，创作心里更有底",
     ],
-    forWho: "适合：MCN、代运营、同时带多个号",
+    forWho: "适合 · 多账号团队与代运营伙伴",
+    cta: "¥299 开启工作室版",
   },
 };
 
@@ -119,13 +129,6 @@ export const PRODUCTS: ProductDef[] = [
   },
   {
     productType: "quota_pack",
-    productName: "灵感加油包 20点",
-    amount: 3.9,
-    bonusQuota: 20,
-    desc: "一次性充值20点奖励灵感，不过期",
-  },
-  {
-    productType: "quota_pack",
     productName: "灵感加油包 50点",
     amount: 9.9,
     bonusQuota: 50,
@@ -136,21 +139,7 @@ export const PRODUCTS: ProductDef[] = [
     productName: "灵感加油包 120点",
     amount: 19.9,
     bonusQuota: 120,
-    desc: "一次性充值120点奖励灵感，不过期",
-  },
-  {
-    productType: "quota_pack",
-    productName: "灵感加油包 200点",
-    amount: 29,
-    bonusQuota: 200,
-    desc: "一次性充值200点奖励灵感，不过期",
-  },
-  {
-    productType: "quota_pack",
-    productName: "灵感加油包 300点",
-    amount: 49,
-    bonusQuota: 300,
-    desc: "一次性充值300点奖励灵感，不过期",
+    desc: "一次性充值120点奖励灵感，不过期 · 更划算",
   },
 ];
 

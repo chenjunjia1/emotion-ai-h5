@@ -13,7 +13,11 @@ export async function POST(req: Request) {
       let formData: FormData;
       try {
         formData = await req.formData();
-      } catch {
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (/body|size|limit|10mb|form/i.test(msg)) {
+          return NextResponse.json({ error: "body_too_large" }, { status: 413 });
+        }
         return NextResponse.json({ error: "invalid_form" }, { status: 400 });
       }
 
@@ -49,11 +53,7 @@ export async function POST(req: Request) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "upload_failed";
         const status =
-          msg === "image_too_large"
-            ? 413
-            : msg === "unsupported_type"
-              ? 415
-              : 500;
+          msg === "unsupported_type" ? 415 : msg === "body_too_large" ? 413 : 500;
         return NextResponse.json({ error: msg }, { status });
       }
     },

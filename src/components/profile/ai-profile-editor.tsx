@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { PartnerAvatarArt } from "@/components/onboarding/partner-avatar-art";
 import { PartnerAvatarPicker } from "@/components/onboarding/partner-avatar-picker";
+import { ProfileAvatarUpload } from "@/components/profile/profile-avatar-upload";
 import {
   AI_PARTNER_AVATARS,
   ONBOARDING_TRACKS,
@@ -38,6 +39,9 @@ export function AiProfileEditor({
   const [trackId, setTrackId] = useState<OnboardingTrackId>(
     initialProfile?.trackIds?.[0] ?? "love"
   );
+  const [customAvatarUrl, setCustomAvatarUrl] = useState<string | undefined>(
+    initialProfile?.customAvatarUrl
+  );
 
   const avatar = useMemo(
     () => AI_PARTNER_AVATARS.find((a) => a.id === avatarId) ?? AI_PARTNER_AVATARS[0],
@@ -69,6 +73,7 @@ export function AiProfileEditor({
       avatarId,
       trackIds: [trackId],
       completedAt: initialProfile?.completedAt ?? new Date().toISOString(),
+      ...(customAvatarUrl ? { customAvatarUrl } : {}),
     });
   };
 
@@ -132,9 +137,28 @@ export function AiProfileEditor({
 
       <div className="pt-1">
         <h2 className="text-sm font-black text-slate-800">{tr("onboardingAvatarTitle")}</h2>
-        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{tr("onboardingAvatarSub")}</p>
-        <div className="mt-4">
-          <PartnerAvatarPicker value={avatarId} onChange={setAvatarId} />
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{tr("profileAvatarUploadSectionSub")}</p>
+        <div className="mt-4 rounded-2xl bg-[#FFFBF8] px-3 py-4 ring-1 ring-[#FFE8F0]">
+          <ProfileAvatarUpload
+            avatarId={avatarId}
+            customAvatarUrl={customAvatarUrl}
+            onCustomAvatarChange={setCustomAvatarUrl}
+            onClearCustom={() => setCustomAvatarUrl(undefined)}
+            tr={tr}
+            onError={onInvalid}
+          />
+        </div>
+        <p className="mt-4 text-center text-[10px] font-bold text-slate-400">
+          {tr("profileAvatarOrPreset")}
+        </p>
+        <div className="mt-2">
+          <PartnerAvatarPicker
+            value={avatarId}
+            onChange={(id) => {
+              setAvatarId(id);
+              setCustomAvatarUrl(undefined);
+            }}
+          />
         </div>
         <p className="mt-3 text-center text-[11px] text-slate-500">
           <span className="font-bold text-slate-700">{avatar.name}</span>
@@ -146,7 +170,16 @@ export function AiProfileEditor({
 
       <div className="rounded-2xl bg-gradient-to-br from-[#FFF0F5] to-orange-50/90 p-3.5 ring-1 ring-[#FF7AAE]/15">
         <div className="flex items-center gap-3">
-          <PartnerAvatarArt id={avatarId} size="md" className="h-12 w-12 shrink-0 ring-2 ring-white" />
+          {customAvatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={customAvatarUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white"
+            />
+          ) : (
+            <PartnerAvatarArt id={avatarId} size="md" className="h-12 w-12 shrink-0 ring-2 ring-white" />
+          )}
           <div className="min-w-0">
             <p className="text-[10px] font-bold text-[#FF7AAE]">{tr("onboardingPreviewTitle")}</p>
             <p className="mt-0.5 text-[10px] text-slate-500">

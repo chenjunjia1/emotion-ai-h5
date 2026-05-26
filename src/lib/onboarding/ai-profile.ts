@@ -16,6 +16,8 @@ export interface AiProfile {
   avatarId: AiAvatarId;
   trackIds: OnboardingTrackId[];
   completedAt: string;
+  /** 用户上传头像（JPEG data URL，仅存本地） */
+  customAvatarUrl?: string;
 }
 
 function storageKey(userId: string) {
@@ -33,7 +35,11 @@ export function loadAiProfile(userId: string): AiProfile | null {
       rawTracks.length > 0
         ? rawTracks.map((id) => normalizeTrackId(String(id)))
         : ["love"];
-    return { ...p, avatarId: normalizeAvatarId(p.avatarId), trackIds };
+    const customAvatarUrl =
+      typeof p.customAvatarUrl === "string" && p.customAvatarUrl.startsWith("data:image/")
+        ? p.customAvatarUrl
+        : undefined;
+    return { ...p, avatarId: normalizeAvatarId(p.avatarId), trackIds, customAvatarUrl };
   } catch {
     return null;
   }

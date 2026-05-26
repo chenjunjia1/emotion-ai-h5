@@ -103,7 +103,7 @@ export async function GET(req: Request) {
     if (!process.env.TIKHUB_API_KEY?.trim()) {
       result.xhsHotNotes = { skipped: true, reason: "no_tikhub_key" };
     } else {
-      const xhs = await aggregateXhsHotNotes({ force: true, dateKey });
+      const xhs = await aggregateXhsHotNotes({ refreshTikhub: true, dateKey });
       result.xhsHotNotes = {
         count: xhs.notes.length,
         source: xhs.source,

@@ -6,6 +6,7 @@ import {
   getStylePreset,
   type ImageStylePreset,
 } from "@/lib/publish-pack/image-style-presets";
+import { cn } from "@/lib/utils";
 
 const STYLE_UI: Record<
   string,
@@ -67,24 +68,27 @@ function StyleCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`relative flex w-full items-start gap-3 rounded-[22px] border-2 bg-gradient-to-br p-3.5 text-left transition-all ${
-        ui.cardClass
-      } ${
+      className={cn(
+        "relative flex min-h-[118px] w-full flex-col items-center rounded-2xl border bg-gradient-to-br px-2.5 py-3 text-center transition-all active:scale-[0.98]",
+        ui.cardClass,
         selected
           ? "border-pink-500 shadow-md shadow-pink-100/80 ring-2 ring-pink-200/50"
-          : "border-white/80 hover:border-pink-200"
-      }`}
+          : "border-white/90 hover:border-pink-200"
+      )}
     >
       <span
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl ${ui.iconBg}`}
+        className={cn(
+          "flex h-12 w-12 items-center justify-center rounded-2xl text-[26px]",
+          ui.iconBg
+        )}
       >
         {ui.emoji}
       </span>
-      <span className="min-w-0 pt-0.5">
-        <span className="block text-[15px] font-black text-slate-800">{style.name}</span>
-        <span className="mt-1 block text-[12px] leading-snug text-slate-500">
-          {style.shortDesc}
-        </span>
+      <span className="mt-2 w-full text-[14px] font-black leading-tight text-slate-800">
+        {style.name}
+      </span>
+      <span className="mt-1 line-clamp-2 w-full px-0.5 text-[11px] leading-[1.45] text-slate-500">
+        {style.shortDesc}
       </span>
     </button>
   );
@@ -98,22 +102,23 @@ export function ImageStylePicker({
   onSelect: (id: string) => void;
 }) {
   const active = getStylePreset(selectedId) ?? IMAGE_STYLE_PRESETS[0]!;
+  const activeUi = STYLE_UI[active.id] ?? { emoji: "✨" };
 
   return (
-    <section className="overflow-hidden rounded-[28px] border-2 border-pink-100 bg-white p-4 shadow-sm">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="flex items-center gap-2 text-base font-black text-slate-800">
-            <Camera className="text-pink-500" size={20} />
+    <section className="w-full overflow-hidden rounded-[24px] border border-pink-100/90 bg-white p-3 shadow-sm">
+      <div className="mb-3 flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-[15px] font-black text-slate-800">
+            <Camera className="shrink-0 text-pink-500" size={18} />
             选择图片风格
           </h3>
-          <p className="mt-1 text-[12px] leading-5 text-slate-400">
-            点击风格，系统会自动加入对应生图描述
-          </p>
+          <span className="shrink-0 rounded-full bg-pink-50 px-2 py-0.5 text-[9px] font-bold leading-tight text-pink-500">
+            Seedream
+          </span>
         </div>
-        <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-[10px] font-bold text-pink-500">
-          火山方舟 Seedream
-        </span>
+        <p className="text-[11px] leading-5 text-slate-400">
+          点击风格，系统会自动加入对应生图描述
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -127,19 +132,19 @@ export function ImageStylePicker({
         ))}
       </div>
 
-      <div className="mt-4 rounded-[22px] border border-amber-100/80 bg-gradient-to-br from-[#fff9f0] to-[#fff5eb] p-4">
+      <div className="mt-3 rounded-2xl border border-amber-100/80 bg-gradient-to-br from-[#fff9f0] to-[#fff5eb] p-3.5">
         <p className="flex items-center gap-2 text-sm font-black text-slate-800">
-          <span className="text-base">📷</span>
+          <span className="text-lg">{activeUi.emoji}</span>
           已选：{active.name}
         </p>
-        <p className="mt-2 text-[13px] leading-6 text-slate-600">{active.longDesc}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <p className="mt-1.5 text-[12px] leading-6 text-slate-600">{active.longDesc}</p>
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {active.suitableScenes.map((scene) => (
             <span
               key={scene}
-              className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-pink-500"
+              className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-pink-500 ring-1 ring-pink-100/80"
             >
-              适合：{scene}
+              {scene}
             </span>
           ))}
         </div>

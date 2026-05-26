@@ -31,7 +31,7 @@ for %%F in (
 
 if not exist "%OUT%\scripts" mkdir "%OUT%\scripts"
 for %%F in (
-  refresh-daily-hot-topics.mjs
+  seed-hot-topics.mjs
   每日8点刷新爆品.bat
 ) do (
   if exist "%ROOT%\scripts\%%F" copy /Y "%ROOT%\scripts\%%F" "%OUT%\scripts\" >nul

@@ -55,12 +55,6 @@ function Top3Skeleton() {
   );
 }
 
-function resolveInitialPicks(): { picks: HomeCuratedPick[]; ready: boolean } {
-  const cached = getCachedHomeTop3();
-  if (cached) return { picks: cached, ready: true };
-  return { picks: [], ready: false };
-}
-
 function Top3Cover({
   pick,
   pexelsUrl,
@@ -98,11 +92,10 @@ function Top3Cover({
 /** 首页 TOP3 — 今日爆款前 3，小红书笔记封面 + 叠字 */
 export function HomeHotTopicsTop3() {
   const { tr } = useApp();
-  const initial = resolveInitialPicks();
-  const [picks, setPicks] = useState<HomeCuratedPick[]>(initial.picks);
-  const [ready, setReady] = useState(initial.ready);
-  const playEnterAnim = useRef(shouldPlayTop3EnterAnim());
-  const pickIdsRef = useRef(top3PickIds(initial.picks));
+  const [picks, setPicks] = useState<HomeCuratedPick[]>([]);
+  const [ready, setReady] = useState(false);
+  const [playEnterAnim, setPlayEnterAnim] = useState(false);
+  const pickIdsRef = useRef("");
 
   const pexelsItems = useMemo(
     () =>
@@ -118,30 +111,47 @@ export function HomeHotTopicsTop3() {
   const { covers: pexelsCovers } = useHotTopicPexelsCovers(pexelsItems);
 
   useEffect(() => {
-    if (initial.ready) return;
-
     let cancelled = false;
-    void loadHomeTop3(fetchHomeTop3FromApi).then((next) => {
+
+    const applyPicks = (resolved: HomeCuratedPick[]) => {
       if (cancelled) return;
-      const resolved = next && next.length >= 3 ? next : fallbackHomeTop3Picks();
       const ids = top3PickIds(resolved);
       if (ids !== pickIdsRef.current) {
         pickIdsRef.current = ids;
         setPicks(resolved);
       }
       setReady(true);
+      if (shouldPlayTop3EnterAnim()) setPlayEnterAnim(true);
+    };
+
+    const cached = getCachedHomeTop3();
+    if (cached && cached.length >= 3) {
+      applyPicks(cached);
+      void loadHomeTop3(fetchHomeTop3FromApi).then((next) => {
+        if (cancelled) return;
+        const resolved = next && next.length >= 3 ? next : cached;
+        applyPicks(resolved);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void loadHomeTop3(fetchHomeTop3FromApi).then((next) => {
+      const resolved = next && next.length >= 3 ? next : fallbackHomeTop3Picks();
+      applyPicks(resolved);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [initial.ready]);
+  }, []);
 
   return (
     <section
       className={cn(
         "content-auto overflow-hidden rounded-[22px] border border-[#FFD0E8]/70 bg-white p-3 shadow-[0_6px_24px_rgba(255,79,139,0.07)]",
-        playEnterAnim.current && ready && "home-section-enter"
+        playEnterAnim && ready && "home-section-enter"
       )}
     >
       <div className="mb-3 flex items-end justify-between gap-2 px-0.5">
@@ -177,9 +187,9 @@ export function HomeHotTopicsTop3() {
               prefetch={i === 0}
               className={cn(
                 "group relative block overflow-hidden rounded-[16px] shadow-[0_4px_16px_rgba(255,100,140,0.12)] active:scale-[0.98]",
-                playEnterAnim.current && "home-hot-card-enter"
+                playEnterAnim && "home-hot-card-enter"
               )}
-              style={playEnterAnim.current ? { animationDelay: `${i * 0.05}s` } : undefined}
+              style={playEnterAnim ? { animationDelay: `${i * 0.05}s` } : undefined}
             >
               <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F3F4F6]">
                 <RankBadge rank={i + 1} />

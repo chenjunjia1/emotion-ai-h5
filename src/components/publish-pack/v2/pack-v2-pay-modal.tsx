@@ -63,7 +63,7 @@ export function PackV2PayModal({
       name: p.name,
       desc: `${p.points} 灵感`,
       tag: p.tag,
-      highlight: p.id === "pack_120",
+      highlight: p.id === "pack_50",
       product: resolveInspirationProduct(p.id),
     })),
     {

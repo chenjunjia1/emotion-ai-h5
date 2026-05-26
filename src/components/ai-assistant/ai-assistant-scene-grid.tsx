@@ -22,6 +22,7 @@ export function AiAssistantSceneGrid({
       {prompts.map((q) => {
         const loading = activePromptId === q.id && busy;
         const done = activePromptId === q.id && !busy && hasResult;
+        const selected = activePromptId === q.id && !busy && !hasResult;
 
         return (
           <button
@@ -32,7 +33,7 @@ export function AiAssistantSceneGrid({
             className={cn(
               "relative flex min-h-[108px] flex-col rounded-[18px] bg-gradient-to-br p-3 text-left shadow-sm transition active:scale-[0.97]",
               q.tint,
-              done ? "ring-2 ring-[#FF4F8B]" : "ring-1 ring-[#FFE8F0]",
+              done || selected ? "ring-2 ring-[#FF4F8B]" : "ring-1 ring-[#FFE8F0]",
               busy && !loading && "opacity-50"
             )}
           >
@@ -55,7 +56,7 @@ export function AiAssistantSceneGrid({
               {q.desc}
             </span>
             <span className="mt-1.5 inline-flex items-center gap-0.5 text-[9px] font-black text-[#FF4F8B]">
-              点我问
+              填入提问
               <ChevronRight size={11} />
             </span>
           </button>

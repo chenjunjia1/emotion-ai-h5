@@ -34,6 +34,12 @@ export type XhsHotNote = {
   hotScore: number;
   source: "xiaohongshu";
   createdAt: string;
+  /** 管理后台指定：出现在首页 TOP1/2/3 */
+  homeTop3Slot?: 1 | 2 | 3;
+  /** 管理后台覆盖：用户端卡片展示标题（不设则自动生成） */
+  displayHeadline?: string;
+  /** 管理后台覆盖：用户端卡片副文案 */
+  displaySubline?: string;
 };
 
 export type XhsHotNotesResponse = {
@@ -41,5 +47,12 @@ export type XhsHotNotesResponse = {
   data: XhsHotNote[];
   cached?: boolean;
   cachedAt?: string;
+  /** 与 Supabase xhs_hot_notes_daily.fetched_at 一致，后台保存后变化 */
+  dataRevision?: string;
   message?: string;
+};
+
+export type XhsHotNotesMetaResponse = {
+  dataRevision: string | null;
+  dateKey: string;
 };

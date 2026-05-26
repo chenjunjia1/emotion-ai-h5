@@ -4,7 +4,6 @@ let audioCtx: AudioContext | null = null;
 
 function ctx(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
   if (!audioCtx) {
     try {
       audioCtx = new AudioContext();
@@ -54,10 +53,37 @@ export function hapticSsr() {
   }
 }
 
-/** 普通开箱 */
+/** 盲盒开盒：短促悦耳的「叮铃 + 上扬」 */
 export function playOpenBox() {
-  tone(440, 0.08);
-  window.setTimeout(() => tone(554, 0.1), 80);
+  const ac = ctx();
+  if (!ac) return;
+  const t0 = ac.currentTime;
+  const notes: { freq: number; at: number; dur: number; vol: number }[] = [
+    { freq: 523.25, at: 0, dur: 0.14, vol: 0.1 },
+    { freq: 659.25, at: 0.06, dur: 0.16, vol: 0.11 },
+    { freq: 783.99, at: 0.12, dur: 0.2, vol: 0.12 },
+    { freq: 1046.5, at: 0.2, dur: 0.28, vol: 0.1 },
+  ];
+  for (const n of notes) {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = n.freq;
+    const start = t0 + n.at;
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(n.vol, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + n.dur);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(start);
+    osc.stop(start + n.dur);
+  }
+}
+
+/** 盒盖弹开瞬间的轻「啵」 */
+export function playBlindBoxPop() {
+  tone(880, 0.08, "sine", 0.08);
+  window.setTimeout(() => tone(1174.66, 0.12, "triangle", 0.07), 50);
 }
 
 /** 任务完成叮一声 */

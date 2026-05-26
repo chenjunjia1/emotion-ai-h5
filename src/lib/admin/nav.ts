@@ -32,7 +32,7 @@ export const GENERATION_TYPE_LABELS: Record<string, string> = {
   review: "复盘",
   reply: "神回复",
   score: "爆款打分",
-  emotion_chat: "AI情绪",
+  emotion_chat: "AI助手",
 };
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {

@@ -17,7 +17,7 @@ export function AppHeader({ homePage = false }: { homePage?: boolean }) {
   const { user, setLoginOpen, tr, orders } = useApp();
   const [notifyOpen, setNotifyOpen] = useState(false);
 
-  const remainTotal = user ? getTotalQuota(user) : 128;
+  const remainTotal = user ? getTotalQuota(user) : 0;
   const pendingOrderCount = useMemo(
     () => orders.filter((o) => o.status === "pending").length,
     [orders]
@@ -90,22 +90,23 @@ export function AppHeader({ homePage = false }: { homePage?: boolean }) {
               ) : null}
             </button>
 
-            <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[#FFF3E8] to-[#FFE8CC] px-2.5 py-1.5 text-[10px] font-black text-[#FF8C42] shadow-sm ring-1 ring-[#FFE0C8]/80">
-              <Zap size={11} className="fill-[#FF9A4D] text-[#FF8C42]" />
-              {remainTotal} {tr("headerInspirationUnit")}
-            </span>
-
             {user ? (
-              <Link href="/profile" className="active:scale-95">
-                <ProfileUserAvatar userId={user.id} className="h-9 w-9 ring-2 ring-[#FFD0E8]" />
-              </Link>
+              <>
+                <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[#FFF3E8] to-[#FFE8CC] px-2.5 py-1.5 text-[10px] font-black text-[#FF8C42] shadow-sm ring-1 ring-[#FFE0C8]/80">
+                  <Zap size={11} className="fill-[#FF9A4D] text-[#FF8C42]" />
+                  {remainTotal} {tr("headerInspirationUnit")}
+                </span>
+                <Link href="/profile" className="active:scale-95" aria-label={tr("navProfile")}>
+                  <ProfileUserAvatar userId={user.id} className="h-9 w-9 ring-2 ring-[#FFD0E8]" />
+                </Link>
+              </>
             ) : (
               <button
                 type="button"
                 onClick={() => setLoginOpen(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FFB8D0] to-[#FF9A4D] text-[11px] font-black text-white shadow-sm active:scale-95"
+                className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-3 py-1.5 text-[11px] font-black text-white shadow-sm active:scale-95"
               >
-                我
+                {tr("headerGuestLoginCta")}
               </button>
             )}
           </div>

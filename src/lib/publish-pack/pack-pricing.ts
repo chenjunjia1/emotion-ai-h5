@@ -27,20 +27,12 @@ export const PACK_PRICING = {
 
 export const INSPIRATION_PRODUCTS = [
   {
-    id: "pack_20",
-    productName: "灵感加油包 20点",
-    name: "AI体验包",
-    points: 20,
-    price: 3.9,
-    tag: "换图刚好",
-  },
-  {
     id: "pack_50",
     productName: "灵感加油包 50点",
     name: "灵感加油包",
     points: 50,
     price: 9.9,
-    tag: "补一次高级图",
+    tag: "推荐",
   },
   {
     id: "pack_120",
@@ -48,15 +40,7 @@ export const INSPIRATION_PRODUCTS = [
     name: "创作者包",
     points: 120,
     price: 19.9,
-    tag: "最适合高级模式",
-  },
-  {
-    id: "pack_300",
-    productName: "灵感加油包 300点",
-    name: "进阶创作包",
-    points: 300,
-    price: 49,
-    tag: "高频创作",
+    tag: "更划算",
   },
 ] as const;
 

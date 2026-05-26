@@ -1,4 +1,13 @@
-import type { XhsHotNotesResponse } from "@/lib/xhs/types";
+import type { XhsHotNotesMetaResponse, XhsHotNotesResponse } from "@/lib/xhs/types";
+
+export async function apiGetXhsHotNotesMeta(): Promise<XhsHotNotesMetaResponse> {
+  const res = await fetch("/api/xhs/hot-notes?meta=1", { cache: "no-store" });
+  const json = (await res.json().catch(() => ({}))) as XhsHotNotesMetaResponse;
+  return {
+    dateKey: json.dateKey ?? "",
+    dataRevision: json.dataRevision ?? null,
+  };
+}
 
 export async function apiGetXhsHotNotes(force = false): Promise<XhsHotNotesResponse> {
   const q = force ? "?force=1" : "";

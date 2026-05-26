@@ -6,6 +6,10 @@
 import { createHash } from "crypto";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import {
+  isSupportedAdminImageMime,
+  sniffImageMime,
+} from "@/lib/media/sniff-image-mime";
 
 export type StorageUploadResult = {
   storageUrl: string;
@@ -87,7 +91,6 @@ export async function uploadImageBuffer(
   return localFallback(buffer, key);
 }
 
-const ADMIN_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 const ADMIN_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -108,10 +111,14 @@ export async function uploadAdminImageFile(
   mime: string,
   opts?: { keyPrefix?: string }
 ): Promise<StorageUploadResult> {
-  if (buffer.length > ADMIN_IMAGE_MAX_BYTES) {
-    throw new Error("image_too_large");
+  const sniffed = sniffImageMime(buffer);
+  let normalized = mime.toLowerCase().split(";")[0]!;
+  if (!isSupportedAdminImageMime(normalized) && sniffed) {
+    normalized = sniffed;
   }
-  const normalized = mime.toLowerCase().split(";")[0]!;
+  if (normalized === "image/heic") {
+    throw new Error("unsupported_type");
+  }
   if (!ADMIN_IMAGE_TYPES.has(normalized)) {
     throw new Error("unsupported_type");
   }

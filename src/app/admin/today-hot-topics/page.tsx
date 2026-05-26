@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Pencil, Save, Search } from "lucide-react";
+import {
+  AdminHomeTop3Panel,
+  AdminHomeTop3SlotButtons,
+} from "@/components/admin/admin-home-top3-panel";
+import { AdminImageUpload } from "@/components/admin/admin-image-upload";
 import { AdminTodayHotRowCard } from "@/components/admin/admin-today-hot-row";
+import { AdminXhsNoteMoreConfig } from "@/components/admin/admin-xhs-note-more-config";
 import { AdminCard, AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -17,7 +23,13 @@ import {
 import type { XhsFeedTab } from "@/lib/xhs/xhs-page-tabs";
 import { XHS_FEED_TABS } from "@/lib/xhs/xhs-page-tabs";
 import type { XhsHotNote } from "@/lib/xhs/types";
-import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
+import { buildXhsCardCopy, previewXhsCardCopyAuto } from "@/lib/xhs/xhs-display-copy";
+import {
+  setNoteHomeTop3Slot,
+  type HomeTop3Slot,
+} from "@/lib/xhs/home-top3-picks";
+import { bumpXhsHotNotesClientCacheVersion } from "@/lib/xhs/xhs-hot-notes-cache";
+import { invalidateHomeTop3Cache } from "@/lib/home/home-top3-cache";
 import { cn } from "@/lib/utils";
 
 type PageMode = "query" | "edit";
@@ -125,12 +137,35 @@ export default function AdminTodayHotTopicsPage() {
     setEditNotes(copy);
   };
 
+  const assignHomeTop3 = (noteId: string, slot: HomeTop3Slot) => {
+    setEditNotes((list) => {
+      const note = list.find((n) => n.id === noteId);
+      if (!note) return list;
+      if (note.homeTop3Slot === slot) {
+        return setNoteHomeTop3Slot(list, noteId, null);
+      }
+      return setNoteHomeTop3Slot(list, noteId, slot);
+    });
+  };
+
+  const clearHomeTop3Slot = (slot: HomeTop3Slot) => {
+    setEditNotes((list) =>
+      list.map((n) => {
+        if (n.homeTop3Slot !== slot) return n;
+        const { homeTop3Slot: _, ...rest } = n;
+        return rest as XhsHotNote;
+      })
+    );
+  };
+
   const onSave = async () => {
     setSaving(true);
     try {
       const r = await apiAdminSaveXhsNotes(editNotes, dateKey);
       if (r.ok) {
-        showToast(`已保存 ${editNotes.length} 条`);
+        bumpXhsHotNotesClientCacheVersion();
+        invalidateHomeTop3Cache();
+        showToast(`已保存 ${editNotes.length} 条，首页 TOP3 与今日热点将自动同步`);
         setMode("query");
         void runQuery();
       } else showToast("保存失败");
@@ -302,6 +337,12 @@ export default function AdminTodayHotTopicsPage() {
           ) : editNotes.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">当日暂无笔记可编辑</p>
           ) : (
+            <>
+            <AdminHomeTop3Panel
+              notes={editNotes}
+              onClearSlot={clearHomeTop3Slot}
+              onJumpToNote={(id) => setExpanded(id)}
+            />
             <ul className="space-y-3">
               {editNotes.map((note, index) => {
                 const copy = buildXhsCardCopy(note);
@@ -311,19 +352,32 @@ export default function AdminTodayHotTopicsPage() {
                     key={note.id}
                     className="overflow-hidden rounded-xl border border-orange-100/80 bg-white"
                   >
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
-                      onClick={() => setExpanded(open ? null : note.id)}
-                    >
-                      <span className="flex h-5 w-5 items-center justify-center rounded bg-black/60 text-[9px] font-black text-white">
-                        {index + 1}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-bold">
-                        {copy.headline}
-                      </span>
-                      <span className="text-[10px] text-slate-400">{note.category}</span>
-                    </button>
+                    <div className="flex items-center gap-1 px-2 py-2">
+                      <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        onClick={() => setExpanded(open ? null : note.id)}
+                      >
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-black/60 text-[9px] font-black text-white">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-bold">
+                          {copy.headline}
+                        </span>
+                        {note.homeTop3Slot ? (
+                          <span className="shrink-0 rounded bg-[#FF4F8B] px-1 py-0.5 text-[8px] font-black text-white">
+                            首页{note.homeTop3Slot}
+                          </span>
+                        ) : null}
+                        <span className="hidden shrink-0 text-[10px] text-slate-400 sm:inline">
+                          {note.category}
+                        </span>
+                      </button>
+                      <AdminHomeTop3SlotButtons
+                        note={note}
+                        onAssign={(slot) => assignHomeTop3(note.id, slot)}
+                      />
+                    </div>
                     {open ? (
                       <div className="space-y-2 border-t border-orange-50 px-3 py-3">
                         <div className="flex gap-1">
@@ -342,14 +396,54 @@ export default function AdminTodayHotTopicsPage() {
                             <ChevronDown size={12} />
                           </button>
                         </div>
-                        <Field label="原标题（影响展示标题）">
+                        <Field label="展示标题（用户端卡片 / 首页 TOP3 显示）">
+                          <input
+                            className="w-full rounded-lg border border-[#FF7AAE]/40 px-2 py-1.5 text-sm font-medium"
+                            value={note.displayHeadline ?? ""}
+                            placeholder={previewXhsCardCopyAuto(note).headline}
+                            onChange={(e) =>
+                              updateNote(note.id, {
+                                displayHeadline: e.target.value,
+                              })
+                            }
+                          />
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <p className="text-[10px] text-slate-400">
+                              留空则自动生成；改完后列表标题与首页同步
+                            </p>
+                            {note.displayHeadline?.trim() ? (
+                              <button
+                                type="button"
+                                className="text-[10px] font-bold text-orange-700 underline"
+                                onClick={() =>
+                                  updateNote(note.id, { displayHeadline: undefined })
+                                }
+                              >
+                                恢复自动生成
+                              </button>
+                            ) : null}
+                          </div>
+                        </Field>
+                        <Field label="展示副文案（可选）">
                           <input
                             className="w-full rounded-lg border px-2 py-1.5 text-sm"
+                            value={note.displaySubline ?? ""}
+                            placeholder={buildXhsCardCopy(note).subline}
+                            onChange={(e) =>
+                              updateNote(note.id, {
+                                displaySubline: e.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="抓取原标题（备查，不直接展示）">
+                          <input
+                            className="w-full rounded-lg border px-2 py-1.5 text-sm text-slate-600"
                             value={note.title}
                             onChange={(e) => updateNote(note.id, { title: e.target.value })}
                           />
                         </Field>
-                        <Field label="副文案">
+                        <Field label="抓取正文 / 话题">
                           <input
                             className="w-full rounded-lg border px-2 py-1.5 text-sm"
                             value={note.desc}
@@ -367,6 +461,12 @@ export default function AdminTodayHotTopicsPage() {
                             }
                           />
                         </Field>
+
+                        <AdminXhsNoteMoreConfig
+                          note={note}
+                          onChange={(patch) => updateNote(note.id, patch)}
+                        />
+
                         <div className="grid grid-cols-3 gap-2">
                           <Field label="点赞">
                             <input
@@ -405,10 +505,41 @@ export default function AdminTodayHotTopicsPage() {
                             />
                           </Field>
                         </div>
-                        <Field label="封面 URL">
+                        <Field label="封面图">
+                          <AdminImageUpload
+                            label="从相册 / 本地上传"
+                            onUploaded={(url) => {
+                              updateNote(note.id, {
+                                images: [url, ...note.images.slice(1)],
+                              });
+                              showToast("封面已上传，记得点「保存全部」");
+                            }}
+                            onError={(msg) => msg && showToast(msg)}
+                          />
+                          {note.images[0] ? (
+                            <div className="mt-2 flex items-start gap-2">
+                              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-orange-100 bg-slate-50">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={note.images[0]}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src =
+                                      "/images/hot/default.svg";
+                                  }}
+                                />
+                              </div>
+                              <p className="min-w-0 flex-1 break-all text-[10px] text-slate-400">
+                                {note.images[0]}
+                              </p>
+                            </div>
+                          ) : null}
                           <input
-                            className="w-full rounded-lg border px-2 py-1.5 text-sm"
+                            className="mt-2 w-full rounded-lg border px-2 py-1.5 text-sm"
                             value={note.images[0] ?? ""}
+                            placeholder="/generated/xxx.jpg 或粘贴外链"
                             onChange={(e) =>
                               updateNote(note.id, {
                                 images: e.target.value
@@ -417,6 +548,9 @@ export default function AdminTodayHotTopicsPage() {
                               })
                             }
                           />
+                          <p className="mt-1 text-[10px] text-slate-400">
+                            上传后自动填入；也可手动改 URL。保存全部后用户端 /hot-topics 生效
+                          </p>
                         </Field>
                       </div>
                     ) : null}
@@ -424,6 +558,7 @@ export default function AdminTodayHotTopicsPage() {
                 );
               })}
             </ul>
+            </>
           )}
         </AdminCard>
       )}

@@ -28,6 +28,8 @@ import {
   BUDDY_QUICK_PROMPTS,
 } from "@/lib/operation-chat/buddy-prompts";
 import type { OpsConsultantResult } from "@/lib/operation-chat/quick-prompts";
+import { loadAiProfile } from "@/lib/onboarding/ai-profile";
+import { DEFAULT_AVATAR_ID, normalizeAvatarId } from "@/lib/onboarding/options";
 import { getTotalQuota } from "@/lib/v1/quota";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,9 @@ export function AiAssistantView() {
   const [chipSeed, setChipSeed] = useState(0);
   const cost = QUOTA_COST.emotion_chat ?? 5;
   const totalQuota = user ? getTotalQuota(user) : 0;
+  const avatarId = user
+    ? normalizeAvatarId(loadAiProfile(user.id)?.avatarId ?? DEFAULT_AVATAR_ID)
+    : DEFAULT_AVATAR_ID;
 
   const featured = useMemo(
     () => BUDDY_QUICK_PROMPTS.find((p) => p.id === BUDDY_FEATURED_ID) ?? BUDDY_QUICK_PROMPTS[0]!,
@@ -101,16 +106,27 @@ export function AiAssistantView() {
     [run, submitQuestion]
   );
 
+  const fillPrompt = useCallback((prompt: string, promptId?: string) => {
+    setResult(null);
+    setMessage(prompt);
+    if (promptId) setActivePromptId(promptId);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("buddy-chat-input");
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, []);
+
   const onSubmit = () => {
-    setActivePromptId(null);
+    const promptId = activePromptId ?? undefined;
     void run(async () => {
-      await submitQuestion(message, undefined);
+      await submitQuestion(message, promptId);
     });
   };
 
   const onChipPick = (chip: string) => {
-    setMessage(chip);
-    askNow(chip);
+    setActivePromptId(null);
+    fillPrompt(chip);
   };
 
   const copyAnswer = useCallback(() => {
@@ -125,6 +141,7 @@ export function AiAssistantView() {
     <div className="flex flex-col gap-3 pb-[9.5rem]">
       <AiAssistantHeroBanner
         tr={tr}
+        avatarId={avatarId}
         totalQuota={totalQuota}
         cost={cost}
         featuredLabel={featured.label}
@@ -142,7 +159,7 @@ export function AiAssistantView() {
               <Sparkles size={15} className="text-[#FF4F8B]" />
               点一下，马上出建议
             </p>
-            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">不用自己想怎么说，点卡片直接问</p>
+            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">点卡片填入下方问题，确认后点发送提问</p>
           </div>
           <span className="shrink-0 rounded-full bg-[#FFF0F5] px-2 py-0.5 text-[9px] font-black text-[#FF4F8B]">
             消耗 {cost} 灵感/次
@@ -154,7 +171,7 @@ export function AiAssistantView() {
           busy={busy}
           activePromptId={activePromptId}
           hasResult={Boolean(result)}
-          onPick={(id, prompt) => askNow(prompt, id)}
+          onPick={(id, prompt) => fillPrompt(prompt, id)}
         />
       </section>
 
@@ -180,7 +197,7 @@ export function AiAssistantView() {
                 onClick={() => onChipPick(chip)}
                 className={cn(
                   "max-w-full rounded-full px-3 py-2 text-left text-[10px] font-bold leading-snug transition active:scale-95",
-                  message === chip && result
+                  message.trim() === chip
                     ? "bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] text-white shadow-sm"
                     : "bg-white text-[#4B5563] ring-1 ring-[#FFE8F0] hover:ring-[#FFB8D4]"
                 )}
@@ -339,10 +356,14 @@ export function AiAssistantView() {
           <div className="p-2.5">
             <p className="px-1 text-[10px] font-bold text-[#9CA3AF]">或自己输入问题</p>
             <textarea
+              id="buddy-chat-input"
               className="mt-1 w-full resize-none rounded-xl bg-[#FAFAFA] p-2.5 text-[12px] leading-relaxed text-[#1F2937] outline-none ring-1 ring-[#F0F0F0] placeholder:text-[#9CA3AF] focus:bg-[#FFF8FA] focus:ring-[#FFD0E8]"
               rows={2}
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                setActivePromptId(null);
+              }}
               placeholder={tr("opsChatInputPlaceholder")}
               disabled={busy}
             />

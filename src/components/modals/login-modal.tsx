@@ -8,6 +8,7 @@ import { useApp } from "@/contexts/app-context";
 import { readUserLocal } from "@/lib/client/persist-user";
 import { isClientServerMode } from "@/lib/client/server-api";
 import { needsAiProfileOnboarding } from "@/lib/onboarding/redirect";
+import { PILOT_LOGIN_MOBILE, isPilotLoginMobile } from "@/lib/auth/login-allowlist";
 import { MOCK_SMS_CODE } from "@/lib/constants/v1";
 import { isLoginCodePrefillAllowedClient } from "@/lib/client/dev-auth";
 import { Button } from "@/components/ui/button";
@@ -22,9 +23,10 @@ export function LoginModal() {
   const router = useRouter();
   const { loginOpen, setLoginOpen, sendCode, login, showToast, tr } = useApp();
   const serverMode = isClientServerMode();
-  const [mobile, setMobile] = useState("");
-  const allowPrefill = isLoginCodePrefillAllowedClient();
-  const [code, setCode] = useState(allowPrefill ? MOCK_SMS_CODE : "");
+  const [mobile, setMobile] = useState(PILOT_LOGIN_MOBILE);
+  const allowPrefill =
+    isLoginCodePrefillAllowedClient() || isPilotLoginMobile(mobile.trim());
+  const [code, setCode] = useState(MOCK_SMS_CODE);
   const [agreed, setAgreed] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [sending, setSending] = useState(false);
@@ -67,6 +69,10 @@ export function LoginModal() {
       showToast(tr("loginAgreeRequired"));
       return;
     }
+    if (!isPilotLoginMobile(mobile.trim())) {
+      showToast(tr("loginMobileNotAllowed"));
+      return;
+    }
     setCodeErrorMsg("");
     setLoggingIn(true);
     try {
@@ -95,6 +101,10 @@ export function LoginModal() {
     const m = mobile.trim();
     if (!/^1\d{10}$/.test(m)) {
       showToast(tr("mobileInvalid"));
+      return;
+    }
+    if (!isPilotLoginMobile(m)) {
+      showToast(tr("loginMobileNotAllowed"));
       return;
     }
     setCodeErrorMsg("");

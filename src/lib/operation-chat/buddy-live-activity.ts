@@ -128,9 +128,35 @@ export const BUDDY_LIVE_ACTIVITIES: BuddyLiveActivity[] = [
   },
 ];
 
-function hashDaySeed(): number {
-  const d = new Date();
-  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+const SHANGHAI_TZ = "Asia/Shanghai";
+
+function shanghaiCalendarDay(now = new Date()): { y: number; m: number; d: number } {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: SHANGHAI_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(now)
+      .map((p) => [p.type, p.value])
+  );
+  return {
+    y: Number(parts.year),
+    m: Number(parts.month),
+    d: Number(parts.day),
+  };
+}
+
+function hashDaySeed(now = new Date()): number {
+  const { y, m, d } = shanghaiCalendarDay(now);
+  return y * 10000 + m * 100 + d;
+}
+
+/** 上海时区当日 0 点（用于「今日使用人数」递增） */
+function shanghaiDayStartMs(now = Date.now()): number {
+  const { y, m, d } = shanghaiCalendarDay(new Date(now));
+  return Date.UTC(y, m - 1, d) - 8 * 60 * 60 * 1000;
 }
 
 function mulberry32(seed: number) {
@@ -159,17 +185,13 @@ export const BUDDY_USAGE_BASE = 7500;
 export const BUDDY_USAGE_TICK_MS = 5 * 60 * 1000;
 
 export function getBuddyTodayUsageCount(now = Date.now()): number {
-  const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
-  const elapsed = now - dayStart.getTime();
+  const elapsed = now - shanghaiDayStartMs(now);
   const ticks = Math.floor(elapsed / BUDDY_USAGE_TICK_MS);
   return BUDDY_USAGE_BASE + ticks;
 }
 
 export function msUntilNextBuddyUsageTick(now = Date.now()): number {
-  const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
-  const elapsed = now - dayStart.getTime();
+  const elapsed = now - shanghaiDayStartMs(now);
   const remainder = elapsed % BUDDY_USAGE_TICK_MS;
   return remainder === 0 ? BUDDY_USAGE_TICK_MS : BUDDY_USAGE_TICK_MS - remainder;
 }

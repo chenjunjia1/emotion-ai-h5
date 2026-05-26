@@ -62,6 +62,7 @@ export default function ProfileEditPage() {
             onSave={(profile) => {
               saveAiProfile(user.id, profile);
               showToast(tr("profileEditSaved"));
+              router.refresh();
               router.push("/profile");
             }}
           />

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { generateEmotionChat } from "@/lib/ai/v1-deepseek";
+import { QUOTA_COST } from "@/lib/constants/v1";
 import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
-import { refundQuota } from "@/lib/server/db/v1";
-import { checkOpsChatDailyQuota, consumePoints } from "@/services/quotaService";
+import { deductQuota, refundQuota } from "@/lib/server/db/v1";
 import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
+import { getTotalQuota } from "@/lib/v1/quota";
 
 export async function POST(req: Request) {
   const guard = guardApi(req, { scope: "emotion-chat", ipLimit: 60, ipWindowMs: 60_000 });
@@ -32,28 +33,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const quota = await checkOpsChatDailyQuota(user);
-  if (!quota.canProceed) {
-    return NextResponse.json(
-      {
-        error: "quota_insufficient",
-        quotaHint: quota.freeRemaining === 0 ? "ops_chat_daily_exhausted" : undefined,
-        dailyLimit: quota.dailyLimit,
-        freeRemaining: quota.freeRemaining,
-      },
-      { status: 402 }
-    );
+  const cost = QUOTA_COST.emotion_chat ?? 5;
+  if (getTotalQuota(user) < cost) {
+    return NextResponse.json({ error: "quota_insufficient" }, { status: 402 });
   }
 
-  const cost = quota.cost;
-  let chargedUser = user;
-  if (cost > 0) {
-    const charged = await consumePoints(user.id, cost, "emotion_chat_overage");
-    if (!charged.ok) {
-      return NextResponse.json({ error: "quota_insufficient" }, { status: 402 });
-    }
-    if (charged.user) chargedUser = charged.user;
+  const q = await deductQuota(user.id, cost, "emotion_chat");
+  if (!q.ok) {
+    return NextResponse.json({ error: "quota_insufficient" }, { status: 402 });
   }
+
+  const chargedUser = q.user ?? user;
 
   let result: Record<string, unknown>;
   let usedMock = true;
@@ -67,9 +57,7 @@ export async function POST(req: Request) {
     result = gen.result;
     usedMock = gen.usedMock;
   } catch {
-    if (cost > 0) {
-      await refundQuota(chargedUser.id, cost, "refund · emotion_chat failed");
-    }
+    await refundQuota(chargedUser.id, cost, "refund · emotion_chat failed");
     return NextResponse.json({ error: "generate_failed" }, { status: 500 });
   }
 
@@ -90,6 +78,5 @@ export async function POST(req: Request) {
     saved: saved.ok,
     generationId: saved.id,
     cost,
-    opsChatFreeRemaining: Math.max(0, quota.freeRemaining - 1),
   });
 }

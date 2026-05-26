@@ -3,7 +3,8 @@ import { HOME_INSPIRATION_TOP3, buildHomePickHref } from "@/lib/content/home-cur
 import { coverPresetForTopic } from "@/lib/content/scene-cover-presets";
 import { assignUniqueCoverPresets } from "@/lib/content/unique-topic-covers";
 import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
-import { diversifyXhsNotes, formatXhsCount } from "@/lib/xhs/xhs-feed-filters";
+import { pickHomeTop3Notes } from "@/lib/xhs/home-top3-picks";
+import { formatXhsCount } from "@/lib/xhs/xhs-feed-filters";
 import type { XhsHotNote } from "@/lib/xhs/types";
 
 function mapXhsNoteToPick(note: XhsHotNote): HomeCuratedPick {
@@ -47,7 +48,7 @@ export async function fetchHomeTop3FromApi(): Promise<HomeCuratedPick[] | null> 
   const data = (await res.json()) as { success?: boolean; data?: XhsHotNote[] };
   if (!data.success || !data.data || data.data.length < 3) return null;
 
-  const top3 = diversifyXhsNotes(data.data, 3).map(mapXhsNoteToPick);
+  const top3 = pickHomeTop3Notes(data.data).map(mapXhsNoteToPick);
   return applyUniqueCovers(top3);
 }
 

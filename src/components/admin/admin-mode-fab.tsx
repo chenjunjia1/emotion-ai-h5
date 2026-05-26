@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shield } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import { canAccessOpsAdmin } from "@/lib/auth/login-allowlist";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,9 +15,10 @@ export function AdminModeFab() {
   const pathname = usePathname();
   const { user } = useApp();
 
-  if (!user || user.role !== "admin") return null;
+  if (!canAccessOpsAdmin(user)) return null;
   if (pathname.startsWith("/admin")) return null;
   if (pathname.startsWith("/onboarding")) return null;
+  if (pathname === "/profile") return null;
 
   return (
     <Link

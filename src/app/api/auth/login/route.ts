@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { NextResponse } from "next/server";
+import { isPilotLoginMobile, isPilotSmsBypass } from "@/lib/auth/login-allowlist";
 import { MOCK_SMS_CODE } from "@/lib/constants/v1";
 import { guardApi } from "@/lib/security/api-guard";
 import {
@@ -49,8 +50,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 400 });
   }
 
+  if (!isPilotLoginMobile(mobile)) {
+    return NextResponse.json({ error: "login_mobile_not_allowed" }, { status: 403 });
+  }
+
   const devBypass = isDevSmsBypassAllowed() && code === MOCK_SMS_CODE;
-  if (!devBypass) {
+  const pilotBypass = isPilotSmsBypass(mobile, code);
+  if (!devBypass && !pilotBypass) {
     const record = await getLatestValidSmsCode(mobile);
     if (!record || new Date(record.expiredAt) < new Date()) {
       return NextResponse.json({ error: "code_expired" }, { status: 401 });

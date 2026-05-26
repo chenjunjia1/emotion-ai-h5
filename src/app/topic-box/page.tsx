@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import Link from "next/link";
 import { Copy, RefreshCw, Sparkles } from "lucide-react";
@@ -14,7 +14,7 @@ import {
   runBlindBoxReveal,
   type BlindBoxPhase,
 } from "@/components/play/blind-box-stage";
-import { TopicBoxSetup } from "@/components/play/topic-box-setup";
+import { TopicBoxQuickPick } from "@/components/play/topic-box-quick-pick";
 import { useApp } from "@/contexts/app-context";
 import { useProduct } from "@/hooks/use-product";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
@@ -23,12 +23,7 @@ import {
   displayField,
   normalizeTopicBoxResult,
 } from "@/lib/ai/normalize-ai-result";
-import {
-  GOAL_VALUES,
-  PLATFORM_VALUES,
-  STYLE_VALUES,
-  TRACK_VALUES,
-} from "@/lib/i18n/form-options";
+import { defaultTopicBoxInput } from "@/lib/topic-box/defaults";
 import { rollTopicRarity, type DropRarity } from "@/lib/play-rarity";
 import { RARITY_META } from "@/lib/play-rarity";
 import { theme } from "@/lib/theme";
@@ -47,28 +42,34 @@ function flattenTopicBox(
 }
 
 export default function TopicBoxPage() {
-  const { tr, showToast } = useApp();
+  const { user, tr, showToast } = useApp();
   const { drawTopicBox, lastTopicBox, growth, dailyUsage, featureLimits } = useProduct();
   const topicBoxUsed = dailyUsage.topicBox;
   const topicBoxLimit = featureLimits.topicBox;
   const topicBoxRemain = Math.max(0, topicBoxLimit - topicBoxUsed);
-  const [platform, setPlatform] = useState<string>(PLATFORM_VALUES[0]);
-  const [track, setTrack] = useState<string>(TRACK_VALUES[3]);
-  const [goal, setGoal] = useState<string>(GOAL_VALUES[0]);
-  const [style, setStyle] = useState<string>(STYLE_VALUES[0]);
+
+  const defaults = useMemo(() => defaultTopicBoxInput(user?.id), [user?.id]);
+  const [platform, setPlatform] = useState(defaults.platform);
+  const [track, setTrack] = useState(defaults.track);
+  const goal = defaults.goal;
+  const style = defaults.style;
+
+  useEffect(() => {
+    setPlatform(defaults.platform);
+    setTrack(defaults.track);
+  }, [defaults.platform, defaults.track]);
+
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [rarity, setRarity] = useState<DropRarity>("N");
   const [phase, setPhase] = useState<BlindBoxPhase>("idle");
   const { run, busy } = useAsyncAction();
 
+  const input = { platform, track, goal, style };
+
   const onOpen = () =>
     void run(async () => {
       const rolled = rollTopicRarity(growth.streakDays, hasSsrBuffToday());
-      const input = { platform, track, goal, style };
-      const r = await runBlindBoxReveal(
-        () => drawTopicBox(input),
-        setPhase
-      );
+      const r = await runBlindBoxReveal(() => drawTopicBox(input), setPhase);
       const flat =
         flattenTopicBox((r as Record<string, unknown>) ?? lastTopicBox, input);
       if (!flat?.topic) {
@@ -96,8 +97,7 @@ export default function TopicBoxPage() {
   };
 
   const r =
-    flattenTopicBox(result, { platform, track, goal, style }) ??
-    flattenTopicBox(lastTopicBox, { platform, track, goal, style });
+    flattenTopicBox(result, input) ?? flattenTopicBox(lastTopicBox, input);
   const displayRarity = (result?.rarity as DropRarity) ?? rarity;
   const meta = RARITY_META[displayRarity];
   const isIdle = phase === "idle";
@@ -105,27 +105,17 @@ export default function TopicBoxPage() {
   return (
     <AppShell>
       <SectionTitle
-        eyebrow="🎲"
+        eyebrow="🎁"
         title={tr("featTopicBox")}
         desc={tr("featTopicBoxDesc")}
       />
 
-      <div
-        className={cn(
-          "mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl px-3 py-2 text-[10px]",
-          "bg-gradient-to-r from-[#FFF0F5] to-[#FFF8EE] ring-1 ring-[#FF7AAE]/20"
-        )}
-      >
-        <span className="font-bold text-[#FF7AAE]">✨ {tr("ssrHint")}</span>
-        <span className="text-slate-500">
-          · {tr("streakDays")} <b className="text-slate-700">{growth.streakDays}</b>{" "}
-          {tr("ssrBonusDays")}
-        </span>
+      <p className="mb-4 text-center text-[11px] text-slate-500">
         <span
           className={cn(
-            "rounded-full px-2 py-0.5 font-bold",
+            "mr-2 inline-block rounded-full px-2.5 py-0.5 font-bold",
             topicBoxRemain > 0
-              ? "bg-white text-[#FF5C8A] ring-1 ring-[#FF7AAE]/25"
+              ? "bg-[#FFF0F5] text-[#FF5C8A] ring-1 ring-[#FF7AAE]/25"
               : "bg-rose-50 text-rose-600 ring-1 ring-rose-200"
           )}
         >
@@ -134,60 +124,32 @@ export default function TopicBoxPage() {
             .replace("{limit}", String(topicBoxLimit))}
         </span>
         {hasSsrBuffToday() && (
-          <span className="font-bold text-amber-600">· 👑 欧气符</span>
+          <span className="font-bold text-amber-600">👑 欧气加成</span>
         )}
-      </div>
+      </p>
 
-      {isIdle ? (
-        <div className="cream-card overflow-hidden rounded-[28px] p-4 shadow-[0_10px_28px_rgba(255,122,174,0.1)] ring-1 ring-orange-100/60">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7AAE] to-[#FFC46B] text-xs">
-              🎯
-            </span>
-            <div>
-              <p className="text-xs font-black text-slate-800">开盒前选赛道</p>
-              <p className="text-[10px] text-slate-500">点一下胶囊，AI 更懂你要发啥</p>
-            </div>
-          </div>
-          <TopicBoxSetup
-            platform={platform}
-            track={track}
-            goal={goal}
-            style={style}
-            onPlatform={setPlatform}
-            onTrack={setTrack}
-            onGoal={setGoal}
-            onStyle={setStyle}
-          />
-          <div className="my-3 h-px bg-gradient-to-r from-transparent via-[#FF7AAE]/20 to-transparent" />
-          <BlindBoxStage
-            embedded
-            phase={phase}
-            onOpen={onOpen}
-            busy={busy}
-            openLabel={tr("blindboxOpen")}
-            shakingLabel={tr("blindboxShaking")}
-            openingLabel={tr("blindboxOpening")}
-            surpriseLabel={tr("blindboxSurprise")}
-            idleHint={tr("blindboxIdleHint")}
-          />
-        </div>
-      ) : (
-        <BlindBoxStage
-          phase={phase}
-          onOpen={onOpen}
-          busy={busy}
-          openLabel={tr("blindboxOpen")}
-          shakingLabel={tr("blindboxShaking")}
-          openingLabel={tr("blindboxOpening")}
-          surpriseLabel={tr("blindboxSurprise")}
-          revealedTopic={
-            phase === "revealed" && r ? displayField(r.topic, "") : undefined
-          }
-          rarity={phase === "revealed" ? displayRarity : "N"}
-          idleHint={tr("blindboxIdleHint")}
+      {isIdle && (
+        <TopicBoxQuickPick
+          platform={platform}
+          onPlatform={(v) => setPlatform(v as typeof platform)}
         />
       )}
+
+      <BlindBoxStage
+        embedded={false}
+        phase={phase}
+        onOpen={onOpen}
+        busy={busy}
+        openLabel={tr("blindboxOpen")}
+        shakingLabel={tr("blindboxShaking")}
+        openingLabel={tr("blindboxOpening")}
+        surpriseLabel={tr("blindboxSurprise")}
+        revealedTopic={
+          phase === "revealed" && r ? displayField(r.topic, "") : undefined
+        }
+        rarity={phase === "revealed" ? displayRarity : "N"}
+        idleHint={tr("blindboxIdleHint")}
+      />
 
       {phase === "revealed" && !r && (
         <Card className="mt-4 overflow-hidden border-orange-100/80">
@@ -210,7 +172,7 @@ export default function TopicBoxPage() {
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-bold text-white/85">
-                {meta.emoji} {meta.label} · 今日选题
+                {meta.emoji} {meta.label} · {platform}
               </span>
               <Sparkles size={14} className="text-white/80" />
             </div>
@@ -219,17 +181,6 @@ export default function TopicBoxPage() {
             </p>
           </div>
           <CardContent className="space-y-3 pt-3 text-sm leading-6">
-            <TopicBoxSetup
-              compact
-              platform={platform}
-              track={track}
-              goal={goal}
-              style={style}
-              onPlatform={setPlatform}
-              onTrack={setTrack}
-              onGoal={setGoal}
-              onStyle={setStyle}
-            />
             {displayRarity === "SSR" && (
               <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 ring-1 ring-amber-200">
                 {tr("ssrDropDesc")}

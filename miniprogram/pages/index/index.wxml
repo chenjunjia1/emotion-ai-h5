@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="hero">
+    <text class="title">AI短视频运营灵感</text>
+    <text class="sub">H5 能力同步 · 热点 · 发布包 · 灵感充值</text>
+  </view>
+
+  <button class="btn primary" bindtap="onLogin" loading="{{loading}}" disabled="{{loading}}">
+    {{user ? '已登录 ' + user.mobile : '微信一键登录'}}
+  </button>
+
+  <button class="btn" bindtap="onSubscribe" wx:if="{{user}}">订阅每日热点提醒</button>
+
+  <view class="grid">
+    <navigator url="/pages/hot-topics/hot-topics" class="card">🔥 今日热点</navigator>
+    <navigator url="/pages/publish-pack/publish-pack" class="card">⚡ 发布包</navigator>
+    <navigator url="/pages/profile/profile" class="card">👤 我的 / 充值</navigator>
+  </view>
+
+  <navigator url="/pages/webview/webview?path=/" class="link" wx:if="{{false}}">
+    打开完整 H5（web-view）
+  </navigator>
+</view>

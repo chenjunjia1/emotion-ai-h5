@@ -2,20 +2,16 @@
 
 import Link from "next/link";
 import { useApp } from "@/contexts/app-context";
-import { isClientServerMode } from "@/lib/client/server-api";
-
+import { canAccessOpsAdmin } from "@/lib/auth/login-allowlist";
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user } = useApp();
-  const serverMode = isClientServerMode();
 
-  if (!user || user.role !== "admin") {
+  if (!canAccessOpsAdmin(user) || user?.role !== "admin") {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
         <p className="text-lg font-bold text-slate-800">无管理权限</p>
         <p className="mt-2 max-w-sm text-sm text-slate-500">
-          {serverMode
-            ? "请使用已在环境变量 ADMIN_MOBILES 中配置的管理员手机号登录。"
-            : "演示模式：本地登录手机号末尾 0000 可体验 admin。"}
+          仅内测管理员账号（13798221796）可访问运营后台。
         </p>
         <Link
           href="/profile"

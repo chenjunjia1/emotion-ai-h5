@@ -1,0 +1,16 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/hot-topics/hot-topics",
+    "pages/publish-pack/publish-pack",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarTitleText": "AI运营灵感",
+    "navigationBarBackgroundColor": "#FFF4F7",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FFF8F3"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { isPilotLoginMobile } from "@/lib/auth/login-allowlist";
 import { getSessionSecret, isServerBackendEnabled } from "@/lib/server/config";
 import { findUserById } from "@/lib/server/db/v1";
 import { SESSION_COOKIE, verifySession, type SessionPayload } from "@/lib/server/session";
@@ -33,7 +34,7 @@ export async function requireUser(): Promise<User | null> {
 
 export async function requireAdmin(): Promise<User | null> {
   const user = await requireUser();
-  if (!user || user.role !== "admin") return null;
+  if (!user || user.role !== "admin" || !isPilotLoginMobile(user.mobile)) return null;
   return user;
 }
 

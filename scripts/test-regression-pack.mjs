@@ -49,12 +49,12 @@ case_("wizard: 仅两步文案", () => {
   assert.match(src, /WIZARD_STEPS = \["填写选题与方向", "生成内容"\]/);
 });
 
-case_("publish-pack: 无独立下一步平台步", () => {
-  const src = read("src/app/publish-pack/page.tsx");
-  assert.doesNotMatch(src, /PlatformSelectGrid/);
-  assert.match(src, /PlatformCompactChips/);
-  assert.doesNotMatch(src, /setWizardStep/);
-  assert.doesNotMatch(src, /GeneratingProgressCard/);
+case_("publish-pack: 默认工作室 + legacy 保留", () => {
+  const page = read("src/app/publish-pack/page.tsx");
+  const legacy = read("src/app/publish-pack/publish-pack-legacy-page.tsx");
+  assert.match(page, /PublishPackStudioPage/);
+  assert.match(legacy, /PlatformCompactChips/);
+  assert.doesNotMatch(legacy, /GeneratingProgressCard/);
 });
 
 // —— 首页轮播（正向）——

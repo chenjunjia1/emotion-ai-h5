@@ -21,7 +21,7 @@ export const FEATURE_LIMITS: Record<
     publishReminders: 3,
   },
   pro: {
-    topicBox: 5,
+    topicBox: 3,
     titleGacha: 10,
     viralScore: 20,
     hotTopicView: 99,

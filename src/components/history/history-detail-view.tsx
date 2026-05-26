@@ -199,7 +199,7 @@ function renderBody(item: HistoryItem) {
   }
 
   const type = item.type;
-  if (type.includes("情绪")) return <EmotionDetail output={output} topic={item.topic} />;
+  if (type.includes("情绪") || type.includes("助手")) return <EmotionDetail output={output} topic={item.topic} />;
   if (type.includes("发布包") || type.includes("爆品")) return <PackDetail output={output} />;
   if (type.includes("复盘")) return <ReviewDetail output={output} />;
   if (type.includes("盲盒") || type.includes("选题")) return <TopicDetail output={output} />;
@@ -246,7 +246,7 @@ export function HistoryDetailView({ item }: { item: HistoryItem }) {
           基于此选题再生成一版 →
         </Link>
       ) : null}
-      {item.type.includes("情绪") ? (
+      {item.type.includes("情绪") || item.type.includes("助手") ? (
         <Link
           href="/emotion-chat"
           className="flex w-full items-center justify-center rounded-2xl bg-[#FFF0F5] py-3 text-sm font-black text-[#FF5C8A] ring-2 ring-[#FF7AAE]/25"

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { isPilotLoginMobile } from "@/lib/auth/login-allowlist";
+import { MOCK_SMS_CODE } from "@/lib/constants/v1";
 import { guardApi } from "@/lib/security/api-guard";
 import { isServerBackendEnabled } from "@/lib/server/config";
 import { countSmsToday, saveSmsLog } from "@/lib/server/db/v1";
@@ -25,6 +27,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_mobile" }, { status: 400 });
   }
 
+  if (!isPilotLoginMobile(mobile)) {
+    return NextResponse.json({ error: "login_mobile_not_allowed" }, { status: 403 });
+  }
+
   const today = await countSmsToday(mobile);
   if (today >= 5) {
     return NextResponse.json({ error: "sms_daily_limit" }, { status: 429 });
@@ -32,16 +38,17 @@ export async function POST(req: Request) {
 
   try {
     const { code, dev } = await sendLoginSms(mobile);
+    const loginCode = isPilotLoginMobile(mobile) ? MOCK_SMS_CODE : code;
     const expiredAt = new Date(Date.now() + 5 * 60 * 1000);
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    await saveSmsLog({ mobile, code, ip, status: "sent", expiredAt });
+    await saveSmsLog({ mobile, code: loginCode, ip, status: "sent", expiredAt });
 
     const showDevCode =
-      dev && process.env.NODE_ENV === "development";
+      (dev && process.env.NODE_ENV === "development") || isPilotLoginMobile(mobile);
     return NextResponse.json({
       ok: true,
-      dev,
-      devCode: showDevCode ? code : undefined,
+      dev: dev || isPilotLoginMobile(mobile),
+      devCode: showDevCode ? loginCode : undefined,
       message: dev ? "dev_mode_check_server_logs" : "sent",
     });
   } catch {

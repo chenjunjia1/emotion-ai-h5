@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  BUDDY_LIVE_ACTIVITIES,
+  BUDDY_USAGE_BASE,
   formatActivityTimeAgo,
   getBuddyTodayUsageCount,
   getShuffledBuddyActivities,
@@ -55,13 +57,20 @@ function ActivityRow({
 }
 
 export function AiAssistantLiveTicker({ compact }: { compact?: boolean } = {}) {
-  const activities = useMemo(() => getShuffledBuddyActivities(), []);
-  const [todayCount, setTodayCount] = useState(() => getBuddyTodayUsageCount());
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * activities.length));
+  /** 首屏固定列表，避免 SSR 与客户端 shuffle / random 不一致 */
+  const [activities, setActivities] = useState<BuddyLiveActivity[]>(
+    () => BUDDY_LIVE_ACTIVITIES
+  );
+  const [todayCount, setTodayCount] = useState(BUDDY_USAGE_BASE);
+  const [idx, setIdx] = useState(0);
   const [fade, setFade] = useState(true);
   const [jitter, setJitter] = useState(0);
 
   useEffect(() => {
+    const list = getShuffledBuddyActivities();
+    setActivities(list);
+    setIdx(Math.floor(Math.random() * list.length));
+
     const refresh = () => setTodayCount(getBuddyTodayUsageCount());
     refresh();
     let timeoutId: ReturnType<typeof setTimeout>;

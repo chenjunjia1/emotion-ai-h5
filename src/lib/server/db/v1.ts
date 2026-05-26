@@ -19,7 +19,7 @@ const GENERATION_TYPE_LABEL: Record<string, string> = {
   viral: "爆款同款拆解",
   review: "发完复盘",
   reply: "神回复",
-  emotion_chat: "AI情绪聊天",
+  emotion_chat: "AI助手",
   score: "爆款潜力打分",
   hot_topic_pack: "爆品内容包",
   account_test: "测号结果",

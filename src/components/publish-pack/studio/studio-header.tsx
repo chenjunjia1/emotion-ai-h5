@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Crown, Sparkles, Zap } from "lucide-react";
 import { ProfileUserAvatar } from "@/components/profile/profile-user-avatar";
 import { useApp } from "@/contexts/app-context";
@@ -8,9 +9,18 @@ import { getTotalQuota } from "@/lib/v1/quota";
 import { cn } from "@/lib/utils";
 
 export function StudioHeader({ onBack }: { onBack: () => void }) {
-  const { user, setLoginOpen, setQuotaModalOpen } = useApp();
+  const router = useRouter();
+  const { user, setLoginOpen } = useApp();
   const quota = user ? getTotalQuota(user) : 0;
   const isPro = user && user.plan !== "free";
+
+  const goMembership = () => {
+    if (!user) {
+      setLoginOpen(true);
+      return;
+    }
+    router.push("/profile?pricing=1");
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#FFE8F0]/80 bg-[#FFFBF8]/95 backdrop-blur-xl">
@@ -39,7 +49,7 @@ export function StudioHeader({ onBack }: { onBack: () => void }) {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            onClick={() => (user ? setQuotaModalOpen(true) : setLoginOpen(true))}
+            onClick={goMembership}
             className="flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#FF4F8B] ring-1 ring-[#FFE8F0] shadow-sm"
           >
             <Zap size={12} className="fill-[#FF4F8B]" />
@@ -47,7 +57,7 @@ export function StudioHeader({ onBack }: { onBack: () => void }) {
           </button>
           <button
             type="button"
-            onClick={() => (user ? setQuotaModalOpen(true) : setLoginOpen(true))}
+            onClick={goMembership}
             className={cn(
               "flex items-center gap-0.5 rounded-full px-2 py-1 text-[9px] font-black ring-1",
               isPro

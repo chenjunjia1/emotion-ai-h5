@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { HotTopicsPageHero } from "@/components/hot-topics/hot-topics-page-hero";
 import { HotTopicsStatsStrip } from "@/components/hot-topics/hot-topics-stats-strip";
 import { XhsHotNotesFeed } from "@/components/hot-topics/xhs-hot-notes-feed";
-import { apiGetXhsHotNotes } from "@/lib/xhs/xhs-client-api";
+import { apiGetXhsHotNotes, apiGetXhsHotNotesMeta } from "@/lib/xhs/xhs-client-api";
 import {
   clearXhsHotNotesClientCache,
   getXhsHotNotesClientCache,
@@ -39,33 +39,63 @@ function HotTopicsPageContent() {
   const [xhsLoading, setXhsLoading] = useState(true);
   const [xhsError, setXhsError] = useState<string | null>(null);
 
-  const loadXhsNotes = useCallback(async (force = false) => {
-    if (!force) {
-      const hit = getXhsHotNotesClientCache();
-      if (hit?.data?.length) {
-        setXhsNotes(hit.data);
-        setXhsLoading(false);
-        setXhsError(null);
-        return;
-      }
-    }
-
-    setXhsLoading(true);
-    setXhsError(null);
-    const res = await apiGetXhsHotNotes(force);
+  const applyResponse = useCallback((res: Awaited<ReturnType<typeof apiGetXhsHotNotes>>) => {
     if (!res.success || !res.data?.length) {
       setXhsError(res.message ?? "暂无小红书热门图文");
       setXhsNotes([]);
-      setXhsLoading(false);
       return;
     }
+    setXhsError(null);
     setXhsNotes(res.data);
     setXhsHotNotesClientCache(res);
-    setXhsLoading(false);
   }, []);
 
+  const loadXhsNotes = useCallback(
+    async (opts?: { force?: boolean; silent?: boolean }) => {
+      const force = opts?.force ?? false;
+      const silent = opts?.silent ?? false;
+
+      let serverRevision: string | null = null;
+      try {
+        const meta = await apiGetXhsHotNotesMeta();
+        serverRevision = meta.dataRevision;
+      } catch {
+        /* 元数据失败仍尝试拉列表 */
+      }
+
+      if (!force) {
+        const hit = getXhsHotNotesClientCache(serverRevision);
+        if (hit?.data?.length) {
+          setXhsNotes(hit.data);
+          setXhsError(null);
+          setXhsLoading(false);
+          if (serverRevision && hit.dataRevision === serverRevision) {
+            return;
+          }
+        }
+      }
+
+      if (!silent) setXhsLoading(true);
+      setXhsError(null);
+      const res = await apiGetXhsHotNotes(force || Boolean(serverRevision));
+      applyResponse(res);
+      setXhsLoading(false);
+    },
+    [applyResponse]
+  );
+
   useEffect(() => {
-    void loadXhsNotes(false);
+    void loadXhsNotes({ force: false, silent: false });
+  }, [loadXhsNotes]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadXhsNotes({ force: true, silent: true });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [loadXhsNotes]);
 
   useEffect(() => {
@@ -77,7 +107,7 @@ function HotTopicsPageContent() {
 
   const onRetryXhs = () => {
     clearXhsHotNotesClientCache();
-    void loadXhsNotes(true);
+    void loadXhsNotes({ force: true });
   };
 
   return (

@@ -14,6 +14,7 @@
 # next.js
 /.next/
 /out/
+/public/generated/
 
 # production
 /build
@@ -43,6 +44,7 @@ yarn-error.log*
 # env files
 .env*.local
 .env.vercel-paste
+xinghui.credentials.local
 
 # alipay keys (never commit)
 .alipay-keys/
@@ -50,3 +52,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel

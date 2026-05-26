@@ -1,3 +1,4 @@
+import { clearXhsHotNotesServerCache } from "@/lib/xhs/xhs-server-cache";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
 import { filterXhsNotesByTab } from "@/lib/xhs/xhs-feed-filters";
@@ -23,7 +24,8 @@ const XHS_CATEGORIES: XhsNoteCategory[] = [
 ];
 
 function matchesSearch(note: XhsHotNote, q: string): boolean {
-  const hay = `${note.title} ${note.desc} ${note.noteId} ${note.category} ${note.tags.join(" ")}`.toLowerCase();
+  const hay =
+    `${note.title} ${note.desc} ${note.displayHeadline ?? ""} ${note.noteId} ${note.category} ${note.tags.join(" ")}`.toLowerCase();
   const headline = buildXhsCardCopy(note).headline.toLowerCase();
   const needle = q.toLowerCase();
   return hay.includes(needle) || headline.includes(needle);
@@ -167,5 +169,7 @@ export async function saveXhsNotesForAdmin(
   );
 
   if (error) return { ok: false, error: error.message };
+
+  clearXhsHotNotesServerCache();
   return { ok: true };
 }

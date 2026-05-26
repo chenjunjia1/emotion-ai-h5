@@ -22,11 +22,14 @@ import {
   ProfileHeroCard,
   ProfileQuickActions,
 } from "@/components/profile/profile-dashboard";
+import { ProfileDailyQuestStrip } from "@/components/profile/profile-daily-quest-strip";
+import { ProfileMembershipBanner } from "@/components/profile/profile-membership-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useApp } from "@/contexts/app-context";
-import { orderStatusLabel } from "@/lib/orders/display";
+import { ProfileOrdersSection } from "@/components/profile/profile-orders-section";
 import { trackEvent } from "@/lib/analytics";
+import { canAccessOpsAdmin } from "@/lib/auth/login-allowlist";
 import { getTotalQuota } from "@/lib/v1/quota";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -118,8 +121,6 @@ function ProfileContent() {
   ];
 
   const totalQuota = getTotalQuota(user);
-  const recentOrders = orders.slice(0, 3);
-
   return (
     <AppShell>
       <div className="profile-stagger space-y-3 pb-2">
@@ -132,58 +133,25 @@ function ProfileContent() {
           onOpenPricing={() => setView("pricing")}
         />
 
+        <ProfileMembershipBanner
+          user={user}
+          tr={tr}
+          onOpenPricing={() => {
+            trackEvent("view_pricing");
+            setView("pricing");
+          }}
+        />
+
+        <ProfileDailyQuestStrip />
+
         <ProfileQuickActions tr={tr} />
 
-        {user.role === "admin" ? (
-          <Link
-            href="/admin"
-            className={cn(
-              "flex items-center justify-between rounded-[22px] border border-slate-200/80 bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3.5 text-white shadow-md active:scale-[0.99]"
-            )}
-          >
-            <span className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-                <Shield size={18} />
-              </span>
-              <span className="text-left">
-                <span className="block text-sm font-bold">{tr("adminPanel")}</span>
-                <span className="text-[11px] text-white/70">用户 · 订单 · 内容 · 反馈</span>
-              </span>
-            </span>
-            <ChevronRight size={18} className="text-white/60" />
-          </Link>
-        ) : null}
-
-        {recentOrders.length > 0 ? (
-          <Card>
-            <CardContent className="py-3">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-bold">{tr("ordersTitle")}</h3>
-                {user.plan === "free" ? (
-                  <button
-                    type="button"
-                    onClick={() => setView("pricing")}
-                    className="text-[10px] font-bold text-[#FF7AAE]"
-                  >
-                    {tr("buyBenefits")}
-                  </button>
-                ) : null}
-              </div>
-              {recentOrders.map((o) => (
-                <div
-                  key={o.id}
-                  className="mb-1.5 rounded-xl bg-orange-50/80 px-3 py-2 text-[11px] leading-5 last:mb-0"
-                >
-                  <b>{o.productName}</b>
-                  <span className="text-slate-500">
-                    {" "}
-                    · ¥{o.amount} · {orderStatusLabel(o.status)}
-                  </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : null}
+        <ProfileOrdersSection
+          orders={orders}
+          tr={tr}
+          variant="preview"
+          onOpenPricing={() => setView("pricing")}
+        />
 
         <Card>
           <CardContent className="py-2">
@@ -233,6 +201,26 @@ function ProfileContent() {
             </Button>
           </CardContent>
         </Card>
+
+        {canAccessOpsAdmin(user) ? (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center justify-between rounded-[22px] border border-slate-200/80 bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3.5 text-white shadow-md active:scale-[0.99]"
+            )}
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                <Shield size={18} />
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-bold">{tr("adminPanel")}</span>
+                <span className="text-[11px] text-white/70">用户 · 订单 · 内容 · 反馈</span>
+              </span>
+            </span>
+            <ChevronRight size={18} className="text-white/60" />
+          </Link>
+        ) : null}
       </div>
     </AppShell>
   );

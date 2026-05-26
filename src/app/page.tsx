@@ -11,12 +11,11 @@ import { cn } from "@/lib/utils";
 const HOME_SEEN_KEY = "home_flow_seen";
 
 export default function HomePage() {
-  const [skipEnterAnim] = useState(
-    () => typeof window !== "undefined" && !!sessionStorage.getItem(HOME_SEEN_KEY)
-  );
+  const [skipEnterAnim, setSkipEnterAnim] = useState(false);
 
   useEffect(() => {
     try {
+      setSkipEnterAnim(!!sessionStorage.getItem(HOME_SEEN_KEY));
       sessionStorage.setItem(HOME_SEEN_KEY, "1");
     } catch {
       /* ignore */

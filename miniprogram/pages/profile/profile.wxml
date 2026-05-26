@@ -1,0 +1,6 @@
+<view class="wrap">
+  <web-view src="{{src}}" />
+  <cover-view class="pay-bar">
+    <cover-view class="pay-btn" bindtap="onBuyPack">购买灵感（微信支付）</cover-view>
+  </cover-view>
+</view>

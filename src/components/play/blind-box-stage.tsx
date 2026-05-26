@@ -7,6 +7,7 @@ import {
   hapticLight,
   hapticSuccess,
   hapticSsr,
+  playBlindBoxPop,
   playOpenBox,
   playSsrReveal,
 } from "@/lib/play-feedback";
@@ -206,6 +207,7 @@ export async function runBlindBoxReveal<T>(
   if (raced.kind === "done") {
     value = raced.value;
     setPhase("opening");
+    playBlindBoxPop();
     await minDelay(BLIND_BOX_OPENING_MS);
   } else {
     // 已到 2s 上限：立刻揭晓，下方卡片可先出加载态

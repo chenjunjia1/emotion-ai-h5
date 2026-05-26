@@ -11,6 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isPilotLoginMobile } from "@/lib/auth/login-allowlist";
 import { debouncedSaveJson } from "@/lib/debounce-storage";
 import { mockMomentsPack } from "@/lib/publish-pack/moments-result";
 import {
@@ -346,16 +347,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const sendCode = useCallback(
     async (mobile: string) => {
+      const m = mobile.trim();
+      if (!isPilotLoginMobile(m)) {
+        showToast(tr("loginMobileNotAllowed"));
+        return false;
+      }
       if (isClientServerMode()) {
-        const r = await apiSendCode(mobile);
+        const r = await apiSendCode(m);
         if (r.ok) {
-          appendLog("sms_logs", `向 ${mobile} 发送验证码`);
+          appendLog("sms_logs", `向 ${m} 发送验证码`);
           if (r.devCode) {
             showToast(`${tr("codeSentDevLocal")} ${r.devCode}`);
           } else {
             showToast(r.dev ? tr("codeSentDev") : tr("codeSentSms"));
           }
           return true;
+        }
+        if (r.error === "login_mobile_not_allowed") {
+          showToast(tr("loginMobileNotAllowed"));
+          return false;
         }
         showToast(tr("smsFrequent"));
         return false;
@@ -384,6 +394,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const c = code.trim();
       if (!c) {
         const msg = tr("codeEmpty");
+        showToast(msg);
+        return { ok: false, message: msg };
+      }
+      if (!isPilotLoginMobile(m)) {
+        const msg = tr("loginMobileNotAllowed");
         showToast(msg);
         return { ok: false, message: msg };
       }

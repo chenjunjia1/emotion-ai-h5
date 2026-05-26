@@ -78,7 +78,7 @@ export function PublishPackStudioPage() {
     if (!ensureQuota(STUDIO_QUOTA.fullPackage)) return;
     const trimmed = topic.trim();
     if (trimmed.length < 2) {
-      showToast("先说一句话，比如今天下班好累");
+      showToast("先说一句话，比如「今日份快乐已到账」");
       return;
     }
 

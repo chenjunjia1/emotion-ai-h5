@@ -97,11 +97,15 @@ function loadGrowth(): GrowthState {
   try {
     const raw = localStorage.getItem(STORAGE_GROWTH);
     const g = raw
-      ? (JSON.parse(raw) as Omit<GrowthState, "level"> & { lastCheckin?: string })
+      ? (JSON.parse(raw) as Omit<GrowthState, "level"> & {
+          lastCheckin?: string;
+          tasksDate?: string | null;
+        })
       : { xp: 0, streakDays: 0, tasksDone: [] as string[], lastCheckinDate: null };
     const today = new Date().toISOString().slice(0, 10);
     const lastCheckin = g.lastCheckinDate ?? g.lastCheckin ?? null;
-    const tasksDone = lastCheckin === today ? (g.tasksDone ?? []) : [];
+    const tasksDate = g.tasksDate ?? null;
+    const tasksDone = tasksDate === today ? (g.tasksDone ?? []) : [];
     const cachedServerXp = readCachedUserGrowthXp();
     const xp = cachedServerXp ?? g.xp ?? 0;
     return toGrowthState({
@@ -115,14 +119,20 @@ function loadGrowth(): GrowthState {
   }
 }
 
-function saveGrowth(g: GrowthState & { lastCheckin?: string }) {
+function saveGrowth(
+  g: GrowthState & { lastCheckin?: string; tasksDate?: string | null }
+) {
   if (typeof window === "undefined") return;
+  const today = new Date().toISOString().slice(0, 10);
+  const tasksDate =
+    g.tasksDate ?? (g.tasksDone.length > 0 ? today : null);
   localStorage.setItem(
     STORAGE_GROWTH,
     JSON.stringify({
       xp: g.xp,
       streakDays: g.streakDays,
       tasksDone: g.tasksDone,
+      tasksDate,
       lastCheckin: g.lastCheckinDate ?? g.lastCheckin ?? null,
     })
   );
@@ -331,9 +341,14 @@ export function useProduct() {
 
   const markTask = useCallback(
     (id: string) => {
+      const today = new Date().toISOString().slice(0, 10);
       setGrowth((g) => {
         if (g.tasksDone.includes(id)) return g;
-        const next = { ...g, tasksDone: [...g.tasksDone, id] };
+        const next = {
+          ...g,
+          tasksDone: [...g.tasksDone, id],
+          tasksDate: today,
+        };
         saveGrowth(next);
         return next;
       });
@@ -343,6 +358,7 @@ export function useProduct() {
 
   const completeTask = useCallback(
     async (id: string) => {
+      if (id !== "checkin" && growth.tasksDone.includes(id)) return;
       if (id === "checkin") {
         if (serverMode && user) {
           const r = await apiGrowthAction({ action: "checkin" });
@@ -405,7 +421,7 @@ export function useProduct() {
       playTaskDone();
       showToast(tr("questTaskDone"));
     },
-    [addXp, markTask, serverMode, setUser, showToast, tr, user]
+    [addXp, growth.tasksDone, markTask, serverMode, setUser, showToast, tr, user]
   );
 
   const ensureLogin = useCallback(() => {
@@ -451,6 +467,7 @@ export function useProduct() {
           id: res.generationId,
         });
         syncHistories();
+        void completeTask("topic");
         return normalized;
       }
       const result = mockTopicBlindBox({
@@ -474,6 +491,7 @@ export function useProduct() {
     [
       addHistory,
       addXp,
+      completeTask,
       ensureLogin,
       markTask,
       openQuotaModal,
@@ -516,6 +534,7 @@ export function useProduct() {
       if (!out?.result) return out ?? null;
       if (serverMode) {
         syncHistories();
+        void completeTask("pack");
       } else {
         markTask("pack");
         void addXp(XP_REWARDS.publish_pack);
@@ -524,6 +543,7 @@ export function useProduct() {
     },
     [
       addXp,
+      completeTask,
       ctxGeneratePublishPack,
       ensureLogin,
       markTask,
@@ -575,20 +595,25 @@ export function useProduct() {
       style: string;
     }) => {
       if (!ensureLogin()) return null;
-      const emotionCost = QUOTA_COST.emotion_chat ?? 2;
-      if (!serverMode) {
-        if (!user || !canAffordQuota(user, "emotion_chat")) {
-          openQuotaModal({
-            need: emotionCost,
-            have: user ? getTotalQuota(user) : 0,
-          });
-          return null;
-        }
+      const emotionCost = QUOTA_COST.emotion_chat ?? 5;
+      if (
+        !user ||
+        (!serverMode && !canAffordQuota(user, "emotion_chat")) ||
+        (serverMode && !canAffordQuota(user, "emotion_chat"))
+      ) {
+        openQuotaModal({
+          need: emotionCost,
+          have: user ? getTotalQuota(user) : 0,
+        });
+        return null;
       }
       if (serverMode) {
         const res = await apiEmotionChat(input);
         if (res.error === "quota_insufficient") {
-          openQuotaModal();
+          openQuotaModal({
+            need: emotionCost,
+            have: user ? getTotalQuota(user) : 0,
+          });
           return null;
         }
         if (res.error === "unauthorized") {
@@ -597,17 +622,17 @@ export function useProduct() {
         }
         if (res.user) setUser(res.user);
         if (res.result) {
-          addHistory("AI情绪聊天", input.chat.slice(0, 80), res.result as Record<string, unknown>, {
+          addHistory("AI助手", input.chat.slice(0, 80), res.result as Record<string, unknown>, {
             id: res.generationId,
           });
-          syncHistories();
+          void refreshUser();
           return { ...res.result, usedMock: res.usedMock };
         }
         return null;
       }
       const result = mockEmotionChat(input);
       setUser((u) => (u ? applyQuotaDeduct(u, emotionCost) : u));
-      addHistory("AI情绪聊天", input.chat.slice(0, 80), result as Record<string, unknown>);
+      addHistory("AI助手", input.chat.slice(0, 80), result as Record<string, unknown>);
       markTask("reply");
       void addXp(XP_REWARDS.reply);
       return result;
@@ -618,10 +643,10 @@ export function useProduct() {
       ensureLogin,
       markTask,
       openQuotaModal,
+      refreshUser,
       serverMode,
       setLoginOpen,
       setUser,
-      syncHistories,
       user,
     ]
   );
@@ -759,6 +784,7 @@ export function useProduct() {
             id: res.generationId,
           });
           syncHistories();
+          void completeTask("review");
           return { ...res.result, usedMock: res.usedMock };
         }
         return null;
@@ -773,6 +799,7 @@ export function useProduct() {
     [
       addHistory,
       addXp,
+      completeTask,
       ensureLogin,
       markTask,
       openQuotaModal,
@@ -830,6 +857,7 @@ export function useProduct() {
     featureLimits,
 
     completeTask,
+    refreshProductState,
     drawTopicBox,
     generatePublishPack,
     runAccountTest,

@@ -1,0 +1,16 @@
+{
+  "description": "AI短视频运营灵感 · 微信小程序",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.4.0",
+  "appid": "请替换为你的小程序AppID",
+  "projectname": "emotion-ai-miniprogram",
+  "condition": {}
+}

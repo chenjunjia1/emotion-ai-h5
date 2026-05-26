@@ -125,7 +125,7 @@ export function HomeQuestRewards({ embedded }: { embedded?: boolean } = {}) {
       <section
         className={cn(
           "relative overflow-hidden",
-          embedded ? "px-3 pb-3 pt-1" : "cream-card rounded-[28px] p-4"
+          embedded ? "px-3 pb-8 pt-2" : "cream-card rounded-[28px] p-4"
         )}
       >
         <ConfettiBurst active={effectiveChest === "opening"} />

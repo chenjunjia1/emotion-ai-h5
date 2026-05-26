@@ -17,6 +17,20 @@ export function ProfileUserAvatar({
 }) {
   const profile = loadAiProfile(userId);
 
+  if (profile?.customAvatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={profile.customAvatarUrl}
+        alt=""
+        className={cn(
+          "h-14 w-14 shrink-0 rounded-full object-cover shadow-[0_4px_14px_rgba(255,122,174,0.25)] ring-2 ring-[#FF7AAE]/35",
+          className
+        )}
+      />
+    );
+  }
+
   if (profile?.avatarId) {
     return (
       <PartnerAvatarArt

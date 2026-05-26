@@ -7,8 +7,9 @@ import {
   Crown,
   Flame,
   Gift,
-  Heart,
   History,
+  MessageCircle,
+  Pencil,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -36,9 +37,9 @@ const QUICK_ACTIONS = [
   },
   {
     href: "/emotion-chat",
-    labelKey: "profileQuickEmotion" as const,
-    icon: Heart,
-    grad: "from-[#FF8EC4] to-[#FF5C8A]",
+    labelKey: "navAiChat" as const,
+    icon: MessageCircle,
+    grad: "from-[#A78BFA] to-[#C4B5FD]",
     iconAnim: "play-icon-bounce",
   },
   {
@@ -110,18 +111,33 @@ export function ProfileHeroCard({
           style={{ animationDelay: "1.2s" }}
         />
 
-        <div className="relative flex items-start gap-3">
-          <div className="profile-avatar-float flex shrink-0 flex-col items-center">
+        <Link
+          href="/profile/edit"
+          className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1.5 text-[10px] font-bold text-[#FF7AAE] shadow-md ring-1 ring-[#FF7AAE]/25 transition active:scale-95"
+        >
+          <Pencil size={12} strokeWidth={2.2} />
+          {tr("profileEditProfile")}
+        </Link>
+
+        <div className="relative flex items-start gap-3 pr-16">
+          <Link
+            href="/profile/edit"
+            className="profile-avatar-float relative flex shrink-0 flex-col items-center active:opacity-90"
+            aria-label={tr("profileEditProfile")}
+          >
             <ProfileUserAvatar
               userId={user.id}
               className="h-[4.25rem] w-[4.25rem] ring-[3px] ring-white shadow-lg"
             />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF7AAE] text-white shadow ring-2 ring-white">
+              <Pencil size={10} strokeWidth={2.5} />
+            </span>
             {companion ? (
               <span className="mt-1 rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-[#FF5C8A] shadow-sm ring-1 ring-[#FF7AAE]/25">
                 陪跑中
               </span>
             ) : null}
-          </div>
+          </Link>
           <div className="min-w-0 flex-1 pt-0.5">
             <p className="text-[10px] font-bold text-[#FF7AAE]">{tr("profileEyebrow")}</p>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -173,11 +189,7 @@ export function ProfileHeroCard({
             </div>
             {!companion ? (
               <Link
-                href="/onboarding"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = "/onboarding";
-                }}
+                href="/profile/edit"
                 className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-bold text-[#FF7AAE] active:opacity-70"
               >
                 <UserRound size={12} />

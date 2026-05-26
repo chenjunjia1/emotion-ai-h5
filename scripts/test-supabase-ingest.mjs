@@ -85,7 +85,7 @@ async function runSchemaTests(db) {
 
   const tables = [
     "invite_records",
-    "daily_hot_topics",
+    "hot_topics",
     "user_daily_usage",
     "generations",
     "users",

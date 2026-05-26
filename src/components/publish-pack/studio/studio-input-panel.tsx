@@ -115,7 +115,7 @@ export function StudioInputPanel({
       <div className="rounded-[20px] bg-white p-3 ring-1 ring-inset ring-[#FFE8F0] shadow-sm">
         <textarea
           className="min-h-[88px] w-full resize-none bg-transparent text-[14px] leading-relaxed text-[#1F2937] outline-none placeholder:text-[#B0B8C4]"
-          placeholder="例如：今天下班好累，想发一条有松弛感的内容"
+          placeholder="例如：今日份快乐已到账，想发条元气满满的日常"
           maxLength={100}
           value={topic}
           onChange={(e) => {

@@ -10,6 +10,7 @@ import {
   XHS_HOT_NOTES_LIMIT,
 } from "@/lib/xhs/xhs-keywords";
 import {
+  getXhsHotNotesCacheMeta,
   getXhsHotNotesServerCache,
   setXhsHotNotesServerCache,
 } from "@/lib/xhs/xhs-server-cache";
@@ -55,26 +56,41 @@ async function enrichNoteDetail(note: XhsHotNote): Promise<XhsHotNote> {
 
 /** 聚合 TikHub 多源数据 → 清洗排序后的热门图文 */
 export async function aggregateXhsHotNotes(options?: {
+  /** 跳过服务端内存缓存（仍会优先读 Supabase 运营配置） */
   force?: boolean;
+  /** 强制重新拉 TikHub 并覆盖当日库（Cron 用） */
+  refreshTikhub?: boolean;
   keywords?: string[];
   dateKey?: string;
 }): Promise<{ notes: XhsHotNote[]; cached: boolean; cachedAt?: string; source?: string }> {
   const dateKey = options?.dateKey ?? todayDateKey();
 
-  if (!options?.force) {
+  const dbHit = await getXhsHotNotesFromDb(dateKey);
+  if (dbHit?.notes.length && !options?.refreshTikhub) {
+    setXhsHotNotesServerCache(dbHit.notes, dbHit.fetchedAt);
+    return {
+      notes: dbHit.notes,
+      cached: true,
+      cachedAt: dbHit.fetchedAt,
+      source: "supabase",
+    };
+  }
+
+  if (!options?.force && !options?.refreshTikhub) {
     const mem = getXhsHotNotesServerCache();
+    const memMeta = getXhsHotNotesCacheMeta();
     if (mem?.length) {
       return {
         notes: mem,
         cached: true,
-        cachedAt: new Date().toISOString(),
+        cachedAt: memMeta?.cachedAt,
         source: "memory",
       };
     }
+  }
 
-    const dbHit = await getXhsHotNotesFromDb(dateKey);
+  if (!process.env.TIKHUB_API_KEY?.trim()) {
     if (dbHit?.notes.length) {
-      setXhsHotNotesServerCache(dbHit.notes);
       return {
         notes: dbHit.notes,
         cached: true,
@@ -82,9 +98,6 @@ export async function aggregateXhsHotNotes(options?: {
         source: "supabase",
       };
     }
-  }
-
-  if (!process.env.TIKHUB_API_KEY?.trim()) {
     return { notes: [], cached: false, source: "none" };
   }
 
@@ -117,8 +130,9 @@ export async function aggregateXhsHotNotes(options?: {
 
   candidates = sortXhsNotesByHotScore([...map.values()]);
   const notes = applyUniqueXhsCovers(diversifyXhsNotes(candidates, XHS_HOT_NOTES_LIMIT));
-  setXhsHotNotesServerCache(notes);
+  const fetchedAt = new Date().toISOString();
   await saveXhsHotNotesToDb(notes, dateKey);
+  setXhsHotNotesServerCache(notes, fetchedAt);
 
-  return { notes, cached: false, source: "tikhub" };
+  return { notes, cached: false, cachedAt: fetchedAt, source: "tikhub" };
 }

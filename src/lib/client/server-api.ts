@@ -35,11 +35,13 @@ export async function apiSendCode(
 
 export function loginErrorMessage(error: string | undefined, lang: Lang = "zh"): string {
   const key: I18nKey =
-    error === "code_expired"
-      ? "codeExpired"
-      : error === "code_invalid"
-        ? "codeError"
-        : "codeError";
+    error === "login_mobile_not_allowed"
+      ? "loginMobileNotAllowed"
+      : error === "code_expired"
+        ? "codeExpired"
+        : error === "code_invalid"
+          ? "codeError"
+          : "codeError";
   return t(lang, key);
 }
 
@@ -814,6 +816,7 @@ export async function apiEmotionChat(input: {
   user?: User;
   error?: string;
   generationId?: string;
+  cost?: number;
 }> {
   const res = await fetch("/api/v1/emotion-chat", {
     method: "POST",
@@ -822,15 +825,14 @@ export async function apiEmotionChat(input: {
     body: JSON.stringify(input),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data.error };
-  const payload = {
+  if (!res.ok) return { error: data.error, user: data.user as User | undefined };
+  return {
     result: data.result as Record<string, unknown> | undefined,
     usedMock: Boolean(data.usedMock),
     user: data.user as User | undefined,
     generationId: data.generationId as string | undefined,
+    cost: typeof data.cost === "number" ? data.cost : undefined,
   };
-  if (data.user) return payload;
-  return { result: payload.result, usedMock: payload.usedMock, generationId: payload.generationId };
 }
 
 export async function apiGetInspirationTitles(batch = 0): Promise<{

@@ -125,6 +125,107 @@ button {
     }
   }
 
+  /* 首页轮播 · 双入口卡片 */
+  .banner-dual-scene {
+    background: radial-gradient(
+        ellipse 80% 60% at 20% 0%,
+        rgba(255, 255, 255, 0.22) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 90% 100%,
+        rgba(255, 232, 168, 0.35) 0%,
+        transparent 50%
+      );
+  }
+
+  .banner-dual-orb {
+    animation: banner-dual-orb 6s ease-in-out infinite;
+  }
+
+  @keyframes banner-dual-orb {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translate(6px, -8px) scale(1.08);
+      opacity: 0.85;
+    }
+  }
+
+  .banner-dual-spark {
+    animation: banner-twinkle 2.4s ease-in-out infinite;
+  }
+
+  .banner-dual-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .banner-dual-card:active {
+    transform: scale(0.97);
+  }
+
+  .banner-dual-card--primary {
+    box-shadow: 0 10px 28px rgba(255, 79, 139, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+
+  .banner-dual-card--gift {
+    box-shadow: 0 8px 22px rgba(255, 140, 66, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.75);
+  }
+
+  .banner-dual-ring {
+    animation: banner-dual-ring 3s ease-in-out infinite;
+  }
+
+  @keyframes banner-dual-ring {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.35;
+    }
+    50% {
+      transform: scale(1.12);
+      opacity: 0.65;
+    }
+  }
+
+  .banner-dual-shine {
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.65) 50%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: buddy-hero-shine 3s ease-in-out infinite;
+  }
+
+  .banner-dual-icon-wand {
+    animation: banner-dual-icon-float 2.6s ease-in-out infinite;
+  }
+
+  .banner-dual-icon-gift {
+    animation: play-icon-bounce 2s ease-in-out infinite;
+  }
+
+  .banner-dual-gift-hop {
+    animation: invite-chibi-hop 2.8s ease-in-out infinite;
+  }
+
+  @keyframes banner-dual-icon-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+      transform: translateY(-5px) rotate(3deg);
+    }
+  }
+
   /* —— 首页动效 Banner（CSS 动图感，非 GIF）—— */
 
   /* 首页运营 Banner：珊瑚粉 + 蜜桃橙 + 奶油白（低饱和奶油风） */

@@ -104,9 +104,17 @@ function BannerHero({
   if (variant === "blindbox") {
     return <BlindboxRichHero motionSrc={motionSrc} />;
   }
+  const isInvite = variant === "invite";
   const center = motionSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={motionSrc} alt="" className="h-[52px] w-[52px] object-contain" />
+    <img
+      src={motionSrc}
+      alt=""
+      className={cn(
+        "object-contain",
+        isInvite ? "h-[38px] w-[38px]" : "h-[52px] w-[52px]"
+      )}
+    />
   ) : variant === "creator" ? (
     <div className="relative">
       <Video size={28} className="text-white" strokeWidth={1.6} />
@@ -121,34 +129,49 @@ function BannerHero({
   ) : variant === "member" ? (
     <Crown size={32} className="text-[#FFE8A8]" strokeWidth={2} />
   ) : (
-    <Users size={30} className="text-white" strokeWidth={1.6} />
+    <Users size={26} className="text-white" strokeWidth={1.6} />
   );
 
+  const heroSize = isInvite ? "h-[46px] w-[46px]" : "h-[54px] w-[54px]";
+  const heroTop = isInvite ? "top-[20px]" : "top-[14px]";
+
   return (
-    <div className="relative mx-auto h-[96px] w-[96px]">
-      <span className="banner-pulse-ring pointer-events-none absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
+    <div
+      className={cn(
+        "relative mx-auto w-[84px]",
+        isInvite ? "h-[100px]" : "h-[96px]"
+      )}
+    >
+      <span
+        className={cn(
+          "banner-pulse-ring pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30",
+          isInvite ? "top-[38%] h-[60px] w-[60px]" : "top-1/2 h-[68px] w-[68px]"
+        )}
+      />
 
       {variant === "creator" && (
-        <BannerSticker text="能发" className="-right-0.5 top-2 rotate-6" />
+        <BannerSticker text="能发" className="-right-0.5 top-1 rotate-6" />
       )}
-      {variant === "invite" && (
-        <BannerSticker text="+10" className="-left-0.5 top-3 -rotate-6" />
+      {isInvite && (
+        <BannerSticker text="+10" className="left-0 top-0 z-20 -rotate-6" />
       )}
       {variant === "gacha" && (
-        <BannerSticker text="GO" className="-right-0.5 bottom-6 rotate-3" />
+        <BannerSticker text="GO" className="-right-0.5 top-10 rotate-3" />
       )}
       {variant === "member" && (
-        <BannerSticker text="¥39" className="-left-0.5 top-2 -rotate-6" />
+        <BannerSticker text="¥39" className="-left-0.5 top-1 -rotate-6" />
       )}
 
       <div
         className={cn(
-          "banner-gift-bounce absolute left-1/2 top-[18%] z-10 flex h-[56px] w-[56px] -translate-x-1/2 items-center justify-center rounded-[18px] bg-white/25 ring-2 ring-white/45 backdrop-blur-sm",
+          "banner-gift-bounce absolute left-1/2 z-10 flex -translate-x-1/2 items-center justify-center rounded-[16px] bg-white/25 ring-2 ring-white/45 backdrop-blur-sm",
+          heroTop,
+          heroSize,
           (variant === "gacha" || variant === "member") && "banner-gacha-spin"
         )}
       >
         {variant === "member" ? (
-          <div className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE8A8] to-[#FFC46B] shadow-md ring-2 ring-white/60">
+          <div className="flex h-[42px] w-[42px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFE8A8] to-[#FFC46B] shadow-md ring-2 ring-white/60">
             {center}
           </div>
         ) : (
@@ -156,26 +179,29 @@ function BannerHero({
         )}
       </div>
 
-      {variant === "invite" && (
-        <>
+      {isInvite && (
+        <div className="absolute inset-x-0 bottom-0 z-20 flex items-end justify-between">
           <span
-            className="invite-chibi-hop absolute bottom-2 left-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-md ring-2 ring-white/70"
+            className="invite-chibi-hop flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs shadow-md ring-1 ring-white/80"
             style={{ animationDelay: "0s" }}
           >
             🧋
           </span>
           <span
-            className="invite-chibi-hop absolute bottom-2 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-md ring-2 ring-white/70"
+            className="invite-chibi-hop flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs shadow-md ring-1 ring-white/80"
             style={{ animationDelay: "0.35s" }}
           >
             ✨
           </span>
-        </>
+        </div>
       )}
 
       <Sparkles
         size={12}
-        className="banner-twinkle absolute right-1 top-2 text-[#FFE8A8]"
+        className={cn(
+          "banner-twinkle pointer-events-none absolute text-[#FFE8A8]",
+          isInvite ? "right-0 top-1" : "right-1 top-2"
+        )}
       />
       {variant === "creator" && (
         <span className="banner-animate-float absolute left-1 top-3 text-sm">
@@ -278,7 +304,7 @@ export function CreamBannerSlide({
           </div>
         ) : null}
 
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_96px] gap-1.5">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_84px] gap-2">
         <div className="flex min-w-0 flex-col justify-between">
           <div
             className={cn(

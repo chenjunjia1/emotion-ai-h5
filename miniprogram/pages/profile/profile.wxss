@@ -1,0 +1,20 @@
+.wrap {
+  height: 100vh;
+}
+.pay-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.95);
+}
+.pay-btn {
+  text-align: center;
+  padding: 24rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #ff4f8b, #ff9a4d);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 700;
+}

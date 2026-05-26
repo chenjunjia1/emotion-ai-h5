@@ -34,6 +34,7 @@ import { inferContentGuess } from "@/lib/publish-pack/infer-guess";
 import {
   GROUPED_INSPIRATION,
   IMAGE_COUNT_OPTIONS,
+  DEFAULT_PUBLISH_INPUT,
   INPUT_PLACEHOLDERS,
 } from "@/lib/publish-pack/pack-inspiration";
 
@@ -44,6 +45,8 @@ const SIMPLE_FEELINGS = [
   "真实碎碎念",
   "深夜emo",
   "打工人嘴替",
+  "发疯文学感",
+  "i人日常感",
 ] as const;
 import type { ImageCountOption } from "@/lib/publish-pack/pack-pricing";
 import {
@@ -136,10 +139,12 @@ export function PublishPackV2Page() {
     modeParam === "advanced" ? "advanced" : "quick"
   );
   const [input, setInput] = useState(
-    topicParam ? decodeURIComponent(topicParam) : "今天下班好累"
+    topicParam ? decodeURIComponent(topicParam) : DEFAULT_PUBLISH_INPUT
   );
   const [guess, setGuess] = useState<ContentGuess>(() =>
-    inferContentGuess(topicParam ? decodeURIComponent(topicParam) : "今天下班好累")
+    inferContentGuess(
+      topicParam ? decodeURIComponent(topicParam) : DEFAULT_PUBLISH_INPUT
+    )
   );
   const [imageCount, setImageCount] = useState<ImageCountOption>(initialImageCount);
   const [advancedExpanded, setAdvancedExpanded] = useState(modeParam === "advanced");
@@ -265,7 +270,7 @@ export function PublishPackV2Page() {
   const applyTopicLine = useCallback((line: string) => {
     setInput((prev) => {
       const t = prev.trim();
-      if (t.length < 6 || t === "今天下班好累") return line;
+      if (t.length < 6 || t === DEFAULT_PUBLISH_INPUT) return line;
       if (t.includes(line.slice(0, 4))) return prev;
       return `${t}。${line}`;
     });
@@ -352,7 +357,7 @@ export function PublishPackV2Page() {
     if (!ensureLogin()) return;
     const trimmed = input.trim();
     if (trimmed.length < 2) {
-      showToast("先说一句话，比如今天下班好累");
+      showToast("先说一句话，比如「今日份快乐已到账」");
       return;
     }
     if (trimmed.length > 180) {
