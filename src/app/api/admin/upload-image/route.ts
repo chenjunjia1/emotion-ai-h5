@@ -44,9 +44,11 @@ export async function POST(req: Request) {
           "admin_panel"
         );
 
-        const persistUrl = result.storageUrl.startsWith("/")
+        const persistUrl = result.storageUrl.startsWith("http")
           ? result.storageUrl
-          : result.cdnUrl;
+          : result.storageUrl.startsWith("/")
+            ? result.storageUrl
+            : result.cdnUrl;
 
         return NextResponse.json({
           ok: true,
@@ -67,7 +69,8 @@ export async function POST(req: Request) {
                   ? 503
                   : 500;
         let error = msg;
-        if (/ENOENT|read-only|EROFS/i.test(msg)) error = "storage_not_configured";
+        if (msg === "supabase_not_configured") error = msg;
+        else if (/ENOENT|read-only|EROFS/i.test(msg)) error = "storage_not_configured";
         else if (msg.startsWith("supabase_bucket:") || msg.startsWith("supabase_storage:")) {
           error = msg;
         } else if (msg === "storage_upload_failed" || msg.startsWith("supabase_bucket_missing")) {

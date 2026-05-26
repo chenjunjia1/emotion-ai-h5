@@ -24,6 +24,8 @@ function uploadErrorMessage(error?: string): string {
       return "无上传权限，请用管理员账号登录";
     case "server_backend_disabled":
       return "服务端未启用，请检查 Supabase 配置";
+    case "supabase_not_configured":
+      return "Vercel 未配置 SUPABASE_SERVICE_ROLE_KEY，请在项目 Environment 添加后 Redeploy";
     case "storage_not_configured":
       return "线上无法写本地目录，请在 Supabase 创建公开桶 uploads（或配置 COS）";
     case "storage_upload_failed":

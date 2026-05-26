@@ -30,6 +30,8 @@ import {
 } from "@/lib/xhs/home-top3-picks";
 import { bumpXhsHotNotesClientCacheVersion } from "@/lib/xhs/xhs-hot-notes-cache";
 import { invalidateHomeTop3Cache } from "@/lib/home/home-top3-cache";
+import { resolvePublicCoverUrl } from "@/lib/media/normalize-cover-url";
+import { xhsCoverDisplayUrl } from "@/lib/xhs/xhs-cover-url";
 import { cn } from "@/lib/utils";
 
 type PageMode = "query" | "edit";
@@ -521,7 +523,11 @@ export default function AdminTodayHotTopicsPage() {
                               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-orange-100 bg-slate-50">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                  src={note.images[0]}
+                                  src={
+                                    xhsCoverDisplayUrl(
+                                      resolvePublicCoverUrl(note.images[0]) ?? note.images[0]
+                                    ) ?? "/images/hot/default.svg"
+                                  }
                                   alt=""
                                   className="h-full w-full object-cover"
                                   referrerPolicy="no-referrer"
@@ -534,6 +540,13 @@ export default function AdminTodayHotTopicsPage() {
                               <p className="min-w-0 flex-1 break-all text-[10px] text-slate-400">
                                 {note.images[0]}
                               </p>
+                              {/localhost|\/generated\/hot-topics-covers-|\/hot-topics\/covers\//.test(
+                                note.images[0]
+                              ) ? (
+                                <p className="mt-1 text-[10px] font-bold text-amber-700">
+                                  此地址在线上无效，请重新上传（成功后会变为 supabase.co 链接）
+                                </p>
+                              ) : null}
                             </div>
                           ) : null}
                           <input

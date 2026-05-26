@@ -114,16 +114,11 @@ async function uploadToSupabaseStorage(
 
   const { data } = db.storage.from(bucket).getPublicUrl(objectKey);
   const publicUrl = data.publicUrl;
-  const cdnBase = getCdnBase().replace(/\/$/, "");
-  const cdnUrl =
-    cdnBase && !/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(cdnBase)
-      ? `${cdnBase}/${objectKey}`
-      : publicUrl;
 
   return {
     key: objectKey,
     storageUrl: publicUrl,
-    cdnUrl,
+    cdnUrl: publicUrl,
   };
 }
 
