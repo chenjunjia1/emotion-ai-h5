@@ -1,19 +1,22 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { MultiSelectCardGrid } from "@/components/publish-pack/multi-select-card-grid";
 import { MomentsResultView } from "@/components/publish-pack/moments-result-view";
-import { PlatformSelectGrid } from "@/components/publish-pack/platform-select-grid";
+import { PlatformCompactChips } from "@/components/publish-pack/platform-compact-chips";
 import { PublishPackEmptyTopic } from "@/components/publish-pack/publish-pack-empty-topic";
 import { PublishPackResultTabs } from "@/components/publish-pack/publish-pack-result-tabs";
 import { SelectedHotTopicCard } from "@/components/publish-pack/selected-hot-topic-card";
-import { GeneratingProgressCard } from "@/components/ui/generating-progress-card";
 import { WizardStepBar } from "@/components/publish-pack/wizard-step-bar";
+import {
+  mergeReviewExtraNote,
+  parseReviewPackSearchParams,
+} from "@/lib/publish-pack/review-bridge";
 import { StepChipGrid } from "@/components/v1/step-chip-grid";
 import { PublishPackSuccessBanner } from "@/components/publish-pack/publish-pack-success-banner";
 import { QuotaCostBadge } from "@/components/ui/quota-cost-badge";
@@ -48,13 +51,6 @@ const PublishSharePoster = dynamic(
   { ssr: false }
 );
 
-const PACK_GENERATE_STAGES = [
-  "正在理解选题与平台…",
-  "撰写标题与正文结构…",
-  "润色口播与发布建议…",
-  "快好了，马上出包 ✨",
-] as const;
-
 function PublishPackInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -62,8 +58,7 @@ function PublishPackInner() {
   const { generatePublishPack } = useProduct();
   const { run, busy } = useAsyncAction();
 
-  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
-  const [platform, setPlatform] = useState("朋友圈");
+  const [platform, setPlatform] = useState("抖音");
   const [momentsTypes, setMomentsTypes] = useState<string[]>(["生活分享"]);
   const [momentsDirections, setMomentsDirections] = useState<string[]>(["日常分享"]);
   const [accountType, setAccountType] = useState<string>(ACCOUNT_TYPE_VALUES[0]);
@@ -74,9 +69,9 @@ function PublishPackInner() {
   const [pack, setPack] = useState<Record<string, unknown> | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
-  const generatingRef = useRef<HTMLDivElement>(null);
-
   const topicParam = params.get("topic");
+  const accountTypeParam = params.get("account_type");
+  const reviewBridge = parseReviewPackSearchParams(params);
   const topicIdParam = params.get("topic_id") ?? params.get("hotId");
   const platformParam = params.get("platform");
   const inspirationMode = params.get("inspiration_mode");
@@ -86,13 +81,31 @@ function PublishPackInner() {
 
   useEffect(() => {
     if (platformParam) setPlatform(platformParam);
+    else if (inspirationMode === "xhs") setPlatform("小红书");
+    if (topicParam) setManualTopic(decodeURIComponent(topicParam));
+    if (accountTypeParam) setAccountType(accountTypeParam);
     if (inspirationMode === "xhs" && inspirationHint) {
       setExtraNote((prev) => prev || inspirationHint);
     }
     if (inspirationCategory && inspirationMode === "xhs") {
       setAccountType(inspirationCategory.includes("职场") ? "职场号" : "生活号");
     }
-  }, [platformParam, inspirationMode, inspirationHint, inspirationCategory]);
+    if (reviewBridge.fromReview) {
+      setExtraNote((prev) =>
+        mergeReviewExtraNote(prev, reviewBridge.reviewHint, reviewBridge.reviewTitle)
+      );
+    }
+  }, [
+    platformParam,
+    inspirationMode,
+    inspirationHint,
+    inspirationCategory,
+    topicParam,
+    accountTypeParam,
+    reviewBridge.fromReview,
+    reviewBridge.reviewHint,
+    reviewBridge.reviewTitle,
+  ]);
 
   const loadHotTopic = useCallback(async () => {
     try {
@@ -124,18 +137,12 @@ function PublishPackInner() {
     void loadHotTopic();
   }, [loadHotTopic]);
 
-  useEffect(() => {
-    if (busy && !pack) {
-      generatingRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [busy, pack]);
-
   const isMoments = platform === "朋友圈";
   const generateCost = QUOTA_COST.publish_pack ?? 30;
   const regenAllCost = QUOTA_COST.publish_regen ?? 10;
   const regenOneCost = QUOTA_COST.moments_regen_one ?? 5;
   const quotaTotal = useMemo(() => (user ? getTotalQuota(user) : 0), [user]);
-  const stepBar = pack ? 3 : wizardStep;
+  const stepBar: 1 | 2 = pack ? 2 : 1;
 
   const topicSource = useMemo(() => {
     return (
@@ -194,18 +201,30 @@ function PublishPackInner() {
 
       try {
         const r = await generatePublishPack(buildInput(quotaAction ?? "publish_pack"));
+        if (r && "error" in r && (r as { error?: string }).error) {
+          const err = (r as { error?: string }).error;
+          showToast(
+            err === "timeout" || err === "network"
+              ? "生成超时，请重试（已为你保留表单）"
+              : tr("generateFailed")
+          );
+          return;
+        }
         if (r?.result && typeof r.result === "object") {
           setPack(r.result as Record<string, unknown>);
-          setWizardStep(2);
-          showToast(quotaAction === "publish_regen" ? "已重新生成" : "生成完成");
+          showToast(
+            quotaAction === "publish_regen"
+              ? "已重新生成，请向下查看"
+              : "生成完成！内容在下方，也可在右上角「生成记录」查看"
+          );
           setTimeout(() => {
             document.getElementById("pack-result")?.scrollIntoView({ behavior: "smooth" });
-          }, 100);
+          }, 80);
         } else {
           showToast(tr("generateFailed"));
         }
       } catch {
-        showToast(tr("generateFailed"));
+        showToast("生成超时，请重试或稍后再试");
       }
     });
 
@@ -310,13 +329,9 @@ function PublishPackInner() {
       </header>
 
       <div className="space-y-4 px-4 pb-36 pt-4">
-        {busy && !pack ? (
-          <div ref={generatingRef}>
-            <GeneratingProgressCard
-              title={isMoments ? "正在生成朋友圈文案" : "正在生成发布包"}
-              subtitle={topicSource || undefined}
-              stages={PACK_GENERATE_STAGES}
-            />
+        {reviewBridge.fromReview && !pack ? (
+          <div className="rounded-[16px] bg-[#FFF0F5] px-3 py-2.5 text-[11px] font-bold text-[#FF4F8B] ring-1 ring-[#FFD0E8]">
+            已带入复盘推荐选题与建议，生成内容将与复盘结论一致
           </div>
         ) : null}
 
@@ -388,17 +403,17 @@ function PublishPackInner() {
               </div>
             )}
           </div>
-        ) : wizardStep === 1 ? (
+        ) : (
           <div className="space-y-4">
             {hotTopic ? (
               <SelectedHotTopicCard topic={hotTopic} />
             ) : (
               <>
                 <PublishPackEmptyTopic />
-                <div className="rounded-[18px] bg-white p-3 ring-1 ring-[#FFE8F0]">
+                <div className="rounded-[18px] bg-white p-3 ring-1 ring-inset ring-[#FFE8F0]">
                   <p className="mb-1.5 text-[11px] font-black text-[#1F2937]">想拍/想发的主题（选填）</p>
                   <input
-                    className="w-full rounded-xl bg-[#FFF8FB] px-3 py-2.5 text-[12px] ring-1 ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
+                    className="w-full rounded-xl bg-[#FFF8FB] px-3 py-2.5 text-[12px] ring-1 ring-inset ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
                     placeholder="例如：下班后的治愈时刻、今日好物分享…"
                     value={manualTopic}
                     onChange={(e) => setManualTopic(e.target.value)}
@@ -407,75 +422,37 @@ function PublishPackInner() {
               </>
             )}
 
-            <div className="cream-card space-y-4 rounded-[24px] p-4 ring-1 ring-[#FFE8F0]">
-              <PlatformSelectGrid value={platform} onChange={setPlatform} />
+            <div className="space-y-4 rounded-[24px] bg-white p-4 ring-1 ring-inset ring-[#FFE8F0]">
+              <PlatformCompactChips value={platform} onChange={setPlatform} />
 
-              {isMoments ? (
-                <MultiSelectCardGrid
-                  title="朋友圈内容类型"
-                  subtitle="选择你需要的方向（可多选）"
-                  options={MOMENTS_CONTENT_TYPES}
-                  value={momentsTypes}
-                  onChange={setMomentsTypes}
-                />
-              ) : null}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (isMoments && momentsTypes.length === 0) {
-                  showToast("请至少选择一种内容类型");
-                  return;
-                }
-                setWizardStep(2);
-              }}
-              className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-3.5 text-sm font-black text-white shadow-[0_8px_24px_rgba(255,79,139,0.35)]"
-            >
-              下一步：选择内容方向
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="cream-card space-y-4 rounded-[24px] p-4 ring-1 ring-[#FFE8F0]">
               {isMoments ? (
                 <>
-                  <section>
-                    <p className="text-[14px] font-black text-[#1F2937]">选择内容方向</p>
-                    <p className="mt-1 text-[11px] text-[#8A94A6]">
-                      AI 会根据你的用途生成不同语气的朋友圈文案
-                    </p>
-                  </section>
                   <MultiSelectCardGrid
-                    title=""
+                    title="朋友圈内容类型"
+                    subtitle="选择你需要的方向（可多选）"
+                    options={MOMENTS_CONTENT_TYPES}
+                    value={momentsTypes}
+                    onChange={setMomentsTypes}
+                  />
+                  <MultiSelectCardGrid
+                    title="内容方向"
+                    subtitle="AI 会根据用途生成不同语气"
                     options={MOMENTS_DIRECTIONS.map((d) => ({ id: d }))}
                     value={momentsDirections}
                     onChange={setMomentsDirections}
                   />
-                  <section>
-                    <p className="mb-2 text-[12px] font-black text-[#1F2937]">补充说明</p>
-                    <textarea
-                      className="w-full resize-none rounded-2xl bg-white p-3 text-[12px] ring-1 ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
-                      rows={4}
-                      maxLength={200}
-                      value={extraNote}
-                      onChange={(e) => setExtraNote(e.target.value)}
-                      placeholder={`请简单描述你想发的内容，比如：\n今天想分享一款护肤品，语气自然一点，不要太像广告。`}
-                    />
-                    <p className="mt-1 text-right text-[10px] text-[#8A94A6]">{extraNote.length}/200</p>
-                  </section>
                 </>
               ) : (
                 <>
                   <StepChipGrid
-                    step={2}
+                    step={1}
                     title="选择账号类型"
                     options={ACCOUNT_TYPE_VALUES}
                     value={accountType}
                     onChange={setAccountType}
                   />
                   <StepChipGrid
-                    step={3}
+                    step={2}
                     title="选择内容风格"
                     options={PUBLISH_STYLE_VALUES}
                     value={style}
@@ -483,26 +460,32 @@ function PublishPackInner() {
                     columns={4}
                   />
                   <StepChipGrid
-                    step={4}
+                    step={3}
                     title="选择生成目标"
                     options={PUBLISH_GOAL_VALUES}
                     value={goal}
                     onChange={setGoal}
                     columns={4}
                   />
-                  <section>
-                    <p className="mb-2 text-[12px] font-black text-[#1F2937]">补充说明（选填）</p>
-                    <textarea
-                      className="w-full resize-none rounded-2xl bg-white p-3 text-[12px] ring-1 ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
-                      rows={3}
-                      maxLength={200}
-                      value={extraNote}
-                      onChange={(e) => setExtraNote(e.target.value)}
-                      placeholder="粉丝数、拍摄场景、想要的语气…"
-                    />
-                  </section>
                 </>
               )}
+
+              <section>
+                <p className="mb-2 text-[12px] font-black text-[#1F2937]">补充说明（选填）</p>
+                <textarea
+                  className="w-full resize-none rounded-2xl bg-[#FFF8FB] p-3 text-[12px] ring-1 ring-inset ring-[#FFE8F0] outline-none focus:ring-[#FF4F8B]/40"
+                  rows={isMoments ? 4 : 3}
+                  maxLength={200}
+                  value={extraNote}
+                  onChange={(e) => setExtraNote(e.target.value)}
+                  placeholder={
+                    isMoments
+                      ? "请简单描述你想发的内容，语气自然一点…"
+                      : "粉丝数、拍摄场景、想要的语气…"
+                  }
+                />
+                <p className="mt-1 text-right text-[10px] text-[#8A94A6]">{extraNote.length}/200</p>
+              </section>
 
               <div className="flex justify-center">
                 <QuotaCostBadge cost={generateCost} />
@@ -520,24 +503,16 @@ function PublishPackInner() {
                 <span className="flex items-center gap-2 text-sm font-black">
                   <Sparkles size={18} className={busy ? "animate-spin" : ""} />
                   {busy
-                    ? tr("loading")
+                    ? "生成中（约 2 秒）…"
                     : isMoments
-                      ? "一键生成朋友圈文案"
-                      : "一键生成发布包 ✨"}
+                      ? "生成朋友圈文案"
+                      : "生成发布包 ✨"}
                 </span>
                 <span className="text-[9px] font-semibold text-white/90">
                   消耗 {generateCost} 灵感 · 当前 {quotaTotal} 灵感
                 </span>
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setWizardStep(1)}
-              className="w-full rounded-2xl bg-white py-3 text-sm font-bold text-[#5A6478] ring-1 ring-[#FFE8F0]"
-            >
-              上一步
-            </button>
           </div>
         )}
       </div>

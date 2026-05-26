@@ -110,7 +110,7 @@ export async function generatePublishPack(input: {
   };
 
   const budget = isMoments
-    ? { ...AI_GENERATE_BUDGET.publish_pack, maxTokens: 2200 }
+    ? { ...AI_GENERATE_BUDGET.publish_pack, maxTokens: 1500 }
     : input.topic.length > 20
       ? AI_GENERATE_BUDGET.publish_pack
       : { ...AI_GENERATE_BUDGET.publish_pack, maxTokens: 1200 };

@@ -494,7 +494,7 @@ export function useProduct() {
       if (!topic) return null;
       const quotaAction =
         input.quotaAction === "hot_topic_pack" ? "hot_topic_pack" : "publish_pack";
-      const { result } = await ctxGeneratePublishPack({
+      const out = await ctxGeneratePublishPack({
         topic,
         platform: String(input.platform ?? "抖音"),
         track: String(input.track ?? "职场成长"),
@@ -512,14 +512,15 @@ export function useProduct() {
         momentsContentTypes: input.momentsContentTypes as string[] | undefined,
         momentsDirections: input.momentsDirections as string[] | undefined,
       });
-      if (!result) return null;
+      if (out && "error" in out && out.error) return out;
+      if (!out?.result) return out ?? null;
       if (serverMode) {
         syncHistories();
       } else {
         markTask("pack");
         void addXp(XP_REWARDS.publish_pack);
       }
-      return result;
+      return out;
     },
     [
       addXp,

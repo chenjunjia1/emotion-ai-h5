@@ -36,4 +36,4 @@ export const MOMENTS_DIRECTIONS = [
 
 export const MOMENTS_COPY_FILTERS = ["全部", "生活分享", "种草带货", "情绪价值", "私域引流"] as const;
 
-export const WIZARD_STEPS = ["选择平台", "选择方向", "生成内容"] as const;
+export const WIZARD_STEPS = ["填写选题与方向", "生成内容"] as const;

@@ -2,7 +2,7 @@
 
 /**
  * 首页奶油风轮播
- * 顺序：① 多平台发片 ② 1分钟发布包 ③ 邀请好友 ④ 开通 Pro（仅免费用户）
+ * 顺序：① 多平台发片 ② 盲盒+情绪助手 ③ 邀请好友 ④ 开通 Pro（仅免费用户）
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,13 +14,13 @@ import {
   bannerTitleLines,
   CreamBannerSlide,
 } from "@/components/home/cream-banner-slide";
-import { HomePublishPackCarouselSlide } from "@/components/home/home-publish-pack-entry";
+import { HomeAttractCarouselSlide } from "@/components/home/home-attract-carousel-slide";
 import { PLAN_QUOTA, PRODUCTS } from "@/lib/constants/v1";
 import { cn } from "@/lib/utils";
 
 const INTERVAL_MS = 5000;
 
-type SlideId = "creator" | "publishPack" | "invite" | "member";
+type SlideId = "creator" | "attract" | "invite" | "member";
 
 /** 轮播动图未上传时用 CSS 插画，避免 404 */
 const MOTION: Partial<Record<SlideId, string>> = {
@@ -29,8 +29,8 @@ const MOTION: Partial<Record<SlideId, string>> = {
 
 const GRADIENTS: Record<SlideId, string> = {
   creator: "from-[#FF4D6D] via-[#FF6B8A] to-[#FFB347]",
-  /** 发布包屏：紫粉→珊瑚，突出核心功能 */
-  publishPack: "from-[#A855F7] via-[#EC4899] to-[#FF6B8A]",
+  /** 盲盒 + 情绪助手：蜜桃粉→珊瑚，与全站主色一致 */
+  attract: "from-[#FF6B8A] via-[#FF8FAB] to-[#FFC46B]",
   /** 邀请屏：暖金→蜜桃粉，与项目粉橙主色一致，略偏礼物感 */
   invite: "from-[#FFC46B] via-[#FF8FAB] to-[#FF4F8B]",
   member: "from-[#FFB347] via-[#FF6B8A] to-[#FF5C7A]",
@@ -68,7 +68,7 @@ export function HomeCreamCarousel() {
 
   const showMemberSlide = user == null || user.plan === "free";
   const slides = useMemo<SlideId[]>(() => {
-    const base: SlideId[] = ["creator", "publishPack", "invite"];
+    const base: SlideId[] = ["creator", "attract", "invite"];
     if (showMemberSlide) base.push("member");
     return base;
   }, [showMemberSlide]);
@@ -130,10 +130,10 @@ export function HomeCreamCarousel() {
             />
           </BannerSlideShell>
         );
-      case "publishPack":
+      case "attract":
         return (
-          <BannerSlideShell gradient={GRADIENTS.publishPack}>
-            <HomePublishPackCarouselSlide />
+          <BannerSlideShell gradient={GRADIENTS.attract}>
+            <HomeAttractCarouselSlide />
           </BannerSlideShell>
         );
       case "invite":

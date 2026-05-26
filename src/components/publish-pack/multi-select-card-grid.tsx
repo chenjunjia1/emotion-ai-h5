@@ -35,7 +35,9 @@ export function MultiSelectCardGrid({
               onClick={() => toggle(o.id)}
               className={cn(
                 "relative rounded-2xl px-3 py-2.5 text-left transition active:scale-[0.98]",
-                active ? "bg-[#FFF0F5] ring-2 ring-[#FF4F8B]/40" : "bg-white ring-1 ring-[#FFE8F0]"
+                active
+                  ? "bg-[#FFF0F5] ring-2 ring-inset ring-[#FF4F8B]/45"
+                  : "bg-white ring-1 ring-inset ring-[#FFE8F0]"
               )}
             >
               {active ? (

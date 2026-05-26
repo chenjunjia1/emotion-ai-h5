@@ -312,20 +312,33 @@ export async function apiGenerateDaily(topic: string) {
 }
 
 export async function apiGeneratePublishPack(input: Record<string, unknown>) {
-  const res = await fetch("/api/v1/generate/publish-pack", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(input),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data.error, risk: data.risk };
-  return {
-    result: data.result,
-    risk: data.risk,
-    user: data.user,
-    generationId: data.generationId as string | undefined,
-  };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2800);
+  try {
+    const res = await fetch("/api/v1/generate/publish-pack", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error, risk: data.risk };
+    return {
+      result: data.result,
+      risk: data.risk,
+      user: data.user,
+      generationId: data.generationId as string | undefined,
+      fastPath: data.fastPath as boolean | undefined,
+    };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return { error: "timeout" };
+    }
+    return { error: "network" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function apiDrawTopicBox(input: Record<string, string>) {

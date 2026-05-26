@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { ReviewScoreMeter } from "@/components/review/review-score-meter";
 import { displayField } from "@/lib/ai/normalize-ai-result";
+import { buildPublishPackHrefFromReview } from "@/lib/publish-pack/review-bridge";
 import { labelClass, normalizeReviewResult } from "@/lib/review/result-shape";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,12 @@ export function ReviewResultDetail({
   const r = normalizeReviewResult(result);
   const score = Number(r.performanceScore ?? 0);
   const stars = Math.min(5, Math.round(score / 20));
+  const nextTopic = displayField(r.nextTopic, "").trim();
+  const packHref = buildPublishPackHrefFromReview({
+    nextTopic: nextTopic || title,
+    reviewTitle: title,
+    nextSuggestion: displayField(r.nextSuggestion, ""),
+  });
 
   return (
     <div className={cn("space-y-3", demo && "opacity-90")}>
@@ -123,13 +130,20 @@ export function ReviewResultDetail({
       </div>
 
       {!demo ? (
-        <Link
-          href={`/publish-pack?topic=${encodeURIComponent(displayField(r.nextTopic, ""))}`}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-3.5 text-sm font-black text-white shadow-md"
-        >
-          <Sparkles size={18} />
-          用推荐选题生成发布包
-        </Link>
+        <div className="space-y-2">
+          <Link
+            href={packHref}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] py-3.5 text-sm font-black text-white shadow-md"
+          >
+            <Sparkles size={18} />
+            用推荐选题生成发布包
+          </Link>
+          {nextTopic ? (
+            <p className="text-center text-[10px] text-[#8A94A6]">
+              将带入推荐选题与复盘建议，生成内容更匹配
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

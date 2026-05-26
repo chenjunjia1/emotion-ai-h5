@@ -160,9 +160,9 @@ export function AiAssistantView() {
 
   const onQuickPick = (id: string, prompt: string) => {
     setResult(null);
-    void run(async () => {
-      await submitQuestion(prompt, id);
-    });
+    setActivePromptId(id);
+    setMessage(prompt);
+    showToast("已填入场景问题，点下方「发送」开始分析");
   };
 
   const copyAnswer = useCallback(() => {
@@ -182,7 +182,12 @@ export function AiAssistantView() {
         featuredLabel={featured.label}
         featuredEmoji={featured.emoji}
         disabled={busy}
-        onPrimaryClick={() => onQuickPick(featured.id, featured.prompt)}
+        onPrimaryClick={() => {
+          setResult(null);
+          setActivePromptId(featured.id);
+          setMessage(featured.prompt);
+          showToast("已填入推荐问题，点下方「发送」开始分析");
+        }}
       />
 
       {showEmpty ? <AiAssistantLiveTicker /> : null}
@@ -191,7 +196,7 @@ export function AiAssistantView() {
         <div className="mb-2.5 flex items-end justify-between px-0.5">
           <div>
             <p className="text-[13px] font-black text-[#1F2937]">{tr("buddyChatQuickTitle")}</p>
-            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">选一个场景，30 秒拿可复制建议</p>
+            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">先选场景填入问题，再点下方发送</p>
           </div>
           <span className="rounded-full bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-2.5 py-0.5 text-[8px] font-black text-white shadow-sm">
             最多人问

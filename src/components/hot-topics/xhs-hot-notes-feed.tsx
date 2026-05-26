@@ -72,9 +72,11 @@ function XhsNoteCard({
     <li className="cv-auto">
       <article
         className={cn(
-          "overflow-hidden rounded-[18px] bg-white shadow-[0_2px_14px_rgba(255,120,150,0.08)] ring-1 ring-[#FFE8F0]",
+          "isolate overflow-hidden rounded-[18px] bg-white shadow-[0_2px_14px_rgba(255,120,150,0.08)] ring-1 ring-inset ring-[#FFE8F0]",
           locked && "pointer-events-none select-none blur-[2px] opacity-60",
-          tab === "hot" && index === 0 && "ring-2 ring-[#FF4F8B]/40 shadow-[0_4px_20px_rgba(255,79,139,0.18)]"
+          tab === "hot" &&
+            index === 0 &&
+            "border-2 border-[#FF4F8B]/35 shadow-[0_4px_20px_rgba(255,79,139,0.15)]"
         )}
       >
         <div className="flex gap-3 p-2.5">
@@ -218,7 +220,11 @@ export function XhsHotNotesFeed({
       {error && !loading ? (
         <div className="rounded-[16px] border border-dashed border-[#FFD0E8] bg-white/90 px-4 py-8 text-center">
           <p className="text-[13px] font-black text-[#1F2937]">{error}</p>
-          <p className="mt-1 text-[10px] text-[#8A94A6]">请确认 TIKHUB_API_KEY 已配置并重启 dev</p>
+          <p className="mt-1 text-[10px] text-[#8A94A6]">
+            {error.includes("TIKHUB")
+              ? "服务端未配置 TikHub 密钥，请联系管理员或在 Vercel 添加 TIKHUB_API_KEY 后重新部署"
+              : "请稍后重试，或检查网络连接"}
+          </p>
           {onRetry ? (
             <button
               type="button"

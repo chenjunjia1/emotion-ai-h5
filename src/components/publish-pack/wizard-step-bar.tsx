@@ -3,11 +3,11 @@
 import { cn } from "@/lib/utils";
 import { WIZARD_STEPS } from "@/lib/publish-pack/moments-options";
 
-export function WizardStepBar({ current }: { current: 1 | 2 | 3 }) {
+export function WizardStepBar({ current }: { current: 1 | 2 }) {
   return (
     <div className="flex items-center justify-center gap-1 px-2 py-3">
       {WIZARD_STEPS.map((label, i) => {
-        const step = (i + 1) as 1 | 2 | 3;
+        const step = (i + 1) as 1 | 2;
         const active = current === step;
         const done = current > step;
         return (

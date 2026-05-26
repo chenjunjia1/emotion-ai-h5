@@ -32,6 +32,7 @@
     "download:covers:pexels": "node scripts/fetch-unsplash-covers.mjs",
     "test:scene-covers": "node scripts/test-scene-covers.mjs",
     "test:full": "node scripts/test-full-app.mjs",
+    "test:regression": "node scripts/test-regression-pack.mjs",
     "test:all": "npm run typecheck && npm run lint && npm run build && npm run verify:css && npm run verify:cron && npm run test:full && npm run test:ingest"
   },
   "dependencies": {

@@ -26,6 +26,9 @@ export function PublishPackSuccessBanner({
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black">{tr("publishPackWinTitle")}</p>
           <p className="mt-0.5 text-[10px] text-white/90">{tr("publishPackWinSub")}</p>
+          <p className="mt-1 text-[9px] font-bold text-white/80">
+            内容在下方卡片 · 已同步到「生成记录」
+          </p>
         </div>
       </div>
       <div className="relative mt-2.5 flex gap-2">
@@ -40,10 +43,10 @@ export function PublishPackSuccessBanner({
           </button>
         ) : null}
         <Link
-          href="/review"
+          href="/history?filter=pack"
           className="flex flex-1 items-center justify-center rounded-full bg-white py-2 text-[10px] font-black text-[#FF4F8B]"
         >
-          {tr("publishPackWinReview")}
+          查看生成记录
         </Link>
       </div>
     </div>

@@ -680,7 +680,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (res.error) {
           if (res.error === "quota_insufficient") openQuotaModal();
           else if (res.error === "unauthorized") setLoginOpen(true);
-          return { risk: res.risk ?? risk };
+          return { error: res.error, risk: res.risk ?? risk };
         }
         if (res.user) setUser(res.user);
         if (res.result) {
