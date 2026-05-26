@@ -1,12 +1,8 @@
-import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getDailyHotTopics } from "@/lib/hot-topics/resolve-daily";
 import {
   getDailyInspirationTitles,
   shuffleTitlesByBatch,
 } from "@/lib/publish-pack/resolve-daily-inspiration";
-
-export type { HotTopicItem } from "@/lib/hot-topics/types";
 
 export interface InviteRecordRow {
   id: string;
@@ -21,50 +17,6 @@ export interface InviteRecordRow {
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-export async function getDailyHotTopicsFromDb(
-  dateKey = todayDate()
-): Promise<HotTopicItem[] | null> {
-  const db = getSupabaseAdmin();
-  if (!db) return null;
-
-  const { data: existing } = await db
-    .from("daily_hot_topics")
-    .select("items")
-    .eq("topic_date", dateKey)
-    .maybeSingle();
-
-  if (existing?.items && Array.isArray(existing.items)) {
-    const cached = existing.items as HotTopicItem[];
-    if (cached.length > 0) return cached;
-  }
-  return null;
-}
-
-export async function saveDailyHotTopics(
-  dateKey: string,
-  items: HotTopicItem[]
-): Promise<{ ok: boolean; error?: string }> {
-  const db = getSupabaseAdmin();
-  if (!db) return { ok: false, error: "no_db" };
-
-  const { error } = await db.from("daily_hot_topics").upsert(
-    { topic_date: dateKey, items },
-    { onConflict: "topic_date" }
-  );
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-/** 优先读库（DeepSeek 每日写入）；无库或未跑任务时用本地池兜底 */
-export async function getOrCreateDailyHotTopics(): Promise<HotTopicItem[]> {
-  const dateKey = todayDate();
-  const cached = await getDailyHotTopicsFromDb(dateKey);
-  if (cached && cached.length >= 30) return cached;
-  if (cached && cached.length > 0) return cached;
-  return getDailyHotTopics(dateKey, 0);
 }
 
 export async function getDailyInspirationTitlesFromDb(

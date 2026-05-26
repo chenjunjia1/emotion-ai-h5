@@ -8,13 +8,13 @@ import {
   Flame,
   Loader2,
   Package,
+  RefreshCw,
   Send,
   Sparkles,
-  TrendingUp,
 } from "lucide-react";
-import { AiAssistantAnswerPreview } from "@/components/ai-assistant/ai-assistant-answer-preview";
 import { AiAssistantHeroBanner } from "@/components/ai-assistant/ai-assistant-hero-banner";
 import { AiAssistantLiveTicker } from "@/components/ai-assistant/ai-assistant-live-ticker";
+import { AiAssistantSceneGrid } from "@/components/ai-assistant/ai-assistant-scene-grid";
 import { GeneratingProgressCard } from "@/components/ui/generating-progress-card";
 import { QuotaCostBadge } from "@/components/ui/quota-cost-badge";
 import { useApp } from "@/contexts/app-context";
@@ -25,67 +25,11 @@ import { QUOTA_COST } from "@/lib/constants/v1";
 import {
   BUDDY_FEATURED_ID,
   BUDDY_POPULAR_CHIPS,
-  BUDDY_PROMPT_GROUPS,
   BUDDY_QUICK_PROMPTS,
-  type BuddyPromptCategory,
-  type BuddyQuickPrompt,
 } from "@/lib/operation-chat/buddy-prompts";
 import type { OpsConsultantResult } from "@/lib/operation-chat/quick-prompts";
 import { getTotalQuota } from "@/lib/v1/quota";
 import { cn } from "@/lib/utils";
-
-const GROUP_ICON: Record<BuddyPromptCategory, typeof Flame> = {
-  topic: Flame,
-  write: Sparkles,
-  grow: TrendingUp,
-};
-
-function SceneCard({
-  q,
-  busy,
-  activePromptId,
-  hasResult,
-  onPick,
-}: {
-  q: BuddyQuickPrompt;
-  busy: boolean;
-  activePromptId: string | null;
-  hasResult: boolean;
-  onPick: (id: string, prompt: string) => void;
-}) {
-  const loading = activePromptId === q.id && busy;
-  const done = activePromptId === q.id && !busy && hasResult;
-
-  return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => onPick(q.id, q.prompt)}
-      className={cn(
-        "relative flex w-[156px] shrink-0 flex-col rounded-[18px] bg-gradient-to-br p-3.5 text-left shadow-sm transition active:scale-[0.97]",
-        q.tint,
-        done ? "ring-2 ring-[#FF4F8B] shadow-md" : "ring-1 ring-[#FFE8F0]",
-        busy && !loading && "opacity-55"
-      )}
-    >
-      {q.hot ? (
-        <span className="absolute right-2 top-2 rounded-md bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-1.5 py-0.5 text-[7px] font-black text-white shadow-sm">
-          HOT
-        </span>
-      ) : null}
-      {loading ? (
-        <Loader2 size={14} className="absolute right-2 top-2 animate-spin text-[#FF4F8B]" />
-      ) : null}
-      <span className="text-[26px] leading-none drop-shadow-sm">{q.emoji}</span>
-      <span className="mt-2 text-[12px] font-black leading-tight text-[#1F2937]">{q.label}</span>
-      <span className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-[#8A94A6]">{q.desc}</span>
-      <span className="mt-2 inline-flex items-center gap-0.5 self-start rounded-full bg-white/85 px-2 py-0.5 text-[8px] font-black text-[#FF4F8B] ring-1 ring-[#FFE8F0]">
-        {q.outcome}
-        <ChevronRight size={10} />
-      </span>
-    </button>
-  );
-}
 
 export function AiAssistantView() {
   const { tr, showToast, user } = useApp();
@@ -94,7 +38,7 @@ export function AiAssistantView() {
   const [message, setMessage] = useState("");
   const [activePromptId, setActivePromptId] = useState<string | null>(null);
   const [result, setResult] = useState<OpsConsultantResult | null>(null);
-  const [chipIdx, setChipIdx] = useState(0);
+  const [chipSeed, setChipSeed] = useState(0);
   const cost = QUOTA_COST.emotion_chat ?? 5;
   const totalQuota = user ? getTotalQuota(user) : 0;
 
@@ -103,15 +47,11 @@ export function AiAssistantView() {
     []
   );
 
-  const grouped = useMemo(() => {
-    const map = new Map<BuddyPromptCategory, BuddyQuickPrompt[]>();
-    for (const g of BUDDY_PROMPT_GROUPS) map.set(g.id, []);
-    for (const p of BUDDY_QUICK_PROMPTS) {
-      if (p.id === featured.id) continue;
-      map.get(p.category)?.push(p);
-    }
-    return map;
-  }, [featured.id]);
+  const popularChips = useMemo(() => {
+    const list = [...BUDDY_POPULAR_CHIPS];
+    const seed = chipSeed;
+    return list.sort((a, b) => ((a.length + seed) % 9) - ((b.length + seed) % 9));
+  }, [chipSeed]);
 
   const submitQuestion = useCallback(
     async (raw: string, promptId?: string) => {
@@ -151,6 +91,16 @@ export function AiAssistantView() {
     [analyzeEmotionChat, showToast, tr]
   );
 
+  const askNow = useCallback(
+    (prompt: string, promptId?: string) => {
+      setResult(null);
+      void run(async () => {
+        await submitQuestion(prompt, promptId);
+      });
+    },
+    [run, submitQuestion]
+  );
+
   const onSubmit = () => {
     setActivePromptId(null);
     void run(async () => {
@@ -158,11 +108,9 @@ export function AiAssistantView() {
     });
   };
 
-  const onQuickPick = (id: string, prompt: string) => {
-    setResult(null);
-    setActivePromptId(id);
-    setMessage(prompt);
-    showToast("已填入场景问题，点下方「发送」开始分析");
+  const onChipPick = (chip: string) => {
+    setMessage(chip);
+    askNow(chip);
   };
 
   const copyAnswer = useCallback(() => {
@@ -174,7 +122,7 @@ export function AiAssistantView() {
   const showEmpty = !result && !busy;
 
   return (
-    <div className="flex flex-col gap-3 pb-[10.5rem]">
+    <div className="flex flex-col gap-3 pb-[9.5rem]">
       <AiAssistantHeroBanner
         tr={tr}
         totalQuota={totalQuota}
@@ -182,76 +130,59 @@ export function AiAssistantView() {
         featuredLabel={featured.label}
         featuredEmoji={featured.emoji}
         disabled={busy}
-        onPrimaryClick={() => {
-          setResult(null);
-          setActivePromptId(featured.id);
-          setMessage(featured.prompt);
-          showToast("已填入推荐问题，点下方「发送」开始分析");
-        }}
+        onPrimaryClick={() => askNow(featured.prompt, featured.id)}
       />
 
-      {showEmpty ? <AiAssistantLiveTicker /> : null}
+      {showEmpty ? <AiAssistantLiveTicker compact /> : null}
 
-      <section>
-        <div className="mb-2.5 flex items-end justify-between px-0.5">
+      <section className="rounded-[22px] bg-white p-3.5 ring-1 ring-[#FFE8F0] shadow-sm">
+        <div className="mb-3 flex items-end justify-between gap-2">
           <div>
-            <p className="text-[13px] font-black text-[#1F2937]">{tr("buddyChatQuickTitle")}</p>
-            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">先选场景填入问题，再点下方发送</p>
+            <p className="flex items-center gap-1.5 text-[14px] font-black text-[#1F2937]">
+              <Sparkles size={15} className="text-[#FF4F8B]" />
+              点一下，马上出建议
+            </p>
+            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">不用自己想怎么说，点卡片直接问</p>
           </div>
-          <span className="rounded-full bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-2.5 py-0.5 text-[8px] font-black text-white shadow-sm">
-            最多人问
+          <span className="shrink-0 rounded-full bg-[#FFF0F5] px-2 py-0.5 text-[9px] font-black text-[#FF4F8B]">
+            消耗 {cost} 灵感/次
           </span>
         </div>
 
-        {BUDDY_PROMPT_GROUPS.map((group) => {
-          const items = grouped.get(group.id) ?? [];
-          if (!items.length) return null;
-          const Icon = GROUP_ICON[group.id];
-          return (
-            <section key={group.id} className="mb-3">
-              <div className="mb-2 flex items-center gap-2 px-0.5">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFF0F5]">
-                  <Icon size={13} className="text-[#FF4F8B]" />
-                </span>
-                <p className="text-[12px] font-black text-[#1F2937]">{group.label}</p>
-                <span className="text-[10px] text-[#B0B8C4]">{group.hint}</span>
-              </div>
-              <div className="-mx-0.5 flex gap-2.5 overflow-x-auto px-0.5 pb-1 scrollbar-none">
-                {items.map((q) => (
-                  <SceneCard
-                    key={q.id}
-                    q={q}
-                    busy={busy}
-                    activePromptId={activePromptId}
-                    hasResult={Boolean(result)}
-                    onPick={onQuickPick}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        <AiAssistantSceneGrid
+          prompts={BUDDY_QUICK_PROMPTS}
+          busy={busy}
+          activePromptId={activePromptId}
+          hasResult={Boolean(result)}
+          onPick={(id, prompt) => askNow(prompt, id)}
+        />
       </section>
 
-      {showEmpty ? <AiAssistantAnswerPreview /> : null}
-
       {showEmpty ? (
-        <section>
-          <p className="mb-2 px-0.5 text-[11px] font-black text-[#8A94A6]">大家都在问</p>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            {BUDDY_POPULAR_CHIPS.map((chip, i) => (
+        <section className="rounded-[20px] bg-[#FFFBFC] px-3 py-2.5 ring-1 ring-[#FFE8F0]">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] font-black text-[#6B7280]">换种问法</p>
+            <button
+              type="button"
+              onClick={() => setChipSeed((s) => s + 1)}
+              className="flex items-center gap-0.5 text-[10px] font-bold text-[#FF4F8B]"
+            >
+              <RefreshCw size={11} />
+              换一批
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {popularChips.map((chip) => (
               <button
                 key={chip}
                 type="button"
-                onClick={() => {
-                  setChipIdx(i);
-                  setMessage(chip);
-                }}
+                disabled={busy}
+                onClick={() => onChipPick(chip)}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold transition active:scale-95",
-                  chipIdx === i && message === chip
+                  "max-w-full rounded-full px-3 py-2 text-left text-[10px] font-bold leading-snug transition active:scale-95",
+                  message === chip && result
                     ? "bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] text-white shadow-sm"
-                    : "bg-white text-[#6B7280] ring-1 ring-[#FFE8F0]"
+                    : "bg-white text-[#4B5563] ring-1 ring-[#FFE8F0] hover:ring-[#FFB8D4]"
                 )}
               >
                 {chip}
@@ -285,7 +216,7 @@ export function AiAssistantView() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-black text-[#1F2937]">{tr("opsChatResultTitle")}</p>
-              <p className="text-[10px] text-[#9CA3AF]">结构化建议 · 可复制 · 可续作</p>
+              <p className="text-[10px] text-[#9CA3AF]">可复制 · 可去发布包继续</p>
             </div>
             <button
               type="button"
@@ -361,10 +292,6 @@ export function AiAssistantView() {
             </div>
           ) : null}
 
-          <p className="text-center text-[10px] font-bold text-[#9CA3AF]">
-            {tr("buddyChatResultHint")}
-          </p>
-
           <div className="flex flex-col gap-2">
             <Link
               href="/publish-pack"
@@ -407,17 +334,12 @@ export function AiAssistantView() {
       ) : null}
 
       <div className="fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-0 right-0 z-30 mx-auto max-w-lg px-3">
-        <section className="overflow-hidden rounded-[22px] bg-white shadow-[0_-6px_32px_rgba(255,100,140,0.18)] ring-1 ring-[#FFD0E8]">
+        <section className="overflow-hidden rounded-[20px] bg-white shadow-[0_-4px_24px_rgba(255,100,140,0.16)] ring-1 ring-[#FFD0E8]">
           <div className="h-0.5 bg-gradient-to-r from-[#FF4F8B] via-[#FF9A4D] to-[#FFB347]" />
-          <div className="p-3">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4F8B] to-[#FF9A4D] text-white shadow-sm">
-                <Bot size={16} />
-              </span>
-              <p className="text-[11px] font-black text-[#1F2937]">{tr("opsChatInputLabel")}</p>
-            </div>
+          <div className="p-2.5">
+            <p className="px-1 text-[10px] font-bold text-[#9CA3AF]">或自己输入问题</p>
             <textarea
-              className="mt-2 w-full resize-none rounded-xl bg-[#FAFAFA] p-2.5 text-[12px] leading-relaxed text-[#1F2937] outline-none ring-1 ring-[#F0F0F0] placeholder:text-[#9CA3AF] focus:bg-[#FFF8FA] focus:ring-[#FFD0E8]"
+              className="mt-1 w-full resize-none rounded-xl bg-[#FAFAFA] p-2.5 text-[12px] leading-relaxed text-[#1F2937] outline-none ring-1 ring-[#F0F0F0] placeholder:text-[#9CA3AF] focus:bg-[#FFF8FA] focus:ring-[#FFD0E8]"
               rows={2}
               value={message}
               onChange={(e) => setMessage(e.target.value)}

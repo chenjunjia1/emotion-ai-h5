@@ -2,7 +2,7 @@
 
 /**
  * 首页奶油风轮播
- * 顺序：① 多平台发片 ② 盲盒+情绪助手 ③ 邀请好友 ④ 开通 Pro（仅免费用户）
+ * 顺序：① 多平台发片 ② 今天发什么 ③ 盲盒+情绪助手 ④ 邀请好友 ⑤ 开通 Pro（仅免费用户）
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -15,12 +15,13 @@ import {
   CreamBannerSlide,
 } from "@/components/home/cream-banner-slide";
 import { HomeAttractCarouselSlide } from "@/components/home/home-attract-carousel-slide";
+import { HomeQuickActionCarouselSlide } from "@/components/home/home-quick-action-carousel-slide";
 import { PLAN_QUOTA, PRODUCTS } from "@/lib/constants/v1";
 import { cn } from "@/lib/utils";
 
 const INTERVAL_MS = 5000;
 
-type SlideId = "creator" | "attract" | "invite" | "member";
+type SlideId = "creator" | "quickAction" | "attract" | "invite" | "member";
 
 /** 轮播动图未上传时用 CSS 插画，避免 404 */
 const MOTION: Partial<Record<SlideId, string>> = {
@@ -29,6 +30,8 @@ const MOTION: Partial<Record<SlideId, string>> = {
 
 const GRADIENTS: Record<SlideId, string> = {
   creator: "from-[#FF4D6D] via-[#FF6B8A] to-[#FFB347]",
+  /** 今天发什么：粉橙主 CTA，与首页快捷出文案卡片一致 */
+  quickAction: "from-[#FF4F8B] via-[#FF6B9D] to-[#FF9A4D]",
   /** 盲盒 + 情绪助手：蜜桃粉→珊瑚，与全站主色一致 */
   attract: "from-[#FF6B8A] via-[#FF8FAB] to-[#FFC46B]",
   /** 邀请屏：暖金→蜜桃粉，与项目粉橙主色一致，略偏礼物感 */
@@ -68,7 +71,7 @@ export function HomeCreamCarousel() {
 
   const showMemberSlide = user == null || user.plan === "free";
   const slides = useMemo<SlideId[]>(() => {
-    const base: SlideId[] = ["creator", "attract", "invite"];
+    const base: SlideId[] = ["creator", "quickAction", "attract", "invite"];
     if (showMemberSlide) base.push("member");
     return base;
   }, [showMemberSlide]);
@@ -128,6 +131,12 @@ export function HomeCreamCarousel() {
               perkChips={[tr("bannerCreatorPerk1"), tr("bannerCreatorPerk2")]}
               withDailyTicker
             />
+          </BannerSlideShell>
+        );
+      case "quickAction":
+        return (
+          <BannerSlideShell gradient={GRADIENTS.quickAction}>
+            <HomeQuickActionCarouselSlide />
           </BannerSlideShell>
         );
       case "attract":

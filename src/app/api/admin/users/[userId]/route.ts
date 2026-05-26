@@ -35,6 +35,7 @@ export async function PATCH(
     videoCoin?: number;
     plan?: string;
     reason?: string;
+    resetUsedCount?: boolean;
   };
   try {
     body = await req.json();
@@ -59,6 +60,7 @@ export async function PATCH(
       videoCoin:
         body.videoCoin !== undefined ? Number(body.videoCoin) : undefined,
       plan,
+      resetUsedCount: body.resetUsedCount === true,
     },
     String(body.reason || "admin_adjust")
   );

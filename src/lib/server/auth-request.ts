@@ -8,8 +8,19 @@ export async function getSessionFromRequest(): Promise<SessionPayload | null> {
   if (!isServerBackendEnabled()) return null;
   const secret = getSessionSecret();
   if (!secret) return null;
+
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
+  let token = jar.get(SESSION_COOKIE)?.value;
+
+  if (!token) {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    const auth = h.get("authorization");
+    if (auth?.startsWith("Bearer ")) {
+      token = auth.slice(7).trim();
+    }
+  }
+
   if (!token) return null;
   return verifySession(token, secret);
 }

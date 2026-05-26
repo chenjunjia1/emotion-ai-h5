@@ -25,9 +25,11 @@ export function getSmsProvider(): "dev" | "aliyun" {
   return p === "aliyun" ? "aliyun" : "dev";
 }
 
-export function getPayProvider(): "mock" | "alipay" {
+export function getPayProvider(): "mock" | "alipay" | "wechat" {
   const p = (process.env.PAY_PROVIDER || "mock").toLowerCase();
-  return p === "alipay" ? "alipay" : "mock";
+  if (p === "alipay") return "alipay";
+  if (p === "wechat") return "wechat";
+  return "mock";
 }
 
 export function getVideoProvider(): "mock" | "kling" | "custom" {

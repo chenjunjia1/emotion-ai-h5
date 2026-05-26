@@ -41,6 +41,11 @@ function mapRow(row: Record<string, unknown>): HotTopicRecord {
     updated_batch_date: String(row.updated_batch_date ?? todayDate()),
     created_at: String(row.created_at ?? new Date().toISOString()),
     updated_at: String(row.updated_at ?? new Date().toISOString()),
+    badge_label: row.badge_label ? String(row.badge_label) : null,
+    likes_label: row.likes_label ? String(row.likes_label) : null,
+    saves_label: row.saves_label ? String(row.saves_label) : null,
+    comments_label: row.comments_label ? String(row.comments_label) : null,
+    display_order: Number(row.display_order ?? 0),
   };
 }
 
@@ -70,7 +75,8 @@ export async function listActiveHotTopics(opts: {
     .gte("safe_score", SAFE_SCORE_MIN)
     .gte("content_value_score", CONTENT_VALUE_SCORE_MIN)
     .order("viral_score", { ascending: false })
-    .order("heat_score", { ascending: false });
+    .order("heat_score", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (latestBatch) {
     q = q.eq("updated_batch_date", latestBatch);

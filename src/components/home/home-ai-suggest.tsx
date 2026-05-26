@@ -27,10 +27,10 @@ export function HomeAiSuggest() {
     <section className="home-section-enter overflow-hidden rounded-[22px] border border-[#FFD0E8]/70 bg-white p-3 shadow-[0_6px_24px_rgba(255,79,139,0.07)]">
       <div className="mb-2.5 flex items-start justify-between gap-2">
         <div>
-          <p className="flex items-center gap-1.5">
-            <Sparkles size={14} className="text-[#FF9A4D]" />
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-[#FF9A4D]" aria-hidden />
             <h2 className="text-[14px] font-black text-[#1F2937]">{tr("homeAiSuggestTitle")}</h2>
-          </p>
+          </div>
           <p className="mt-0.5 pl-5 text-[10px] text-[#9CA3AF]">{tr("homeAiSuggestSub")}</p>
         </div>
         <button

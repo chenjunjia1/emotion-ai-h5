@@ -174,6 +174,7 @@ export async function apiAdminAdjustUser(
     videoCoin?: number;
     plan?: User["plan"];
     reason?: string;
+    resetUsedCount?: boolean;
   }
 ): Promise<{ user?: User; error?: string }> {
   const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
@@ -185,6 +186,315 @@ export async function apiAdminAdjustUser(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { error: data.error };
   return { user: data.user as User };
+}
+
+export interface AdminUserRow extends User {
+  createdAt: string;
+}
+
+export interface AdminOrderRow extends Order {
+  userId: string;
+  userMobile: string;
+  payChannel: string;
+  paidAt?: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  adminUserId: string;
+  adminMobile: string;
+  action: string;
+  targetType: string;
+  targetId?: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface AdminContentStats {
+  dateKey: string;
+  hotTopicsActive: number;
+  hotTopicsTotal: number;
+  inspirationTitles: number;
+  xhsNotes: number;
+  latestPush?: {
+    title: string;
+    body: string;
+    dateKey: string;
+    createdAt: string;
+  };
+}
+
+type AdminListResult<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  error?: string;
+};
+
+async function adminFetch<T extends Record<string, unknown>>(
+  url: string,
+  init?: RequestInit
+): Promise<T & { error?: string }> {
+  const res = await fetch(url, { credentials: "include", ...init });
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) return { error: data.error || "admin_failed" } as T & { error?: string };
+  return data;
+}
+
+export async function apiAdminListUsers(params: {
+  q?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminListResult<AdminUserRow>> {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  sp.set("page", String(params.page ?? 1));
+  sp.set("limit", String(params.limit ?? 20));
+  return adminFetch(`/api/admin/users?${sp}`);
+}
+
+export async function apiAdminListOrders(params: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminListResult<AdminOrderRow>> {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set("status", params.status);
+  sp.set("page", String(params.page ?? 1));
+  sp.set("limit", String(params.limit ?? 20));
+  return adminFetch(`/api/admin/orders?${sp}`);
+}
+
+export async function apiAdminListFeedback(params: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminListResult<AdminOverview["recentFeedbacks"][number]>> {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set("status", params.status);
+  sp.set("page", String(params.page ?? 1));
+  sp.set("limit", String(params.limit ?? 20));
+  return adminFetch(`/api/admin/feedback?${sp}`);
+}
+
+export async function apiAdminUpdateFeedback(
+  id: string,
+  status: "pending" | "processed"
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(`/api/admin/feedback/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { ok: true };
+}
+
+export async function apiAdminListAudit(params: {
+  page?: number;
+  limit?: number;
+}): Promise<AdminListResult<AdminAuditLog>> {
+  const sp = new URLSearchParams();
+  sp.set("page", String(params.page ?? 1));
+  sp.set("limit", String(params.limit ?? 20));
+  return adminFetch(`/api/admin/audit?${sp}`);
+}
+
+export async function apiAdminContentStats(): Promise<{
+  stats?: AdminContentStats;
+  error?: string;
+}> {
+  return adminFetch("/api/admin/content/stats");
+}
+
+export async function apiAdminRefreshHotTopics(): Promise<{
+  ok?: boolean;
+  error?: string;
+  count?: number;
+  source?: string;
+}> {
+  const res = await fetch("/api/admin/content/refresh-hot-topics", {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error || "refresh_failed" };
+  return data;
+}
+
+export interface AdminHotTopicRow {
+  id: string;
+  raw_title: string;
+  display_title: string;
+  summary: string;
+  platform: string;
+  heat_value: string;
+  heat_score: number;
+  cover_image: string;
+  category: string;
+  tags: string[];
+  viral_score: number;
+  status: "active" | "inactive" | "rejected";
+  is_new: boolean;
+  badge_label: string | null;
+  likes_label: string | null;
+  saves_label: string | null;
+  comments_label: string | null;
+  display_order: number;
+  updated_batch_date: string;
+}
+
+export async function apiAdminListHotTopics(params: {
+  batch?: string;
+  status?: string;
+  category?: string;
+  platformFilter?: "cron" | "xhs" | "all";
+  q?: string;
+  page?: number;
+  limit?: number;
+}): Promise<
+  AdminListResult<AdminHotTopicRow> & {
+    batches?: string[];
+    categoryStats?: { category: string; count: number }[];
+    sourceCounts?: { cron: number; xhsInspiration: number; total: number };
+    platformFilter?: string;
+    resolvedBatch?: string;
+  }
+> {
+  const sp = new URLSearchParams();
+  if (params.batch) sp.set("batch", params.batch);
+  if (params.status) sp.set("status", params.status);
+  if (params.category) sp.set("category", params.category);
+  if (params.platformFilter) sp.set("platformFilter", params.platformFilter);
+  if (params.q) sp.set("q", params.q);
+  sp.set("page", String(params.page ?? 1));
+  sp.set("limit", String(params.limit ?? 20));
+  return adminFetch(`/api/admin/hot-topics?${sp}`);
+}
+
+export async function apiAdminPurgeCronHotTopics(opts?: {
+  batchDate?: string;
+  scope?: "cron" | "all";
+  confirm?: boolean;
+}): Promise<{
+  ok?: boolean;
+  deleted?: number;
+  scope?: string;
+  before?: { cron: number; xhsInspiration: number; total: number };
+  after?: { cron: number; xhsInspiration: number; total: number };
+  counts?: { cron: number; xhsInspiration: number; total: number };
+  error?: string;
+  message?: string;
+}> {
+  const res = await fetch("/api/admin/hot-topics/purge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      batchDate: opts?.batchDate,
+      scope: opts?.scope ?? "cron",
+      confirm: opts?.confirm ?? false,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error, message: data.message, counts: data.counts };
+  return data;
+}
+
+export async function apiAdminCreateHotTopic(
+  payload: Record<string, unknown>
+): Promise<{ item?: AdminHotTopicRow; error?: string }> {
+  const res = await fetch("/api/admin/hot-topics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { item: data.item as AdminHotTopicRow };
+}
+
+export async function apiAdminUploadImage(
+  file: File
+): Promise<{ url?: string; error?: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch("/api/admin/upload-image", {
+    method: "POST",
+    credentials: "include",
+    body,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error || "upload_failed" };
+  return { url: (data.url as string) || (data.path as string) };
+}
+
+export async function apiAdminUpdateHotTopic(
+  id: string,
+  payload: Record<string, unknown>
+): Promise<{ item?: AdminHotTopicRow; error?: string }> {
+  const res = await fetch(`/api/admin/hot-topics/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { item: data.item as AdminHotTopicRow };
+}
+
+export async function apiAdminQueryTodayHotTopics(params: {
+  date?: string;
+  tab?: string;
+  category?: string;
+  q?: string;
+}): Promise<{
+  dateKey?: string;
+  fetchedAt?: string;
+  tab?: string;
+  rawTotal?: number;
+  filteredTotal?: number;
+  items?: import("@/lib/admin/today-hot-query-types").AdminTodayHotQueryRow[];
+  categoryStats?: { category: string; count: number }[];
+  availableDates?: string[];
+  error?: string;
+}> {
+  const sp = new URLSearchParams();
+  if (params.date) sp.set("date", params.date);
+  if (params.tab) sp.set("tab", params.tab);
+  if (params.category) sp.set("category", params.category);
+  if (params.q) sp.set("q", params.q);
+  return adminFetch(`/api/admin/today-hot-topics?${sp}`);
+}
+
+export async function apiAdminGetXhsNotes(date?: string): Promise<{
+  dateKey?: string;
+  notes?: import("@/lib/xhs/types").XhsHotNote[];
+  fetchedAt?: string;
+  error?: string;
+}> {
+  const sp = date ? `?date=${encodeURIComponent(date)}` : "";
+  return adminFetch(`/api/admin/xhs-notes${sp}`);
+}
+
+export async function apiAdminSaveXhsNotes(
+  notes: import("@/lib/xhs/types").XhsHotNote[],
+  dateKey?: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch("/api/admin/xhs-notes", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ notes, dateKey }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error };
+  return { ok: true };
 }
 
 export async function apiSubmitFeedback(input: {
@@ -339,6 +649,130 @@ export async function apiGeneratePublishPack(input: Record<string, unknown>) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function apiQuickPublishPackage(input: Record<string, unknown>) {
+  const isAdvanced = input.mode === "advanced";
+  const timeoutMs = isAdvanced ? 240_000 : 45_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch("/api/v1/publish-package/quick", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        error: data.error as string | undefined,
+        message: data.message as string | undefined,
+        risk: data.risk,
+        quotaHint: data.quotaHint as string | undefined,
+      };
+    }
+    return {
+      package: data.package,
+      user: data.user as User | undefined,
+      generationId: data.generationId as string | undefined,
+      usedMock: Boolean(data.usedMock),
+      cost: data.cost as number | undefined,
+      quotaReason: data.quotaReason as string | undefined,
+    };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") return { error: "timeout" };
+    return { error: "network" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function apiPublishPackageQuotaPreview(
+  mode: "quick" | "advanced",
+  imageCount?: 1 | 2 | 4
+): Promise<{
+  cost?: number;
+  canProceed?: boolean;
+  freeRemaining?: number;
+  isPro?: boolean;
+  reason?: string;
+  totalQuota?: number;
+  error?: string;
+}> {
+  const q = new URLSearchParams({ mode });
+  if (mode === "advanced" && imageCount) {
+    q.set("imageCount", String(imageCount));
+  }
+  const res = await fetch(`/api/v1/publish-package/quota-preview?${q}`, {
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error as string | undefined };
+  return data as {
+    cost: number;
+    canProceed: boolean;
+    freeRemaining?: number;
+    isPro?: boolean;
+    reason?: string;
+    totalQuota?: number;
+  };
+}
+
+export async function apiEnhancePublishInput(input: Record<string, unknown>) {
+  const res = await fetch("/api/v1/publish-package/enhance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error as string | undefined };
+  return { enhanced: data.enhanced as string };
+}
+
+export async function apiUpgradePublishPackage(input: Record<string, unknown>) {
+  const res = await fetch("/api/v1/publish-package/upgrade", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error as string | undefined };
+  return {
+    package: data.package,
+    user: data.user as User | undefined,
+    cost: data.cost as number | undefined,
+  };
+}
+
+export async function apiPublishPackageImages(input: Record<string, unknown>) {
+  const res = await fetch("/api/v1/publish-package/images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error as string | undefined };
+  return { images: data.images, user: data.user as User | undefined };
+}
+
+export async function apiPublishPackageRestyle(input: Record<string, unknown>) {
+  const res = await fetch("/api/v1/publish-package/restyle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: data.error as string | undefined };
+  return {
+    bodies: data.bodies as import("@/lib/publish-pack/quick-package-types").PackageBody[] | undefined,
+    user: data.user as User | undefined,
+  };
 }
 
 export async function apiDrawTopicBox(input: Record<string, string>) {

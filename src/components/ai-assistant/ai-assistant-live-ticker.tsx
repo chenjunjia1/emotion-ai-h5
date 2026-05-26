@@ -54,7 +54,7 @@ function ActivityRow({
   );
 }
 
-export function AiAssistantLiveTicker() {
+export function AiAssistantLiveTicker({ compact }: { compact?: boolean } = {}) {
   const activities = useMemo(() => getShuffledBuddyActivities(), []);
   const [todayCount, setTodayCount] = useState(() => getBuddyTodayUsageCount());
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * activities.length));
@@ -101,9 +101,16 @@ export function AiAssistantLiveTicker() {
   }, [activities.length]);
 
   return (
-    <section className="rounded-[18px] bg-white/95 px-3 py-2.5 ring-1 ring-[#FFE8F0] shadow-sm">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-black text-[#374151]">最近动态</p>
+    <section
+      className={cn(
+        "rounded-[18px] bg-white/95 ring-1 ring-[#FFE8F0] shadow-sm",
+        compact ? "px-3 py-2" : "px-3 py-2.5"
+      )}
+    >
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <p className="text-[10px] font-black text-[#374151]">
+          {compact ? "🔥 大家都在问" : "最近动态"}
+        </p>
         <span className="text-[9px] font-bold text-[#9CA3AF]">
           今天约 <span className="text-[#FF4F8B]">{formatInspirationCount(todayCount)}</span> 人在用
         </span>
@@ -111,12 +118,13 @@ export function AiAssistantLiveTicker() {
 
       <div
         className={cn(
-          "space-y-2 transition-opacity duration-300",
+          "transition-opacity duration-300",
+          compact ? "" : "space-y-2",
           fade ? "opacity-100" : "opacity-0"
         )}
       >
         <ActivityRow item={current} jitter={jitter} />
-        <ActivityRow item={prev} jitter={0} compact />
+        {!compact ? <ActivityRow item={prev} jitter={0} compact /> : null}
       </div>
     </section>
   );

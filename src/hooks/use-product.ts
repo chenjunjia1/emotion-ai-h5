@@ -123,7 +123,7 @@ function saveGrowth(g: GrowthState & { lastCheckin?: string }) {
       xp: g.xp,
       streakDays: g.streakDays,
       tasksDone: g.tasksDone,
-      lastCheckin: g.lastCheckin ?? g.lastCheckinDate ?? new Date().toISOString().slice(0, 10),
+      lastCheckin: g.lastCheckinDate ?? g.lastCheckin ?? null,
     })
   );
 }

@@ -99,6 +99,10 @@ export function NotificationPanel({
                 <div className="relative flex items-center justify-between gap-2">
                   <span className="rounded-full bg-white/25 px-2 py-0.5 text-[9px] font-black">
                     {tr("notifyDailyTag")} · {dailyMessage.tag}
+                    {"fromServerBroadcast" in dailyMessage &&
+                    dailyMessage.fromServerBroadcast
+                      ? " · 8点推送"
+                      : ""}
                   </span>
                   <span className="text-[9px] font-medium text-white/80">
                     {tr("notifyDailyTime")}

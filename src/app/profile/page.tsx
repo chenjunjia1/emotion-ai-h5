@@ -134,6 +134,26 @@ function ProfileContent() {
 
         <ProfileQuickActions tr={tr} />
 
+        {user.role === "admin" ? (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center justify-between rounded-[22px] border border-slate-200/80 bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3.5 text-white shadow-md active:scale-[0.99]"
+            )}
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                <Shield size={18} />
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-bold">{tr("adminPanel")}</span>
+                <span className="text-[11px] text-white/70">用户 · 订单 · 内容 · 反馈</span>
+              </span>
+            </span>
+            <ChevronRight size={18} className="text-white/60" />
+          </Link>
+        ) : null}
+
         {recentOrders.length > 0 ? (
           <Card>
             <CardContent className="py-3">
@@ -208,13 +228,6 @@ function ProfileContent() {
                 </Button>
               </div>
             </div>
-            {user.role === "admin" ? (
-              <Link href="/admin" className="mt-2 block">
-                <Button variant="secondary" className="w-full text-sm">
-                  {tr("adminPanel")}
-                </Button>
-              </Link>
-            ) : null}
             <Button variant="ghost" className="mt-2 w-full text-sm" onClick={logout}>
               {tr("logout")}
             </Button>

@@ -2,7 +2,14 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { RefreshCw, Sparkles, TrendingUp } from "lucide-react";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  RefreshCw,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/contexts/app-context";
 import { enrichHotTopics, type HotTopicDisplay } from "@/lib/content/hot-topic-enrichment";
@@ -188,6 +195,15 @@ export function HotTopicsFeed({
                     <span className="absolute left-1 top-1 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/55 px-1 text-[9px] font-black text-white">
                       {index + 1}
                     </span>
+                    {item.badgeLabel ? (
+                      <span className="absolute right-1 top-1 z-10 rounded-md bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-1 py-0.5 text-[7px] font-black text-white">
+                        {item.badgeLabel}
+                      </span>
+                    ) : index === 0 ? (
+                      <span className="absolute right-1 top-1 z-10 rounded-md bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-1 py-0.5 text-[7px] font-black text-white">
+                        最多人点
+                      </span>
+                    ) : null}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col py-0.5">
                     <div className="flex flex-wrap items-center gap-1">
@@ -206,10 +222,33 @@ export function HotTopicsFeed({
                     <h3 className="mt-1.5 line-clamp-2 text-[13px] font-black leading-snug text-[#1F2937]">
                       {item.title}
                     </h3>
-                    <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#FF6B8A]">
-                      <TrendingUp size={11} />
-                      {item.heatValue} · 爆款率 {item.viralScore}%
-                    </p>
+                    {item.likesLabel || item.savesLabel || item.commentsLabel ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[9px] font-bold text-[#8A94A6]">
+                        {item.likesLabel ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            <Heart size={10} className="text-[#FF6B8A]" />
+                            {item.likesLabel}
+                          </span>
+                        ) : null}
+                        {item.savesLabel ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            <Bookmark size={10} />
+                            {item.savesLabel}
+                          </span>
+                        ) : null}
+                        {item.commentsLabel ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            <MessageCircle size={10} />
+                            {item.commentsLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#FF6B8A]">
+                        <TrendingUp size={11} />
+                        {item.heatValue} · 爆款率 {item.viralScore}%
+                      </p>
+                    )}
                     <button
                       type="button"
                       onClick={() => onGenerate(item, index)}

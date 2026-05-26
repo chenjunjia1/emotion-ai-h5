@@ -8,16 +8,20 @@ export function AppShell({
   children,
   showHeader = true,
   homePage = false,
+  wide = false,
 }: {
   children: ReactNode;
   showHeader?: boolean;
   /** 首页奶油粉渐变背景 */
   homePage?: boolean;
+  /** 发布包工作室等宽屏双栏布局 */
+  wide?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "mx-auto min-h-screen w-full max-w-[430px] pb-28",
+        "mx-auto min-h-screen w-full pb-28",
+        wide ? "max-w-5xl" : "max-w-[430px]",
         homePage
           ? "bg-gradient-to-b from-[#FFF6FA] via-[#FFFBF8] to-[#FFF0F5]"
           : cn("bg-gradient-to-b", theme.bg),

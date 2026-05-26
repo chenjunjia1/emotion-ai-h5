@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { generateEmotionChat } from "@/lib/ai/v1-deepseek";
-import { QUOTA_COST } from "@/lib/constants/v1";
 import { guardApi } from "@/lib/security/api-guard";
 import { requireUser } from "@/lib/server/auth-request";
 import { isServerBackendEnabled } from "@/lib/server/config";
-import { deductQuota, refundQuota } from "@/lib/server/db/v1";
+import { refundQuota } from "@/lib/server/db/v1";
+import { checkOpsChatDailyQuota, consumePoints } from "@/services/quotaService";
 import { persistGenerationAndDeferGrowth } from "@/lib/server/defer-generation-side-effects";
 
 export async function POST(req: Request) {
@@ -32,10 +32,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const cost = QUOTA_COST.emotion_chat ?? 2;
-  const q = await deductQuota(user.id, cost, "emotion_chat");
-  if (!q.ok) {
-    return NextResponse.json({ error: "quota_insufficient" }, { status: 402 });
+  const quota = await checkOpsChatDailyQuota(user);
+  if (!quota.canProceed) {
+    return NextResponse.json(
+      {
+        error: "quota_insufficient",
+        quotaHint: quota.freeRemaining === 0 ? "ops_chat_daily_exhausted" : undefined,
+        dailyLimit: quota.dailyLimit,
+        freeRemaining: quota.freeRemaining,
+      },
+      { status: 402 }
+    );
+  }
+
+  const cost = quota.cost;
+  let chargedUser = user;
+  if (cost > 0) {
+    const charged = await consumePoints(user.id, cost, "emotion_chat_overage");
+    if (!charged.ok) {
+      return NextResponse.json({ error: "quota_insufficient" }, { status: 402 });
+    }
+    if (charged.user) chargedUser = charged.user;
   }
 
   let result: Record<string, unknown>;
@@ -50,12 +67,14 @@ export async function POST(req: Request) {
     result = gen.result;
     usedMock = gen.usedMock;
   } catch {
-    await refundQuota(user.id, cost, "refund · emotion_chat failed");
+    if (cost > 0) {
+      await refundQuota(chargedUser.id, cost, "refund · emotion_chat failed");
+    }
     return NextResponse.json({ error: "generate_failed" }, { status: 500 });
   }
 
   const saved = await persistGenerationAndDeferGrowth({
-    userId: user.id,
+    userId: chargedUser.id,
     type: "emotion_chat",
     topic: chat.slice(0, 80),
     input: body,
@@ -67,8 +86,10 @@ export async function POST(req: Request) {
   return NextResponse.json({
     result,
     usedMock,
-    user: q.user,
+    user: chargedUser,
     saved: saved.ok,
     generationId: saved.id,
+    cost,
+    opsChatFreeRemaining: Math.max(0, quota.freeRemaining - 1),
   });
 }

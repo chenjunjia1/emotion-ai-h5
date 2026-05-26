@@ -22,6 +22,11 @@ export interface HotTopicRecord {
   updated_batch_date: string;
   created_at: string;
   updated_at: string;
+  badge_label?: string | null;
+  likes_label?: string | null;
+  saves_label?: string | null;
+  comments_label?: string | null;
+  display_order?: number;
 }
 
 /** 前端 / 旧组件兼容条目 */
@@ -50,6 +55,11 @@ export interface HotTopicItem {
   sourceUrl?: string;
   updatedBatchDate?: string;
   updatedAt?: string;
+  badgeLabel?: string;
+  likesLabel?: string;
+  savesLabel?: string;
+  commentsLabel?: string;
+  displayOrder?: number;
 }
 
 export type RawHotFromApi = {
@@ -132,5 +142,10 @@ export function recordToItem(row: HotTopicRecord): HotTopicItem {
     sourceUrl: row.source_url ?? undefined,
     updatedBatchDate: row.updated_batch_date,
     updatedAt: row.updated_at,
+    badgeLabel: row.badge_label ?? undefined,
+    likesLabel: row.likes_label ?? undefined,
+    savesLabel: row.saves_label ?? undefined,
+    commentsLabel: row.comments_label ?? undefined,
+    displayOrder: row.display_order,
   };
 }

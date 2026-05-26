@@ -1,11 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  getDailyNotifyMessage,
-  todayDateKey,
-  type DailyNotifyMessage,
-} from "@/lib/notifications/daily-messages";
+import { todayDateKey } from "@/lib/notifications/daily-messages";
+import { useServerDailyNotify } from "@/hooks/use-server-daily-notify";
 import {
   getNotifyReadDate,
   isDailyNotifyUnread,
@@ -17,10 +14,8 @@ export function useAppNotifications(pendingOrderCount = 0) {
   const [readTick, setReadTick] = useState(0);
   const [mounted, setMounted] = useState(false);
   const today = todayDateKey();
-  const dailyMessage: DailyNotifyMessage = useMemo(
-    () => getDailyNotifyMessage(new Date()),
-    [today, readTick]
-  );
+  const serverDaily = useServerDailyNotify();
+  const dailyMessage = useMemo(() => serverDaily, [serverDaily, readTick]);
 
   useEffect(() => {
     setMounted(true);

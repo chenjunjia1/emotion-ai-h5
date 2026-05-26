@@ -309,6 +309,22 @@ export async function deductQuota(
   const db = getSupabaseAdmin();
   if (!db) return { ok: false };
 
+  const { data: rpcRows, error: rpcError } = await db.rpc("deduct_user_quota", {
+    p_user_id: userId,
+    p_cost: cost,
+    p_reason: reason,
+  });
+
+  if (!rpcError && rpcRows && Array.isArray(rpcRows) && rpcRows.length > 0) {
+    const row = rpcRows[0] as { ok?: boolean };
+    if (row.ok) {
+      const updated = await findUserById(userId);
+      return { ok: true, user: updated ?? undefined };
+    }
+    const user = await findUserById(userId);
+    return { ok: false, user: user ?? undefined };
+  }
+
   const user = await findUserById(userId);
   if (!user) return { ok: false };
 
@@ -324,7 +340,20 @@ export async function deductQuota(
   usedCount += fromDaily;
   bonusQuota -= cost - fromDaily;
 
-  await db.from("users").update({ used_count: usedCount, bonus_quota: bonusQuota }).eq("id", userId);
+  const { data: updatedRow, error: updateError } = await db
+    .from("users")
+    .update({ used_count: usedCount, bonus_quota: bonusQuota })
+    .eq("id", userId)
+    .eq("used_count", user.usedCount)
+    .eq("bonus_quota", user.bonusQuota)
+    .select()
+    .maybeSingle();
+
+  if (updateError || !updatedRow) {
+    const latest = await findUserById(userId);
+    return { ok: false, user: latest ?? undefined };
+  }
+
   await db.from("quota_logs").insert({
     user_id: userId,
     change_type: "deduct",

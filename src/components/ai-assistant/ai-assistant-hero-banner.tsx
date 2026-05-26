@@ -2,10 +2,7 @@
 
 import { ArrowRight, Bot, Sparkles, Zap } from "lucide-react";
 import type { I18nKey } from "@/lib/i18n";
-import {
-  BUDDY_CAPABILITY_TAGS,
-  BUDDY_WORKFLOW_STEPS,
-} from "@/lib/operation-chat/buddy-prompts";
+import { BUDDY_CAPABILITY_TAGS } from "@/lib/operation-chat/buddy-prompts";
 import { cn } from "@/lib/utils";
 
 type Tr = (key: I18nKey) => string;
@@ -91,8 +88,8 @@ export function AiAssistantHeroBanner({
           ) : null}
         </div>
 
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {BUDDY_CAPABILITY_TAGS.map((tag) => (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {BUDDY_CAPABILITY_TAGS.slice(0, 4).map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold text-white ring-1 ring-white/20"
@@ -122,25 +119,13 @@ export function AiAssistantHeroBanner({
               {tr("buddyChatBannerCta").replace("{label}", featuredLabel)}
             </span>
             <span className="mt-0.5 block text-[9px] font-medium text-[#8A94A6]">
-              {tr("buddyChatBannerCtaSub")}
+              点一下直接出建议，约 10 秒
             </span>
           </span>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] text-white shadow-md">
             <ArrowRight size={18} strokeWidth={2.5} />
           </span>
         </button>
-
-        <div className="mt-3 grid grid-cols-3 gap-1.5">
-          {BUDDY_WORKFLOW_STEPS.map(({ step, label }) => (
-            <div
-              key={step}
-              className="rounded-xl bg-black/12 px-2 py-1.5 text-center backdrop-blur-sm"
-            >
-              <p className="text-[9px] font-black text-[#FFE8A8]">STEP {step}</p>
-              <p className="mt-0.5 text-[9px] font-bold leading-tight text-white/95">{label}</p>
-            </div>
-          ))}
-        </div>
 
         <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-black/12 px-3 py-1.5 backdrop-blur-sm">
           <span className="flex items-center gap-1 text-[9px] font-bold text-white/90">

@@ -10,8 +10,9 @@ export const MEMBERSHIP_MARKETING: Record<
   pro: {
     tagline: "天天发得出去，每日 200 灵感够用",
     perks: [
-      "每天约 6 条完整发布包（30灵感/条）",
-      "热点无限查看 + AI运营顾问每天50次",
+      "快速文案不限次 · 高级图文包 9 折",
+      "高级图文 1 张约 72 灵感（原价 80）",
+      "热点无限查看 + AI 运营顾问每天 50 次",
       "内容复盘、内容库无限保存",
     ],
     forWho: "适合：想日更起号的个人创作者",
@@ -52,6 +53,9 @@ export const QUOTA_COST: Record<string, number> = {
   emotion_chat: 5,
   publish_regen: 10,
   publish_restyle: 10,
+  pack_images_regen: 20,
+  premium_cover: 30,
+  openai_premium_image: 50,
   moments_regen_one: 5,
 };
 
@@ -115,6 +119,13 @@ export const PRODUCTS: ProductDef[] = [
   },
   {
     productType: "quota_pack",
+    productName: "灵感加油包 20点",
+    amount: 3.9,
+    bonusQuota: 20,
+    desc: "一次性充值20点奖励灵感，不过期",
+  },
+  {
+    productType: "quota_pack",
     productName: "灵感加油包 50点",
     amount: 9.9,
     bonusQuota: 50,
@@ -122,10 +133,24 @@ export const PRODUCTS: ProductDef[] = [
   },
   {
     productType: "quota_pack",
+    productName: "灵感加油包 120点",
+    amount: 19.9,
+    bonusQuota: 120,
+    desc: "一次性充值120点奖励灵感，不过期",
+  },
+  {
+    productType: "quota_pack",
     productName: "灵感加油包 200点",
     amount: 29,
     bonusQuota: 200,
     desc: "一次性充值200点奖励灵感，不过期",
+  },
+  {
+    productType: "quota_pack",
+    productName: "灵感加油包 300点",
+    amount: 49,
+    bonusQuota: 300,
+    desc: "一次性充值300点奖励灵感，不过期",
   },
 ];
 

@@ -8,6 +8,7 @@ import {
 import { countActiveHotTopics } from "@/lib/server/db/hot-topics-db";
 import { countXhsHotNotesInDb } from "@/lib/server/db/xhs-hot-notes-db";
 import { aggregateXhsHotNotes } from "@/lib/xhs/aggregate-xhs-hot-notes";
+import { publishHotTopicsDailyPush } from "@/lib/server/push/hot-topics-daily";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,7 @@ export async function GET(req: Request) {
     const existingXhs = await countXhsHotNotesInDb(dateKey);
     xhsSkipped = existingXhs >= 10;
     if (hotSkipped && inspSkipped && xhsSkipped) {
+      const push = await publishHotTopicsDailyPush(dateKey, existingHot);
       return NextResponse.json({
         ok: true,
         skipped: true,
@@ -62,6 +64,7 @@ export async function GET(req: Request) {
         hotTopics: existingHot,
         inspirationTitles: existingInsp!.length,
         xhsHotNotes: existingXhs,
+        push,
         message: "今日数据已齐全，传 ?force=1 强制覆盖",
       });
     }
@@ -111,6 +114,9 @@ export async function GET(req: Request) {
   } else {
     result.xhsHotNotes = { skipped: true };
   }
+
+  const activeCount = await countActiveHotTopics(dateKey);
+  result.push = await publishHotTopicsDailyPush(dateKey, activeCount);
 
   return NextResponse.json(result);
 }

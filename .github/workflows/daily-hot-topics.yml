@@ -1,0 +1,28 @@
+name: Daily hot topics refresh
+
+on:
+  schedule:
+    # UTC 00:00 = 北京时间 08:00（与 vercel.json 一致）
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call refresh API
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET not set in repo secrets"
+            exit 1
+          fi
+          BASE="${APP_URL:-https://www.emovalue.top}"
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE}/api/cron/refresh-hot-topics?force=0" \
+            | head -c 4000
+          echo ""
+          echo "Done."
