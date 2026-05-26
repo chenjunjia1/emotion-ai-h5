@@ -57,8 +57,23 @@ export async function POST(req: Request) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "upload_failed";
         const status =
-          msg === "unsupported_type" ? 415 : msg === "body_too_large" ? 413 : 500;
-        return NextResponse.json({ error: msg }, { status });
+          msg === "unsupported_type"
+            ? 415
+            : msg === "body_too_large"
+              ? 413
+              : msg === "storage_not_configured" || msg === "storage_upload_failed"
+                ? 503
+                : /ENOENT|read-only|EROFS/i.test(msg)
+                  ? 503
+                  : 500;
+        const error =
+          msg === "storage_not_configured" ||
+          /ENOENT|read-only|EROFS/i.test(msg)
+            ? "storage_not_configured"
+            : msg === "storage_upload_failed"
+              ? "storage_upload_failed"
+              : msg;
+        return NextResponse.json({ error }, { status });
       }
     },
     { ipLimit: 20 }

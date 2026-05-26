@@ -40,6 +40,7 @@ export function normalizeStoredCoverUrl(url: string | undefined): string | undef
 }
 
 const EPHEMERAL_ADMIN_COVER = /^\/generated\/hot-topics-covers-/i;
+const SUPABASE_STORAGE_HOST = /\.supabase\.co$/i;
 
 function isLocalDevOrigin(): boolean {
   if (typeof window === "undefined") return false;
@@ -58,6 +59,15 @@ export function resolvePublicCoverUrl(url: string | undefined): string | undefin
     !isLocalDevOrigin()
   ) {
     return undefined;
+  }
+  if (normalized?.startsWith("http")) {
+    try {
+      if (SUPABASE_STORAGE_HOST.test(new URL(normalized).hostname)) {
+        return normalized;
+      }
+    } catch {
+      /* ignore */
+    }
   }
   return normalized;
 }

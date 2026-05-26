@@ -24,6 +24,10 @@ function uploadErrorMessage(error?: string): string {
       return "无上传权限，请用管理员账号登录";
     case "server_backend_disabled":
       return "服务端未启用，请检查 Supabase 配置";
+    case "storage_not_configured":
+      return "线上无法写本地目录，请在 Supabase 创建公开桶 uploads（或配置 COS）";
+    case "storage_upload_failed":
+      return "云存储上传失败，请确认 Supabase Storage 桶 uploads 已设为 Public";
     default:
       return error ? `上传失败：${error}` : "上传失败，请重试";
   }

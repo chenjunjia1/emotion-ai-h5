@@ -10,6 +10,7 @@ import {
   isSupportedAdminImageMime,
   sniffImageMime,
 } from "@/lib/media/sniff-image-mime";
+import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export type StorageUploadResult = {
   storageUrl: string;
@@ -24,6 +25,18 @@ function getCdnBase(): string {
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     ""
   );
+}
+
+function getSupabaseStorageBucket(): string {
+  return process.env.SUPABASE_STORAGE_BUCKET?.trim() || "uploads";
+}
+
+export function isSupabaseStorageConfigured(): boolean {
+  return isSupabaseConfigured() && Boolean(getSupabaseStorageBucket());
+}
+
+function canWriteLocalPublicDir(): boolean {
+  return process.env.VERCEL !== "1" && process.env.AWS_LAMBDA_FUNCTION_NAME == null;
 }
 
 function localFallback(buffer: Buffer, storageKey: string): StorageUploadResult {
@@ -73,6 +86,40 @@ export function isCosConfigured(): boolean {
   return Boolean(process.env.COS_UPLOAD_URL_TEMPLATE?.trim()?.includes("{key}"));
 }
 
+/** Vercel 等无本地磁盘环境：Supabase Storage 公开桶 */
+async function uploadToSupabaseStorage(
+  buffer: Buffer,
+  key: string,
+  contentType: string
+): Promise<StorageUploadResult> {
+  const db = getSupabaseAdmin();
+  if (!db) throw new Error("supabase_not_configured");
+
+  const bucket = getSupabaseStorageBucket();
+  const objectKey = key.replace(/^\/+/, "");
+
+  const { error } = await db.storage.from(bucket).upload(objectKey, buffer, {
+    contentType,
+    upsert: true,
+    cacheControl: "public, max-age=31536000, immutable",
+  });
+  if (error) throw new Error(error.message);
+
+  const { data } = db.storage.from(bucket).getPublicUrl(objectKey);
+  const publicUrl = data.publicUrl;
+  const cdnBase = getCdnBase().replace(/\/$/, "");
+  const cdnUrl =
+    cdnBase && !/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(cdnBase)
+      ? `${cdnBase}/${objectKey}`
+      : publicUrl;
+
+  return {
+    key: objectKey,
+    storageUrl: publicUrl,
+    cdnUrl,
+  };
+}
+
 export async function uploadImageBuffer(
   buffer: Buffer,
   opts: { keyPrefix?: string; ext?: string; contentType?: string }
@@ -86,8 +133,23 @@ export async function uploadImageBuffer(
     try {
       return await uploadToCosPresigned(buffer, key, contentType);
     } catch (e) {
-      console.warn("[storageService] COS upload failed, fallback local:", e);
+      console.warn("[storageService] COS upload failed:", e);
     }
+  }
+
+  if (isSupabaseStorageConfigured()) {
+    try {
+      return await uploadToSupabaseStorage(buffer, key, contentType);
+    } catch (e) {
+      console.warn("[storageService] Supabase Storage upload failed:", e);
+      if (!canWriteLocalPublicDir()) {
+        throw new Error("storage_upload_failed");
+      }
+    }
+  }
+
+  if (!canWriteLocalPublicDir()) {
+    throw new Error("storage_not_configured");
   }
 
   return localFallback(buffer, key);
