@@ -36,11 +36,12 @@ export type ImageGenInput = {
 
 export type ImageProviderId = "ark" | "xinghui" | "mock";
 
-/** 火山方舟需显式开启（未接火山时不要设 ARK_IMAGE_ENABLED=1） */
+/** 火山方舟：ARK_IMAGE_ENABLED=1 或 IMAGE_PROVIDER=ark（兼容旧 .env） */
 function isArkEnabled(): boolean {
-  return (
-    process.env.ARK_IMAGE_ENABLED === "1" && getArkConfig().configured
-  );
+  const flag =
+    process.env.ARK_IMAGE_ENABLED === "1" ||
+    process.env.IMAGE_PROVIDER?.trim() === "ark";
+  return flag && getArkConfig().configured;
 }
 
 export function resolveImageProvider(): ImageProviderId {
