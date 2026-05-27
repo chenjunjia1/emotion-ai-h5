@@ -12,11 +12,16 @@ const envPath = resolve(root, ".env.local");
 
 const LINES = [
   "",
-  "# ── AI 发布包：文案 + 星绘配图 + CDN（仅服务端）──",
+  "# ── AI 发布包：文案 + 配图 + CDN（仅服务端）──",
   "# 文案 DeepSeek（若已有 DEEPSEEK_API_KEY 可忽略此行）",
   "# DEEPSEEK_API_KEY=sk-xxx",
   "",
-  "# 星绘官方企业 API（生产填真实值；本地演示可只开 MOCK）",
+  "# 火山方舟 Doubao-Seedream-5.0（Vercel 生产推荐，接入点 ID 填 ARK_IMAGE_ENDPOINT）",
+  "# ARK_IMAGE_ENABLED=1",
+  "# ARK_API_KEY=",
+  "# ARK_IMAGE_ENDPOINT=ep-xxxx",
+  "",
+  "# 星绘官方企业 API（未开火山时用；本地演示可只开 MOCK）",
   "XINGHUI_APP_ID=",
   "XINGHUI_API_KEY=",
   "# XINGHUI_API_SECRET=",

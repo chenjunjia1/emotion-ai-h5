@@ -12,3 +12,23 @@ NEXT_PUBLIC_APP_URL=https://www.emovalue.top
 ALIPAY_NOTIFY_URL=https://www.emovalue.top/api/pay/notify/alipay
 CRON_SECRET=随机长字符串
 ADMIN_MOBILES=你的管理员手机号
+
+# ── 发布包 · Doubao Seedream 5.0（火山方舟，高级图文包配图）──
+# 火山控制台创建「图片生成」在线推理接入点，模型选 Doubao-Seedream-5.0，复制 ep-xxxx
+ARK_IMAGE_ENABLED=1
+ARK_API_KEY=你的火山方舟_API_Key
+ARK_IMAGE_ENDPOINT=ep-xxxxxxxx
+# 可选
+# ARK_API_BASE=https://ark.cn-beijing.volces.com/api/v3
+# ARK_IMAGE_SIZE=2K
+# ARK_IMAGE_SIZE_COVER=1728x2304
+
+# 不配火山时用讯飞星绘（二选一；生产建议 Seedream）
+# XINGHUI_APP_ID=
+# XINGHUI_API_KEY=
+# XINGHUI_API_SECRET=
+# 仅演示占位图（勿用于生产）: XINGHUI_MOCK=1
+
+# 出图后上传（Supabase 公开桶 uploads 或 COS）
+SUPABASE_STORAGE_BUCKET=uploads
+CDN_BASE_URL=https://你的CDN或Supabase公网域名
