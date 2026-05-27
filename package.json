@@ -6,8 +6,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "node scripts/dev-fresh.mjs",
-    "dev:quick": "next dev",
+    "dev": "next dev --turbopack",
+    "dev:quick": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "dev:clean": "node scripts/dev-fresh.mjs",
     "dev:fresh": "node scripts/dev-fresh.mjs",
     "kill:dev": "node scripts/kill-dev-port.mjs",
     "verify:css": "node scripts/verify-dev-css.mjs",
@@ -28,6 +30,7 @@
     "seed:hot-topics:force": "node scripts/seed-hot-topics.mjs --via-api --force",
     "refresh:hot-topics-v2": "node scripts/seed-hot-topics.mjs --via-api",
     "refresh:xhs-notes": "node scripts/refresh-xhs-hot-notes.mjs",
+    "pull:tikhub": "node scripts/pull-tikhub-inspiration-pool.mjs",
     "download:covers": "node scripts/download-cover-assets.mjs",
     "download:covers:pexels": "node scripts/fetch-unsplash-covers.mjs",
     "test:scene-covers": "node scripts/test-scene-covers.mjs",

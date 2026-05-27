@@ -31,7 +31,7 @@ export function PackV2LoadingProgress({
   const steps =
     mode === "quick"
       ? ["理解主题", "匹配平台", "生成文案", "整理建议"]
-      : ["理解主题", "生成文案", "Seedream 配图", "整理发布建议"];
+      : ["理解主题", "生成文案", "AI 配图", "整理发布建议"];
 
   const activeStep = Math.min(
     steps.length - 1,

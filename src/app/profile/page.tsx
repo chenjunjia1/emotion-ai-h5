@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,29 +9,38 @@ import {
   ChevronRight,
   Crown,
   FileText,
+  Handshake,
   HelpCircle,
   Languages,
   MessageCircle,
   Shield,
   Smartphone,
 } from "lucide-react";
-import { useProduct } from "@/hooks/use-product";
 import { AppShell } from "@/components/layout/app-shell";
-import { MembershipPricing } from "@/components/pricing/membership-pricing";
-import { QuotaPackPricing } from "@/components/pricing/quota-pack-pricing";
-import {
-  ProfileHeroCard,
-  ProfileQuickActions,
-} from "@/components/profile/profile-dashboard";
+import { ProfileExpressionPanel } from "@/components/expression/profile-expression-panel";
 import { ProfileDailyQuestStrip } from "@/components/profile/profile-daily-quest-strip";
 import { ProfileMembershipBanner } from "@/components/profile/profile-membership-banner";
+import { useGrowth } from "@/hooks/use-growth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useApp } from "@/contexts/app-context";
-import { ProfileOrdersSection } from "@/components/profile/profile-orders-section";
+
+const MembershipPricing = dynamic(
+  () =>
+    import("@/components/pricing/membership-pricing").then((m) => ({
+      default: m.MembershipPricing,
+    })),
+  { loading: () => <div className="h-40 animate-pulse rounded-2xl bg-orange-50" /> }
+);
+const QuotaPackPricing = dynamic(
+  () =>
+    import("@/components/pricing/quota-pack-pricing").then((m) => ({
+      default: m.QuotaPackPricing,
+    })),
+  { loading: () => <div className="h-24 animate-pulse rounded-2xl bg-orange-50" /> }
+);
 import { trackEvent } from "@/lib/analytics";
 import { canAccessOpsAdmin } from "@/lib/auth/login-allowlist";
-import { getTotalQuota } from "@/lib/v1/quota";
 import { theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +49,6 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const {
     user,
-    orders,
     tr,
     setLang,
     lang,
@@ -49,9 +58,9 @@ function ProfileContent() {
     products,
     refreshUser,
   } = useApp();
-  const { growth } = useProduct();
   const membershipProducts = products.filter((p) => p.productType === "membership");
   const quotaPackProducts = products.filter((p) => p.productType === "quota_pack");
+  const { growth } = useGrowth();
   const [view, setView] = useState<"main" | "pricing">("main");
 
   useEffect(() => {
@@ -114,21 +123,20 @@ function ProfileContent() {
   const settingsLinks = [
     { href: "/support", labelKey: "linkSupport" as const, icon: HelpCircle },
     { href: "/support?tab=feedback", labelKey: "linkFeedback" as const, icon: MessageCircle },
+    { href: "/partner", labelKey: "linkPartner" as const, icon: Handshake },
     { href: "/agreement/user", labelKey: "linkUserAgreement" as const, icon: FileText },
     { href: "/agreement/privacy", labelKey: "linkPrivacy" as const, icon: Shield },
     { href: "/agreement/rights", labelKey: "linkRights" as const, icon: Crown },
     { href: "/about", labelKey: "linkAbout" as const, icon: ChevronRight },
   ];
 
-  const totalQuota = getTotalQuota(user);
   return (
-    <AppShell>
+    <AppShell homePage showHeader>
       <div className="profile-stagger space-y-3 pb-2">
-        <ProfileHeroCard
+        <ProfileExpressionPanel
           user={user}
-          growth={growth}
-          totalQuota={totalQuota}
           planLabel={planLabel}
+          growth={growth}
           tr={tr}
           onOpenPricing={() => setView("pricing")}
         />
@@ -143,15 +151,6 @@ function ProfileContent() {
         />
 
         <ProfileDailyQuestStrip />
-
-        <ProfileQuickActions tr={tr} />
-
-        <ProfileOrdersSection
-          orders={orders}
-          tr={tr}
-          variant="preview"
-          onOpenPricing={() => setView("pricing")}
-        />
 
         <Card>
           <CardContent className="py-2">
@@ -227,11 +226,10 @@ function ProfileContent() {
 }
 
 export default function ProfilePage() {
-  const { tr } = useApp();
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-orange-600">{tr("loading")}</div>
+        <div className="p-8 text-center text-orange-600">加载中…</div>
       }
     >
       <ProfileContent />

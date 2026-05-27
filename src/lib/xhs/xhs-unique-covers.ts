@@ -17,6 +17,10 @@ const LOCAL_COVER_POOL: Record<XhsNoteCategory, string[]> = {
 
 /** 用于跨笔记去重的封面指纹 */
 export function xhsCoverFingerprint(url: string): string {
+  if (url.includes("/api/cover-seed/")) {
+    const m = url.match(/\/api\/cover-seed\/([^/?]+)/);
+    if (m?.[1]) return decodeURIComponent(m[1]);
+  }
   if (url.startsWith("/")) return url;
   try {
     const u = new URL(url);
@@ -33,6 +37,12 @@ function hashNote(noteId: string): number {
   let h = 0;
   for (let i = 0; i < noteId.length; i++) h = (h * 31 + noteId.charCodeAt(i)) >>> 0;
   return h;
+}
+
+/** 单条笔记的本地分类封面（封面加载失败时的兜底） */
+export function getLocalCoverForNote(note: XhsHotNote): string {
+  const pool = LOCAL_COVER_POOL[note.category] ?? [DEFAULT_LOCAL_COVER];
+  return pool[hashNote(note.noteId) % pool.length]!;
 }
 
 function pickLocalCover(note: XhsHotNote, usedLocals: Set<string>): string {
@@ -70,7 +80,8 @@ export function applyUniqueXhsCovers(notes: XhsHotNote[]): XhsHotNote[] {
     }
 
     if (!cover) {
-      cover = pickLocalCover(note, usedLocals);
+      const seed = encodeURIComponent(note.noteId.replace(/~/g, "_"));
+      cover = `/api/cover-seed/${seed}?w=400&h=500`;
     }
 
     if (cover === note.images[0]) return note;

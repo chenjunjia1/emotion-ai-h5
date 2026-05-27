@@ -1,6 +1,6 @@
 /**
  * AI 配图服务（服务端）
- * 优先火山方舟 Seedream，其次讯飞星绘；禁止 Pexels / 占位降级
+ * 默认讯飞星绘（或 XINGHUI_MOCK 演示）；火山方舟仅 ARK_IMAGE_ENABLED=1 时启用
  */
 
 import type { ImageCountOption } from "@/lib/publish-pack/pack-pricing";
@@ -36,11 +36,18 @@ export type ImageGenInput = {
 
 export type ImageProviderId = "ark" | "xinghui" | "mock";
 
+/** 火山方舟需显式开启（未接火山时不要设 ARK_IMAGE_ENABLED=1） */
+function isArkEnabled(): boolean {
+  return (
+    process.env.ARK_IMAGE_ENABLED === "1" && getArkConfig().configured
+  );
+}
+
 export function resolveImageProvider(): ImageProviderId {
-  if (getArkConfig().configured) return "ark";
   const xh = getXinghuiConfig();
-  if (xh.configured && !xh.mock) return "xinghui";
+  if (isArkEnabled()) return "ark";
   if (xh.mock) return "mock";
+  if (xh.configured) return "xinghui";
   return "xinghui";
 }
 
@@ -55,6 +62,7 @@ export function getImageProviderStatus() {
     arkEndpoint: ark.endpoint || undefined,
     xinghui: xh.configured || xh.mock,
     xinghuiMock: xh.mock,
+    arkEnabled: isArkEnabled(),
     advancedRequiresArk: provider === "ark",
   };
 }

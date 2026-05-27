@@ -12,14 +12,18 @@ console.log("[dev-fresh] 正在释放 3000 端口…");
 killDevPort(3000);
 
 if (existsSync(".next")) {
-  rmSync(".next", { recursive: true, force: true });
-  console.log("[dev-fresh] 已删除 .next");
+  try {
+    rmSync(".next", { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+    console.log("[dev-fresh] 已删除 .next");
+  } catch (e) {
+    console.warn("[dev-fresh] .next 删除不完整，继续启动:", e?.message ?? e);
+  }
 }
 
 console.log("[dev-fresh] 启动开发服务…");
 console.log("[dev-fresh] 提示: 开发时不要同时运行 npm run build");
 
-const child = spawn("npx", ["next", "dev"], {
+const child = spawn("npx", ["next", "dev", "--turbopack"], {
   stdio: "inherit",
   shell: true,
   cwd: process.cwd(),

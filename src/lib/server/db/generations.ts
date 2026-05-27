@@ -12,7 +12,13 @@ export type GenerationType =
   | "reply"
   | "emotion_chat"
   | "score"
-  | "hot_topic";
+  | "hot_topic"
+  | "expression_quick"
+  | "expression_chat"
+  | "expression_emotion"
+  | "expression_vip"
+  | "expression_diagnosis"
+  | "expression_commerce";
 
 export async function recordGeneration(input: {
   userId: string;

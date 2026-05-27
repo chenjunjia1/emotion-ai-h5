@@ -201,6 +201,44 @@ export function normalizeReviewResult(raw: Record<string, unknown>): Record<stri
   return normalizeReviewShape(raw);
 }
 
+/** 从历史 output 中提取主文案（运营顾问 / 树洞等） */
+export function pickStringFromOutput(
+  output: Record<string, unknown>,
+  keys: string[]
+): string | undefined {
+  return pickString(output, keys);
+}
+
+/** 是否为 AI 运营顾问类结果（emotion-chat API 实际返回结构） */
+export function isConsultantHistoryOutput(output: Record<string, unknown>): boolean {
+  const analysis = pickString(output, ["analysis", "reply", "text", "content"]);
+  if (analysis) return true;
+  if (Array.isArray(output.todayTopics) && output.todayTopics.length > 0) return true;
+  if (Array.isArray(output.titleSuggestions) && output.titleSuggestions.length > 0) return true;
+  if (Array.isArray(output.contentStructure) && output.contentStructure.length > 0) return true;
+  return false;
+}
+
+/** 是否为树洞陪聊结果（text + tags） */
+export function isTreeholeHistoryOutput(output: Record<string, unknown>): boolean {
+  if (isConsultantHistoryOutput(output)) return false;
+  return Boolean(pickString(output, ["text", "reply", "content"]));
+}
+
+/** 是否为情绪陪聊类结果（心动值 + 回复话术） */
+export function isEmotionHistoryOutput(output: Record<string, unknown>): boolean {
+  const replies = output.replies;
+  if (Array.isArray(replies) && replies.length > 0) {
+    const first = replies[0];
+    if (first && typeof first === "object" && "text" in (first as object)) return true;
+  }
+  const insight = pickString(output, ["insight"]);
+  const stage = pickString(output, ["stage"]);
+  if (insight && !pickString(output, ["analysis"])) return true;
+  if (stage && typeof output.heartbeat === "number") return true;
+  return false;
+}
+
 /** 页面展示：避免 String(undefined) === "undefined" */
 export function displayField(value: unknown, fallback = "—"): string {
   if (value === null || value === undefined) return fallback;

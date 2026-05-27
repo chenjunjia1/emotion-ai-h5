@@ -6,7 +6,7 @@ import type { HomeCuratedPick } from "@/lib/content/home-curated-picks";
 
 const TTL_MS = 30 * 60 * 1000;
 
-const STORAGE_KEY = "emotion_home_top3_v2";
+const STORAGE_KEY = "emotion_home_top3_v3";
 
 
 

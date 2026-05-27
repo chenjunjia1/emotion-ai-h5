@@ -76,7 +76,7 @@ export function AdminShell({
               </Link>
               <div>
                 <h1 className="text-base font-bold text-slate-900 md:text-lg">
-                  AI短视频运营灵感 · 管理后台
+                  AI灵感创作 · 管理后台
                 </h1>
                 <p className="text-[11px] text-slate-500">
                   {user?.mobile} · {title}

@@ -41,7 +41,7 @@ export function BannerDailyTicker() {
       className="flex w-full justify-center px-0.5"
       aria-live="polite"
     >
-      <div className="flex max-w-full items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 shadow-[0_4px_14px_rgba(255,77,148,0.18)] ring-1 ring-white/80">
+      <div className="flex max-w-full items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 shadow-[0_4px_14px_rgba(255,77,148,0.18)] ring-1 ring-white/80">
         <Bell size={13} className="shrink-0 text-[#FF4D94]" strokeWidth={2.5} />
         <p className="truncate text-[10px] font-black leading-tight text-[#FF4D94] sm:text-[11px]">
           {tr("bannerTickerHot")}

@@ -3,12 +3,12 @@ import { HOME_INSPIRATION_TOP3, buildHomePickHref } from "@/lib/content/home-cur
 import { coverPresetForTopic } from "@/lib/content/scene-cover-presets";
 import { assignUniqueCoverPresets } from "@/lib/content/unique-topic-covers";
 import { resolvePublicCoverUrl } from "@/lib/media/normalize-cover-url";
+import { inspirationFeedHeadNotes, formatXhsCount } from "@/lib/xhs/xhs-feed-filters";
+import { readInspirationPoolCache } from "@/lib/xhs/inspiration-pool-client-cache";
 import { buildXhsCardCopy } from "@/lib/xhs/xhs-display-copy";
-import { pickHomeTop3Notes } from "@/lib/xhs/home-top3-picks";
-import { formatXhsCount } from "@/lib/xhs/xhs-feed-filters";
 import type { XhsHotNote } from "@/lib/xhs/types";
 
-function mapXhsNoteToPick(note: XhsHotNote): HomeCuratedPick {
+export function mapXhsNoteToPick(note: XhsHotNote): HomeCuratedPick {
   const copy = buildXhsCardCopy(note);
   const viralScore = Math.min(98, Math.max(72, 68 + Math.round(note.hotScore / 12)));
 
@@ -29,7 +29,7 @@ function mapXhsNoteToPick(note: XhsHotNote): HomeCuratedPick {
   };
 }
 
-function applyUniqueCovers(picks: HomeCuratedPick[]): HomeCuratedPick[] {
+export function applyUniqueCovers(picks: HomeCuratedPick[]): HomeCuratedPick[] {
   const needPreset = picks.filter((p) => !p.coverImageUrl);
   if (!needPreset.length) return picks;
 
@@ -42,19 +42,26 @@ function applyUniqueCovers(picks: HomeCuratedPick[]): HomeCuratedPick[] {
   }));
 }
 
-/** 首页 TOP3：今日爆款前 3（与热点页「今日爆款」Tab 同源） */
+/** 首页 TOP3：轻量接口，仅 3 条卡片 JSON */
 export async function fetchHomeTop3FromApi(): Promise<HomeCuratedPick[] | null> {
-  const res = await fetch("/api/xhs/hot-notes", { cache: "no-store" });
+  const res = await fetch("/api/home/top3");
   if (!res.ok) return null;
-  const data = (await res.json()) as { success?: boolean; data?: XhsHotNote[] };
-  if (!data.success || !data.data || data.data.length < 3) return null;
-
-  const top3 = pickHomeTop3Notes(data.data).map(mapXhsNoteToPick);
-  return applyUniqueCovers(top3);
+  const data = (await res.json()) as { success?: boolean; data?: HomeCuratedPick[] };
+  if (!data.data || data.data.length < 3) return null;
+  return data.data;
 }
 
 export function fallbackHomeTop3Picks(): HomeCuratedPick[] {
   return applyUniqueCovers(HOME_INSPIRATION_TOP3);
+}
+
+/** 浏览器已缓存灵感池时，与灵感页「今日爆款」前三同源 */
+export function resolveHomeTop3FromClientPool(): HomeCuratedPick[] | null {
+  const pool = readInspirationPoolCache(0);
+  if (!pool?.length) return null;
+  const notes = inspirationFeedHeadNotes(pool, "hot", 3);
+  if (notes.length < 3) return null;
+  return applyUniqueCovers(notes.map(mapXhsNoteToPick));
 }
 
 export function top3PickIds(picks: HomeCuratedPick[]): string {
@@ -73,6 +80,8 @@ export function buildHomeTop3Href(pick: HomeCuratedPick): string {
     if (pick.xhsAngle) {
       q.set("inspiration_hint", `${pick.xhsAngle}；请 AI 原创改写，禁止照搬原文与图片`);
     }
+    q.set("from", "home_top3");
+    q.set("returnTo", "/inspiration?tab=hot");
     return `/publish-pack?${q.toString()}`;
   }
   if (!pick.id.startsWith("insp-")) {

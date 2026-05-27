@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { InspirationSourceBar } from "@/components/inspiration/inspiration-source-bar";
 import { StudioHeader } from "@/components/publish-pack/studio/studio-header";
 import { PackPromptChips } from "@/components/publish-pack/v2/pack-prompt-chips";
 import { PackV2PayModal, type PayModalKind } from "@/components/publish-pack/v2/pack-v2-pay-modal";
@@ -127,6 +128,10 @@ export function PublishPackV2Page() {
   const topicParam = params.get("topic");
   const modeParam = params.get("mode");
   const imageCountParam = params.get("imageCount");
+  const fromInspiration =
+    params.get("from") === "inspiration" || Boolean(params.get("inspiration_id"));
+  const inspirationReturnTo = params.get("returnTo") ?? "/inspiration";
+  const inspirationHint = params.get("inspiration_hint");
   const reviewBridge = parseReviewPackSearchParams(params);
 
   const initialImageCount = ([1, 2, 4] as const).includes(
@@ -422,7 +427,7 @@ export function PublishPackV2Page() {
         ) {
           showToast(
             res.message ??
-              "高级配图暂时不可用，请检查火山方舟 API 配置或稍后再试"
+              "高级配图暂时不可用，请检查星绘 API 配置，或开启 XINGHUI_MOCK=1 演示模式"
           );
           setLoading(false);
           setLoadingStartedAt(null);
@@ -654,6 +659,21 @@ export function PublishPackV2Page() {
     <AppShell showHeader={false} wide>
       <StudioHeader onBack={() => router.back()} />
 
+      {fromInspiration && topicParam ? (
+        <div className="mx-auto max-w-6xl px-3 sm:px-6">
+          <InspirationSourceBar
+            headline={decodeURIComponent(topicParam).slice(0, 56)}
+            subline={
+              inspirationHint
+                ? "结构参考已带入，生成内容为 AI 原创改写"
+                : "结构参考已带入，可直接生成你的版本"
+            }
+            returnTo={inspirationReturnTo}
+            createHref="/create?from=inspiration"
+          />
+        </div>
+      ) : null}
+
       <div className="mx-auto grid max-w-6xl gap-5 px-3 pb-8 pt-2 sm:px-6 lg:grid-cols-[470px_1fr]">
         <section className="h-fit rounded-[36px] border border-white bg-white/70 p-5 shadow-sm backdrop-blur lg:sticky lg:top-20">
           <div className="mb-5 grid grid-cols-2 gap-2 rounded-full bg-pink-50 p-1">
@@ -690,7 +710,7 @@ export function PublishPackV2Page() {
           <p className="mt-2 text-sm leading-6 text-slate-400">
             {mode === "quick"
               ? "随便说一句，AI会帮你补成能发的内容。"
-              : "写一句主题，再点选下面画面标签，Seedream 会按你的选择出更真实的图。"}
+              : "写一句主题，再点选下面画面标签，AI 会按你的选择生成生活感配图。"}
           </p>
 
           <textarea
@@ -919,7 +939,7 @@ export function PublishPackV2Page() {
           <p className="mt-3 text-center text-xs text-slate-400">
             {mode === "quick"
               ? "快速模式不生成图片，成本低，先轻松体验。"
-              : "选好画面标签 + 图片风格，Seedream 会生成更真实的生活感配图。"}
+              : "选好画面标签 + 图片风格，AI 会生成更真实的生活感配图。"}
           </p>
           <p className="mt-1 text-center text-[10px] text-slate-300">
             灵感余额 {quota}

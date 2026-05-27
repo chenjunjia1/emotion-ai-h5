@@ -6,7 +6,7 @@
     "pages/profile/profile"
   ],
   "window": {
-    "navigationBarTitleText": "AI运营灵感",
+    "navigationBarTitleText": "AI灵感创作",
     "navigationBarBackgroundColor": "#FFF4F7",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#FFF8F3"

@@ -33,8 +33,8 @@ export function ProfileMembershipBanner({
       className={cn(
         "profile-membership-banner group relative w-full overflow-hidden rounded-[22px] text-left shadow-[0_10px_28px_rgba(255,79,139,0.32)] ring-2 ring-white/50 transition active:scale-[0.99]",
         isFree
-          ? "bg-gradient-to-br from-[#FF4F8B] via-[#FF6B9D] to-[#FF9A4D]"
-          : "bg-gradient-to-br from-[#FFB347] via-[#FF7AAE] to-[#FF4F8B]"
+          ? "bg-gradient-to-r from-[#FF9A4D] via-[#FF7AAE] to-[#FF4F8B]"
+          : "bg-gradient-to-r from-[#FFA040] via-[#FF7AAE] to-[#FF4E93]"
       )}
     >
       <span

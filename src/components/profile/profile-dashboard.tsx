@@ -19,7 +19,7 @@ import {
   profileCompanionMeta,
   profileDisplayName,
 } from "@/components/profile/profile-user-avatar";
-import type { GrowthState } from "@/hooks/use-product";
+import type { GrowthState } from "@/hooks/use-growth";
 import type { I18nKey } from "@/lib/i18n";
 import type { User } from "@/lib/types/v1";
 import { getNextLevel, getProfileLevelHintContent, xpProgress } from "@/lib/v1/growth";
@@ -39,7 +39,7 @@ const QUICK_ACTIONS = [
     href: "/emotion-chat",
     labelKey: "navAiChat" as const,
     icon: MessageCircle,
-    grad: "from-[#A78BFA] to-[#C4B5FD]",
+    grad: "from-[#FF7AAE] to-[#FF9EC4]",
     iconAnim: "play-icon-bounce",
   },
   {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "管理后台 · AI短视频运营灵感",
+  title: "管理后台 · AI灵感创作",
   robots: "noindex, nofollow",
 };
 

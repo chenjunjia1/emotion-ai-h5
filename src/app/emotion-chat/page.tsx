@@ -1,12 +1,18 @@
 "use client";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { AiAssistantView } from "@/components/ai-assistant/ai-assistant-view";
+import { Suspense } from "react";
+import { ChatStrategistPage } from "@/components/expression/chat-strategist-page";
+import { useApp } from "@/contexts/app-context";
 
-export default function BuddyChatPage() {
+function ChatPageInner() {
+  return <ChatStrategistPage />;
+}
+
+export default function EmotionChatPage() {
+  const { tr } = useApp();
   return (
-    <AppShell>
-      <AiAssistantView />
-    </AppShell>
+    <Suspense fallback={<div className="p-8 text-center text-[#FF4F8B]">{tr("loading")}</div>}>
+      <ChatPageInner />
+    </Suspense>
   );
 }

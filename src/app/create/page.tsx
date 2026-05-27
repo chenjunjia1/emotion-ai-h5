@@ -1,17 +1,18 @@
-import { redirect } from "next/navigation";
+"use client";
 
-/** PRD 创作页别名 → 发布包生成页 */
-export default async function CreatePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp)) {
-    if (typeof v === "string") qs.set(k, v);
-    else if (Array.isArray(v)) v.forEach((x) => qs.append(k, x));
-  }
-  const q = qs.toString();
-  redirect(q ? `/publish-pack?${q}` : "/publish-pack");
+import { Suspense } from "react";
+import { CreateHubPage } from "@/components/expression/create-hub-page";
+import { useApp } from "@/contexts/app-context";
+
+function CreatePageInner() {
+  return <CreateHubPage />;
+}
+
+export default function CreatePage() {
+  const { tr } = useApp();
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-[#9CA3AF]">{tr("loading")}</div>}>
+      <CreatePageInner />
+    </Suspense>
+  );
 }

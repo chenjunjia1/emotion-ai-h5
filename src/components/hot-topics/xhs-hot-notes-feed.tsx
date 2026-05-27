@@ -2,187 +2,14 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ChevronRight, Sparkles, Heart, Bookmark, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { HotTopicsFeedToolbar } from "@/components/hot-topics/hot-topics-feed-toolbar";
-import { useApp } from "@/contexts/app-context";
-import type { XhsHotNote } from "@/lib/xhs/types";
+import { XhsInspirationNoteCard } from "@/components/hot-topics/xhs-inspiration-note-card";
+import { useAppUi } from "@/contexts/app-ui-context";
 import { type XhsFeedTab } from "@/lib/xhs/xhs-page-tabs";
-import { xhsCardButtonLabel } from "@/lib/xhs/xhs-tab-ui";
-import { filterXhsNotesByTab, formatXhsCount } from "@/lib/xhs/xhs-client-api";
-import { formatXhsVibeLabel } from "@/lib/xhs/xhs-vibe-labels";
-import { buildXhsCardCopy, buildMomentsCardCopy } from "@/lib/xhs/xhs-display-copy";
+import { filterXhsNotesByTab } from "@/lib/xhs/xhs-client-api";
 import { FEATURE_LIMITS } from "@/lib/v1/plan-limits";
-import { xhsCoverDisplayUrl } from "@/lib/xhs/xhs-cover-url";
+import type { XhsHotNote } from "@/lib/xhs/types";
 import { cn } from "@/lib/utils";
-
-function buildRewriteHref(note: XhsHotNote, tab: XhsFeedTab): string {
-  const copy =
-    tab === "moments" ? buildMomentsCardCopy(note) : buildXhsCardCopy(note);
-  const platform = tab === "moments" || note.contentType === "朋友圈文案" ? "朋友圈" : "小红书";
-  const q = new URLSearchParams({
-    platform,
-    topic: copy.headline.slice(0, 32),
-    inspiration_mode: "xhs",
-    inspiration_id: note.noteId,
-    inspiration_category: note.category,
-  });
-  q.set(
-    "inspiration_hint",
-    tab === "moments"
-      ? `${copy.angle}；请 AI 原创改写为朋友圈短文案（1–3 句），禁止照搬原文`
-      : `${copy.angle}；请 AI 原创改写，禁止照搬原文与图片`
-  );
-  return `/publish-pack?${q.toString()}`;
-}
-
-function XhsNoteCard({
-  note,
-  index,
-  locked,
-  tab,
-}: {
-  note: XhsHotNote;
-  index: number;
-  locked?: boolean;
-  tab: XhsFeedTab;
-}) {
-  const router = useRouter();
-  const cover = xhsCoverDisplayUrl(note.images[0]);
-  const isMoments = tab === "moments";
-  const isLife = tab === "life";
-  const isWeekend = tab === "weekend";
-  const isFashion = tab === "fashion";
-  const isWork = tab === "work";
-  const copy = isMoments ? buildMomentsCardCopy(note) : buildXhsCardCopy(note);
-  const isLocalCover = Boolean(
-    cover?.startsWith("/") && !cover.startsWith("/api/xhs/")
-  );
-
-  const vibeBadge = isMoments
-    ? "朋友圈体"
-    : isLife
-      ? "生活感"
-      : isWeekend
-        ? "周末碎片"
-        : isFashion
-          ? "OOTD灵感"
-          : isWork
-            ? "打工人"
-            : "种草方向";
-
-  return (
-    <li className="cv-auto">
-      <article
-        className={cn(
-          "isolate overflow-hidden rounded-[18px] bg-white shadow-[0_2px_14px_rgba(255,120,150,0.08)] ring-1 ring-inset ring-[#FFE8F0]",
-          locked && "pointer-events-none select-none blur-[2px] opacity-60",
-          tab === "hot" &&
-            index === 0 &&
-            "border-2 border-[#FF4F8B]/35 shadow-[0_4px_20px_rgba(255,79,139,0.15)]"
-        )}
-      >
-        <div className="flex gap-3 p-2.5">
-          <div className="relative h-[96px] w-[96px] shrink-0 overflow-hidden rounded-[18px] bg-gradient-to-br from-[#FFF0F5] to-[#FFE8F0]">
-            {cover ? (
-              <img
-                src={cover}
-                alt=""
-                width={96}
-                height={96}
-                className={cn(
-                  "h-full w-full",
-                  isLocalCover ? "object-contain p-3" : "object-cover"
-                )}
-                loading={index < 6 ? "eager" : "lazy"}
-                decoding="async"
-                draggable={false}
-                referrerPolicy={isLocalCover ? undefined : "no-referrer"}
-              />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-[#FFD6EC] to-[#FFE0C8]" />
-            )}
-            <span className="absolute left-1 top-1 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/55 px-1 text-[9px] font-black text-white">
-              {index + 1}
-            </span>
-            {tab === "hot" && index === 0 ? (
-              <span className="absolute right-1 top-1 z-10 rounded-md bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-1 py-0.5 text-[7px] font-black text-white">
-                最多人点
-              </span>
-            ) : null}
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col py-0.5">
-            <div className="flex flex-wrap items-center gap-1">
-              <span
-                className={cn(
-                  "rounded-md px-1.5 py-0.5 text-[8px] font-bold",
-                  isMoments
-                    ? "bg-[#ECFDF5] text-[#059669]"
-                    : isLife
-                      ? "bg-[#FFF7ED] text-[#EA580C]"
-                      : isWeekend
-                        ? "bg-[#EFF6FF] text-[#2563EB]"
-                        : isFashion
-                          ? "bg-[#FDF2F8] text-[#DB2777]"
-                          : isWork
-                            ? "bg-[#EFF6FF] text-[#2563EB]"
-                            : "bg-[#FFF0F5] text-[#FF4F8B]"
-                )}
-              >
-                {vibeBadge}
-              </span>
-              <span className="rounded-md bg-[#F3F4F6] px-1.5 py-0.5 text-[8px] font-bold text-[#6B7280]">
-                {note.category}
-              </span>
-              <span className="rounded-md bg-[#EEF2FF] px-1.5 py-0.5 text-[8px] font-bold text-[#6366F1]">
-                {formatXhsVibeLabel(note)}
-              </span>
-            </div>
-
-            <h3 className="mt-1 line-clamp-2 text-[13px] font-black leading-snug text-[#1F2937]">
-              {copy.headline}
-            </h3>
-
-            <p className="mt-0.5 line-clamp-1 text-[10px] text-[#8A94A6]">
-              {copy.subline}
-            </p>
-
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[9px] font-bold text-[#8A94A6]">
-              <span className="inline-flex items-center gap-0.5">
-                <Heart size={10} className="text-[#FF6B8A]" />
-                {formatXhsCount(note.likedCount)}
-              </span>
-              <span className="inline-flex items-center gap-0.5">
-                <Bookmark size={10} />
-                {formatXhsCount(note.collectedCount)}
-              </span>
-              <span className="inline-flex items-center gap-0.5">
-                <MessageCircle size={10} />
-                {formatXhsCount(note.commentCount)}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => router.push(buildRewriteHref(note, tab))}
-              className={cn(
-                "mt-2 inline-flex w-full items-center justify-center gap-1 rounded-full py-2.5 text-[11px] font-black text-white shadow-sm active:scale-[0.98]",
-                isMoments
-                  ? "bg-gradient-to-r from-[#10B981] to-[#34D399]"
-                  : "bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D]"
-              )}
-            >
-              <Sparkles size={12} />
-              {xhsCardButtonLabel(tab)}
-              <ChevronRight size={12} className="opacity-90" />
-            </button>
-          </div>
-        </div>
-      </article>
-    </li>
-  );
-}
 
 export function XhsHotNotesFeed({
   notes,
@@ -191,6 +18,7 @@ export function XhsHotNotesFeed({
   onRetry,
   loading,
   error,
+  toolbarCompact = false,
 }: {
   notes: XhsHotNote[];
   tab: XhsFeedTab;
@@ -198,22 +26,30 @@ export function XhsHotNotesFeed({
   onRetry?: () => void;
   loading: boolean;
   error: string | null;
+  toolbarCompact?: boolean;
 }) {
-  const { user, setQuotaModalOpen, tr } = useApp();
+  const { user, openQuotaModal, tr } = useAppUi();
   const viewLimit = user ? FEATURE_LIMITS[user.plan].hotTopicView : 5;
 
   const filtered = useMemo(() => filterXhsNotesByTab(notes, tab), [notes, tab]);
 
   return (
-    <section className="space-y-3">
-      <HotTopicsFeedToolbar tab={tab} onTabChange={onTabChange} />
+    <section className="inspiration-feed-panel space-y-2.5">
+      <div
+        className={cn(
+          toolbarCompact && "sticky top-0 z-10 -mx-0.5 pb-2 pt-0.5"
+        )}
+      >
+        <HotTopicsFeedToolbar tab={tab} onTabChange={onTabChange} compact={toolbarCompact} />
+      </div>
 
       {loading ? (
         <div className="space-y-2 py-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[112px] animate-pulse rounded-[18px] bg-white/80 ring-1 ring-[#FFE8F0]"
+              className="inspiration-skeleton h-[112px] rounded-[18px] ring-1 ring-[#FFE8F0]"
+              style={{ animationDelay: `${i * 0.1}s` }}
             />
           ))}
           <p className="text-center text-[11px] text-[#9CA3AF]">正在拉取小红书热门图文…</p>
@@ -268,7 +104,7 @@ export function XhsHotNotesFeed({
       ) : null}
 
       {!loading && filtered.length > 0 ? (
-        <ul className="space-y-2.5">
+        <ul key={tab} className="inspiration-feed-list space-y-2.5">
           {filtered.map((note, index) => {
             const locked = user?.plan === "free" && index >= viewLimit;
             const showProBanner = user?.plan === "free" && index === viewLimit;
@@ -287,7 +123,7 @@ export function XhsHotNotesFeed({
                       </Link>
                       <button
                         type="button"
-                        onClick={() => setQuotaModalOpen(true)}
+                        onClick={() => openQuotaModal()}
                         className="rounded-full bg-gradient-to-r from-[#FF4F8B] to-[#FF9A4D] px-4 py-1.5 text-[11px] font-black text-white"
                       >
                         {tr("hotTopicsUnlockPro")}
@@ -298,7 +134,20 @@ export function XhsHotNotesFeed({
               );
             }
 
-            return <XhsNoteCard key={note.id} note={note} index={index} locked={locked} tab={tab} />;
+            return (
+              <li
+                key={note.noteId}
+                className="inspiration-feed-item cv-auto"
+                style={{ animationDelay: `${Math.min(index, 8) * 0.05}s` }}
+              >
+                <XhsInspirationNoteCard
+                  note={note}
+                  index={index}
+                  tab={tab}
+                  locked={locked}
+                />
+              </li>
+            );
           })}
         </ul>
       ) : null}

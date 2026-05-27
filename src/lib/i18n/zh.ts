@@ -143,6 +143,7 @@ export const zh = {
   settingsTitle: "设置与帮助",
   linkSupport: "客服中心 / 常见问题",
   linkFeedback: "意见反馈",
+  linkPartner: "加盟合伙人",
   linkUserAgreement: "用户协议",
   linkPrivacy: "隐私政策",
   linkAbout: "关于我们",

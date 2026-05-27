@@ -13,4 +13,9 @@ export const AI_GENERATE_BUDGET = {
   reply: { maxTokens: 700, timeoutMs: FAST_GENERATE_MS },
   score: { maxTokens: 800, timeoutMs: FAST_GENERATE_MS },
   account_test: { maxTokens: 1200, timeoutMs: FAST_GENERATE_MS + 400 },
+  expression_quick: { maxTokens: 900, timeoutMs: FAST_GENERATE_MS },
+  expression_chat: { maxTokens: 700, timeoutMs: FAST_GENERATE_MS },
+  expression_emotion: { maxTokens: 500, timeoutMs: FAST_GENERATE_MS },
+  expression_account_diagnosis: { maxTokens: 1800, timeoutMs: FAST_GENERATE_MS + 800 },
+  expression_commerce_pack: { maxTokens: 2000, timeoutMs: FAST_GENERATE_MS + 1000 },
 } as const;

@@ -34,7 +34,7 @@ export const XHS_TAB_SECTION_COPY: Record<
   },
   moments: {
     title: "朋友圈秒发",
-    sub: "配 1 张图 · 一句话就能发",
+    sub: "搭子/干饭/演出/萌宠 · 1 张图一句话",
   },
   xhs: {
     title: "小红书体",

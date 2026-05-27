@@ -2,6 +2,8 @@
  * 封面 URL 规范化 — 避免把 localhost 绝对地址写入生产库
  */
 
+import { isFakeSiteCdnCoverUrl } from "@/lib/media/pick-cover-persist-url";
+
 const DEV_HOST = /^(localhost|127\.0\.0\.1)$/i;
 
 /** 本地开发环境写入的地址，生产/用户端不可访问 */
@@ -46,8 +48,6 @@ function isLocalDevOrigin(): boolean {
   if (typeof window === "undefined") return false;
   return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(window.location.origin);
 }
-
-import { isFakeSiteCdnCoverUrl } from "@/lib/media/pick-cover-persist-url";
 
 /** 用户端展示用：dev-only 或无效则返回 undefined，触发 Pexels / 预设兜底 */
 export function resolvePublicCoverUrl(url: string | undefined): string | undefined {

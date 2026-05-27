@@ -13,7 +13,6 @@ import {
 } from "react";
 import { isPilotLoginMobile } from "@/lib/auth/login-allowlist";
 import { debouncedSaveJson } from "@/lib/debounce-storage";
-import { mockMomentsPack } from "@/lib/publish-pack/moments-result";
 import {
   MOCK_SMS_CODE,
   PLAN_QUOTA,
@@ -45,17 +44,11 @@ import {
 } from "@/lib/v1/invite-local";
 import { trackEvent } from "@/lib/analytics";
 import { t, type I18nKey } from "@/lib/i18n";
-import { mockPublishPack } from "@/lib/mock/content-v1";
 import {
   applyQuotaDeduct,
   canAffordQuota,
   getQuotaCost,
 } from "@/lib/v1/quota";
-import {
-  mockAccountPackage,
-  mockDailyVideo,
-  mockViralCopy,
-} from "@/lib/mock/v1-generators";
 import {
   apiConfirmMockPay,
   apiCreatePayOrder,
@@ -85,6 +78,7 @@ import type {
   User,
   VideoTask,
 } from "@/lib/types/v1";
+import { AppUiProvider } from "@/contexts/app-ui-context";
 
 interface AppContextValue {
   lang: Lang;
@@ -588,6 +582,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { result: res.result, risk: res.risk ?? risk };
       }
 
+      const { mockAccountPackage } = await import("@/lib/mock/v1-generators");
       const result = mockAccountPackage({
         platform: input.platform ?? "抖音",
         track: input.track ?? "婚恋情感",
@@ -629,6 +624,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { result: res.result, risk: res.risk ?? risk };
       }
 
+      const { mockDailyVideo } = await import("@/lib/mock/v1-generators");
       const result = mockDailyVideo(topic);
       deductQuota("publish_pack", "完整发布包");
       addHistory("完整发布包", topic, result as Record<string, unknown>);
@@ -710,13 +706,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const pack =
         input.platform === "朋友圈"
-          ? mockMomentsPack({
+          ? (
+              await import("@/lib/publish-pack/moments-result")
+            ).mockMomentsPack({
               topic,
               contentTypes: input.momentsContentTypes,
               directions: input.momentsDirections,
               extraNote: input.extraNote,
             })
-          : mockPublishPack({
+          : (
+              await import("@/lib/mock/content-v1")
+            ).mockPublishPack({
               topic,
               platform: input.platform,
               track: input.track,
@@ -769,6 +769,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { result: res.result, risk: res.risk ?? risk };
       }
 
+      const { mockViralCopy } = await import("@/lib/mock/v1-generators");
       const result = mockViralCopy(title, copy);
       deductQuota("viral", "爆款同款");
       addHistory("爆款同款", title, result as Record<string, unknown>);
@@ -1201,7 +1202,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ]
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  const uiValue = useMemo(
+    () => ({
+      lang,
+      tr,
+      user,
+      setLoginOpen,
+      openQuotaModal,
+      showToast,
+      pendingOrderCount: orders.filter((o) => o.status === "pending").length,
+    }),
+    [lang, tr, user, openQuotaModal, showToast, orders]
+  );
+
+  return (
+    <AppUiProvider value={uiValue}>
+      <AppContext.Provider value={value}>{children}</AppContext.Provider>
+    </AppUiProvider>
+  );
 }
 
 export function useApp() {

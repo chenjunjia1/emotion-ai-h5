@@ -17,51 +17,26 @@ export async function GET() {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-
-
   const providers = getImageProviderStatus();
-
   const ark = getArkConfig();
-
   const xh = getXinghuiConfig();
 
-
-
   let hint = "";
-
-  if (providers.provider === "ark") {
-
-    hint = "已配置火山方舟 Seedream，高级图文包将走在线推理接入点";
-
-  } else if (xh.mock) {
-
-    hint = "XINGHUI_MOCK=1：演示封面图。配置 ARK_API_KEY + ARK_IMAGE_ENDPOINT 可切换火山方舟";
-
-  } else if (xh.configured) {
-
-    hint = "使用讯飞星绘 TTI";
-
+  if (providers.provider === "mock") {
+    hint = "XINGHUI_MOCK=1：演示配图。接星绘企业 API 填 XINGHUI_*；接火山需 ARK_IMAGE_ENABLED=1";
+  } else if (providers.provider === "xinghui") {
+    hint = "使用讯飞星绘 TTI（当前未接火山）";
+  } else if (providers.provider === "ark") {
+    hint = "已开启火山方舟（ARK_IMAGE_ENABLED=1）";
   } else {
-
-    hint = "请配置 ARK_API_KEY + ARK_IMAGE_ENDPOINT，或星绘 XINGHUI_*";
-
+    hint = "请配置 XINGHUI_* 或设置 XINGHUI_MOCK=1";
   }
 
-
-
   return NextResponse.json({
-
     providers,
-
     ark: { configured: ark.configured, endpoint: ark.endpoint, size: ark.size },
-
     xinghui: xh,
-
     storage: { cosPresigned: isCosConfigured() },
-
     hint,
-
   });
-
 }
-

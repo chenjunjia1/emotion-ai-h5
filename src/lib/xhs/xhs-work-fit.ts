@@ -23,7 +23,7 @@ export function scoreWorkFit(note: XhsHotNote): number {
 }
 
 /** 打工人 Tab：优先职场嘴替，不够时用关键词兜底 */
-export function filterWorkNotes(notes: XhsHotNote[], max = 24): XhsHotNote[] {
+export function filterWorkNotes(notes: XhsHotNote[], max = 100): XhsHotNote[] {
   const scored = notes
     .map((n) => ({ n, s: scoreWorkFit(n) }))
     .sort((a, b) => b.s - a.s);

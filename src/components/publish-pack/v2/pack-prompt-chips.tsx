@@ -89,7 +89,7 @@ export function PackPromptChips({
       <div>
         <h3 className="font-black text-slate-800">选好画面，出图更真实</h3>
         <p className="mt-1 text-xs leading-5 text-slate-400">
-          点选 1～{max} 个标签，Seedream 会按这些场景和拍摄感觉生成，不用自己写英文提示词。
+          点选 1～{max} 个标签，AI 会按这些场景和拍摄感觉生成配图，不用自己写英文提示词。
         </p>
       </div>
       {renderGroup(

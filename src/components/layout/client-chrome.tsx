@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { AdminModeFab } from "@/components/admin/admin-mode-fab";
 import { BottomNav } from "./bottom-nav";
@@ -12,7 +13,9 @@ export function ClientChrome() {
   if (hideChrome) return null;
   return (
     <>
-      <BottomNav />
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
       <AdminModeFab />
     </>
   );

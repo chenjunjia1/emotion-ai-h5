@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       const msg =
         e instanceof ArkImageError || e instanceof XinghuiImageError
           ? e.message
-          : "未配置图片 API（火山方舟或星绘）";
+          : "未配置图片 API（星绘 XINGHUI_* 或 XINGHUI_MOCK=1）";
       return NextResponse.json({ error: "image_not_configured", message: msg, risk }, { status: 503 });
     }
     cost = calcAdvancedCost(imageCount, user.plan);
@@ -143,9 +143,11 @@ export async function POST(req: Request) {
       quotaReason,
       imageProviders,
       imageSourceNote:
-        getImageProviderStatus().provider === "ark"
-          ? "火山方舟 Seedream 真实感配图"
-          : "高级真实感配图",
+        imageProviders.provider === "mock"
+          ? "演示配图（XINGHUI_MOCK）"
+          : imageProviders.provider === "ark"
+            ? "火山方舟真实感配图"
+            : "星绘 AI 生活感配图",
     });
   } catch (e) {
     if (cost > 0) {

@@ -113,7 +113,7 @@ export function ImageStylePicker({
             选择图片风格
           </h3>
           <span className="shrink-0 rounded-full bg-pink-50 px-2 py-0.5 text-[9px] font-bold leading-tight text-pink-500">
-            Seedream
+            AI 配图
           </span>
         </div>
         <p className="text-[11px] leading-5 text-slate-400">

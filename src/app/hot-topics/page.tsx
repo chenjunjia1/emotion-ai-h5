@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { HotTopicsPageHero } from "@/components/hot-topics/hot-topics-page-hero";
-import { HotTopicsStatsStrip } from "@/components/hot-topics/hot-topics-stats-strip";
 import { XhsHotNotesFeed } from "@/components/hot-topics/xhs-hot-notes-feed";
 import { apiGetXhsHotNotes, apiGetXhsHotNotesMeta } from "@/lib/xhs/xhs-client-api";
 import {
@@ -20,7 +19,6 @@ function HotTopicsPageFallback() {
   return (
     <AppShell>
       <HotTopicsPageHero />
-      <HotTopicsStatsStrip />
       <div className="py-8 text-center text-[11px] text-[#9CA3AF]">加载灵感库…</div>
     </AppShell>
   );
@@ -113,7 +111,6 @@ function HotTopicsPageContent() {
   return (
     <AppShell>
       <HotTopicsPageHero />
-      <HotTopicsStatsStrip />
 
       <XhsHotNotesFeed
         notes={xhsNotes}

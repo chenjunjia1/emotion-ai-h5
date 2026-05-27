@@ -16,7 +16,7 @@ export default function AboutPage() {
     <LegalShell title="关于我们">
       <Card className="bg-gradient-to-br from-orange-50 to-rose-50">
         <CardContent>
-          <h2 className="text-lg font-bold text-slate-900">AI短视频运营灵感</h2>
+          <h2 className="text-lg font-bold text-slate-900">AI灵感创作</h2>
           <p className="mt-2 text-sm leading-7 text-slate-600">
             帮助小白博主与运营者每天抽选题、生成完整发布包、写标题与评论回复，轻松做短视频账号的一站式
             H5 陪跑工具。

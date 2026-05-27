@@ -7,14 +7,14 @@ import {
   HomeQuestRewards,
   useQuestProgressSummary,
 } from "@/components/home/home-quest-rewards";
-import { useApp } from "@/contexts/app-context";
-import { useProduct } from "@/hooks/use-product";
+import { useAppUi } from "@/contexts/app-ui-context";
+import { useGrowth } from "@/hooks/use-growth";
 import { cn } from "@/lib/utils";
 
 /** 我的页 · 会员中心下方横向任务条 */
 export function ProfileDailyQuestStrip() {
-  const { tr } = useApp();
-  const { refreshProductState } = useProduct();
+  const { tr } = useAppUi();
+  const { refreshProductState } = useGrowth();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { done, total, chestClaimed, allDone } = useQuestProgressSummary();

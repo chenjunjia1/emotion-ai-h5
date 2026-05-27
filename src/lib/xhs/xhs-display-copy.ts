@@ -1,5 +1,9 @@
 import type { XhsHotNote, XhsNoteCategory } from "@/lib/xhs/types";
-import { extractMomentsPreview } from "@/lib/xhs/xhs-moments-fit";
+import {
+  extractMomentsPreview,
+  isXhsStyledInspirationText,
+  pickMomentsHeadlinePrefix,
+} from "@/lib/xhs/xhs-moments-fit";
 
 export type XhsCardCopy = {
   headline: string;
@@ -71,6 +75,73 @@ function keywordFromNote(note: XhsHotNote): string {
   return String(note.category ?? "灵感");
 }
 
+/** 扩展池轮换用：从标题/描述/标签中取不同关键词，避免卡片标题雷同 */
+function keywordVariants(note: XhsHotNote): string[] {
+  const fromTags = (note.tags ?? [])
+    .map((t) => cleanRawTitle(String(t)))
+    .filter((t) => t.length >= 2);
+  const chunks = [
+    cleanRawTitle(String(note.title ?? "")),
+    cleanRawTitle(String(note.desc ?? "").slice(0, 24)),
+    cleanRawTitle(String(note.desc ?? "").slice(12, 36)),
+    ...fromTags,
+    String(note.category ?? "灵感"),
+  ].filter((t) => t.length >= 2);
+  const uniq: string[] = [];
+  for (const c of chunks) {
+    if (!uniq.includes(c)) uniq.push(c);
+  }
+  return uniq.length ? uniq : ["灵感"];
+}
+
+/**
+ * 灵感池扩展条目专用展示文案（round=0 为原条，>0 为克隆变体）
+ */
+export function buildInspirationVariantCopy(
+  note: XhsHotNote,
+  variantRound: number
+): { displayHeadline: string; displaySubline: string } {
+  if (variantRound <= 0 && note.displayHeadline?.trim()) {
+    return {
+      displayHeadline: note.displayHeadline.trim().slice(0, 32),
+      displaySubline: (note.displaySubline?.trim() || buildXhsCardCopyAuto(note).subline).slice(0, 48),
+    };
+  }
+
+  const category = String(note.category ?? "灵感").trim() || "灵感";
+  const pools = categoryPools(category);
+  const seed =
+    variantRound > 0
+      ? `${String(note.noteId ?? note.id ?? "note")}~v${variantRound}`
+      : String(note.noteId ?? note.id ?? "note");
+  const prefix = hashPick(seed, pools.headlines);
+  const subline = hashPick(`${seed}-sub`, pools.sublines);
+  const variants = keywordVariants(note);
+  const keyword = variants[variantRound % variants.length]!;
+
+  const VARIANT_TAGS = [
+    "换角度",
+    "新发",
+    "备选",
+    "今日版",
+    "灵感+",
+    "再一版",
+    "结构参考",
+  ] as const;
+
+  let headline =
+    keyword.length >= 4
+      ? `${prefix}${keyword}`
+      : `${prefix}${category}灵感${variantRound > 0 ? variantRound : ""}`;
+
+  if (variantRound > 0) {
+    const tag = VARIANT_TAGS[variantRound % VARIANT_TAGS.length]!;
+    headline = `${headline}·${tag}`;
+  }
+
+  return { displayHeadline: headline.slice(0, 32), displaySubline: subline.slice(0, 48) };
+}
+
 /** 把 TikHub 原标题包装成更吸引点击的灵感标题（未设 displayHeadline 时） */
 function buildXhsCardCopyAuto(note: XhsHotNote): XhsCardCopy {
   const category = String(note.category ?? "灵感").trim() || "灵感";
@@ -109,29 +180,36 @@ export function previewXhsCardCopyAuto(note: XhsHotNote): XhsCardCopy {
   return buildXhsCardCopyAuto(note);
 }
 
-/** 朋友圈 Tab：强调「一句秒发」+ 配图即可 */
+/** 朋友圈 Tab：一句秒发 · 不用小红书风/老套池内标题 */
 export function buildMomentsCardCopy(note: XhsHotNote): XhsCardCopy {
   const customHeadline = note.displayHeadline?.trim();
   const customSubline = note.displaySubline?.trim();
-  if (customHeadline) {
+  const noteId = String(note.noteId ?? note.id ?? "note");
+
+  if (customHeadline && !isXhsStyledInspirationText(customHeadline)) {
     return {
       headline: customHeadline.slice(0, 32),
-      subline: customSubline || "配 1 张图就能发 · AI 改成你的口吻",
-      angle: buildXhsCardCopyAuto(note).angle,
+      subline: customSubline || "1 张图 + 一句话 · AI 改成你的语气",
+      angle: `朋友圈秒发 · ${note.category}`.slice(0, 48),
     };
   }
 
   const preview = extractMomentsPreview(note);
   const category = String(note.category ?? "灵感").trim() || "灵感";
-  const moods = ["今日状态", "生活碎片", "随手一记", "小确幸"];
-  const noteId = String(note.noteId ?? note.id ?? "note");
+  const prefix = pickMomentsHeadlinePrefix(noteId);
+
+  const sublines = [
+    "1 张图 + 一句话 · AI 改成你的语气",
+    "短平快 · 适合私域秒发",
+    "不用长文 · 配图就能发",
+    "90/00 后口吻 · AI 原创改写",
+  ];
   let h = 0;
   for (let i = 0; i < noteId.length; i++) h = (h * 31 + noteId.charCodeAt(i)) >>> 0;
-  const mood = moods[h % moods.length]!;
 
   return {
-    headline: `${mood}｜${preview}`.slice(0, 28),
-    subline: "配 1 张图就能发 · AI 改成你的口吻",
-    angle: `朋友圈短文案 · ${category} · ${preview}`.slice(0, 48),
+    headline: `${prefix}｜${preview}`.slice(0, 32),
+    subline: sublines[h % sublines.length]!,
+    angle: `朋友圈秒发 · ${category} · ${preview}`.slice(0, 48),
   };
 }

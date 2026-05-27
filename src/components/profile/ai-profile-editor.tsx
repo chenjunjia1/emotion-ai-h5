@@ -80,9 +80,15 @@ export function AiProfileEditor({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-base font-black text-slate-800">{tr("onboardingNicknameTitle")}</h2>
-        <p className="mt-0.5 text-[11px] text-slate-500">{tr("onboardingNicknameSub")}</p>
-        <label className="mt-3 block text-[11px] font-bold text-slate-600">
+        {mode === "create" ? (
+          <>
+            <h2 className="text-base font-black text-slate-800">{tr("onboardingNicknameTitle")}</h2>
+            <p className="mt-0.5 text-[11px] text-slate-500">{tr("onboardingNicknameSub")}</p>
+          </>
+        ) : (
+          <p className="text-[13px] font-black text-[#1F2937]">基础信息</p>
+        )}
+        <label className={cn("block text-[11px] font-bold text-slate-600", mode === "edit" ? "mt-2" : "mt-3")}>
           {tr("onboardingNicknameLabel")}
           <div className="relative mt-1.5">
             <input
@@ -98,9 +104,9 @@ export function AiProfileEditor({
         </label>
       </div>
 
-      <div>
-        <h2 className="text-sm font-black text-slate-800">{tr("onboardingTracksTitle")}</h2>
-        <p className="mt-0.5 text-[10px] text-slate-500">{tr("onboardingTracksSub")}</p>
+      <div className="border-t border-[#FFF0F5] pt-4">
+        <p className="text-[13px] font-black text-[#1F2937]">{tr("onboardingTracksTitle")}</p>
+        <p className="mt-0.5 text-[10px] text-[#9CA3AF]">{tr("onboardingTracksSub")}</p>
         <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label={tr("onboardingTracksTitle")}>
           {ONBOARDING_TRACKS.map((t) => {
             const selected = trackId === t.id;
@@ -135,9 +141,11 @@ export function AiProfileEditor({
         </div>
       </div>
 
-      <div className="pt-1">
-        <h2 className="text-sm font-black text-slate-800">{tr("onboardingAvatarTitle")}</h2>
-        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{tr("profileAvatarUploadSectionSub")}</p>
+      <div className="border-t border-[#FFF0F5] pt-4">
+        <p className="text-[13px] font-black text-[#1F2937]">{tr("onboardingAvatarTitle")}</p>
+        <p className="mt-0.5 text-[10px] leading-relaxed text-[#9CA3AF]">
+          {tr("profileAvatarUploadSectionSub")}
+        </p>
         <div className="mt-4 rounded-2xl bg-[#FFFBF8] px-3 py-4 ring-1 ring-[#FFE8F0]">
           <ProfileAvatarUpload
             avatarId={avatarId}

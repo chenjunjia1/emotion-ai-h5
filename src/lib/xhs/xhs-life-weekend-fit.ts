@@ -53,7 +53,7 @@ function pickScoredNotes(
   minScore: number,
   fallbackMin: number,
   fallbackCategories: XhsNoteCategory[],
-  max = 24
+  max = 100
 ): XhsHotNote[] {
   const scored = notes
     .map((n) => ({ n, s: scoreFn(n) }))
@@ -81,7 +81,7 @@ function pickScoredNotes(
 }
 
 /** 生活感：松弛日常、城市漫游、咖啡窗边 */
-export function filterLifeVibeNotes(notes: XhsHotNote[], max = 24): XhsHotNote[] {
+export function filterLifeVibeNotes(notes: XhsHotNote[], max = 100): XhsHotNote[] {
   return pickScoredNotes(
     notes,
     scoreLifeVibe,
@@ -93,7 +93,7 @@ export function filterLifeVibeNotes(notes: XhsHotNote[], max = 24): XhsHotNote[]
 }
 
 /** 周末碎片：出游、探店、打卡出片 */
-export function filterWeekendNotes(notes: XhsHotNote[], max = 24): XhsHotNote[] {
+export function filterWeekendNotes(notes: XhsHotNote[], max = 100): XhsHotNote[] {
   return pickScoredNotes(
     notes,
     scoreWeekendVibe,

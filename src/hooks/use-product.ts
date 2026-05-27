@@ -11,15 +11,6 @@ import {
 import type { User } from "@/lib/types/v1";
 import type { HotTopicItem } from "@/lib/hot-topics/types";
 import { readHotTopicsForToday } from "@/lib/hot-topics/read-cached";
-import {
-  mockAccountPersonalityTest,
-  mockEmotionChat,
-  mockGodReplies,
-  mockHotTopics,
-  mockPostReview,
-  mockTopicBlindBox,
-  mockViralScore,
-} from "@/lib/mock/content-v1";
 import { playTaskDone } from "@/lib/play-feedback";
 import { getLevelByXp, XP_REWARDS } from "@/lib/v1/growth";
 import {
@@ -219,7 +210,7 @@ export function useProduct() {
   useEffect(() => {
     let cancelled = false;
     const key = new Date().toISOString().slice(0, 10);
-    const loadLocal = () => {
+    const loadLocal = async () => {
       const cached = localStorage.getItem(STORAGE_HOT_TOPICS);
       if (cached) {
         try {
@@ -239,6 +230,7 @@ export function useProduct() {
           localStorage.removeItem(STORAGE_HOT_TOPICS);
         }
       }
+      const { mockHotTopics } = await import("@/lib/mock/content-v1");
       const items = mockHotTopics(key);
       setHotTopics(items);
       localStorage.setItem(STORAGE_HOT_TOPICS, JSON.stringify({ date: key, items }));
@@ -255,23 +247,23 @@ export function useProduct() {
               JSON.stringify({ date: key, items: r.items })
             );
           } else {
-            loadLocal();
+            void loadLocal();
           }
         })
         .catch(() => {
-          if (!cancelled) loadLocal();
+          if (!cancelled) void loadLocal();
         });
     };
 
     if (serverMode) {
-      loadLocal();
+      void loadLocal();
       const timeoutId = window.setTimeout(loadRemote, 0) as unknown as number;
       return () => {
         cancelled = true;
         window.clearTimeout(timeoutId);
       };
     }
-    loadLocal();
+    void loadLocal();
     return () => {
       cancelled = true;
     };
@@ -470,6 +462,7 @@ export function useProduct() {
         void completeTask("topic");
         return normalized;
       }
+      const { mockTopicBlindBox } = await import("@/lib/mock/content-v1");
       const result = mockTopicBlindBox({
         platform: input.platform ?? "抖音",
         track: input.track ?? "职场成长",
@@ -572,6 +565,7 @@ export function useProduct() {
         }
         return null;
       }
+      const { mockAccountPersonalityTest } = await import("@/lib/mock/content-v1");
       const result = mockAccountPersonalityTest(answers);
       void addXp(XP_REWARDS.account);
       return result;
@@ -630,6 +624,7 @@ export function useProduct() {
         }
         return null;
       }
+      const { mockEmotionChat } = await import("@/lib/mock/content-v1");
       const result = mockEmotionChat(input);
       setUser((u) => (u ? applyQuotaDeduct(u, emotionCost) : u));
       addHistory("AI助手", input.chat.slice(0, 80), result as Record<string, unknown>);
@@ -674,6 +669,7 @@ export function useProduct() {
         }
         return null;
       }
+      const { mockGodReplies } = await import("@/lib/mock/content-v1");
       const result = mockGodReplies(comment);
       addHistory("神回复", comment.slice(0, 80), result as Record<string, unknown>);
       markTask("reply");
@@ -731,6 +727,7 @@ export function useProduct() {
         }
         return null;
       }
+      const { mockViralScore } = await import("@/lib/mock/content-v1");
       const result = mockViralScore(input);
       addHistory(
         "爆款潜力打分",
@@ -789,6 +786,7 @@ export function useProduct() {
         }
         return null;
       }
+      const { mockPostReview } = await import("@/lib/mock/content-v1");
       const result = mockPostReview(input);
       setUser((u) => (u ? applyQuotaDeduct(u, reviewCost) : u));
       addHistory("发完复盘", String(input.title ?? ""), result as Record<string, unknown>);

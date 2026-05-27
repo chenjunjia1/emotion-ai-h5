@@ -6,7 +6,8 @@ import {
 import { normalizeXhsNote } from "@/lib/xhs/xhs-note-normalize";
 import { sortXhsNotesByHotScore } from "@/lib/xhs/xhs-note-rules";
 import {
-  XHS_DEFAULT_SEARCH_KEYWORDS,
+  mergeXhsFetchKeywords,
+  XHS_BULK_EXTRA_KEYWORDS,
   XHS_HOT_NOTES_LIMIT,
 } from "@/lib/xhs/xhs-keywords";
 import {
@@ -23,8 +24,16 @@ import type { XhsHotNote } from "@/lib/xhs/types";
 import { diversifyXhsNotes } from "@/lib/xhs/xhs-feed-filters";
 import { applyUniqueXhsCovers } from "@/lib/xhs/xhs-unique-covers";
 
-const DETAIL_ENRICH_LIMIT = 20;
-const SEARCH_CONCURRENCY = 2;
+const DETAIL_ENRICH_LIMIT = 24;
+const SEARCH_CONCURRENCY = 3;
+const SEARCH_PAGES_PER_KEYWORD = 8;
+const HOT_LIST_TAKE = 80;
+const MIN_SEARCH_BATCH = 4;
+const MIN_UNIQUE_BEFORE_SAVE = 300;
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 async function mapPool<T, R>(
   items: T[],
@@ -102,25 +111,44 @@ export async function aggregateXhsHotNotes(options?: {
   }
 
   const keywords = options?.keywords?.length
-    ? options.keywords
-    : [...XHS_DEFAULT_SEARCH_KEYWORDS];
+    ? mergeXhsFetchKeywords(options.keywords)
+    : mergeXhsFetchKeywords();
 
   const map = new Map<string, XhsHotNote>();
 
   const hotList = await fetchXhsHotList();
-  for (const item of hotList.slice(0, 15)) {
+  for (const item of hotList.slice(0, HOT_LIST_TAKE)) {
     const note = normalizeXhsNote(item);
     if (note) map.set(note.noteId, note);
   }
 
-  await mapPool(keywords, SEARCH_CONCURRENCY, async (kw) => {
-    const batch = await searchXhsNotes(kw, 1);
-    for (const n of batch) {
-      if (!map.has(n.noteId)) map.set(n.noteId, n);
-    }
-  });
+  async function searchKeywords(kws: string[]) {
+    await mapPool(kws, SEARCH_CONCURRENCY, async (kw) => {
+      for (let page = 1; page <= SEARCH_PAGES_PER_KEYWORD; page++) {
+        const batch = await searchXhsNotes(kw, page);
+        if (!batch.length) break;
+        for (const n of batch) {
+          if (!map.has(n.noteId)) map.set(n.noteId, n);
+        }
+        if (batch.length < MIN_SEARCH_BATCH) break;
+        await sleep(120);
+      }
+    });
+  }
 
-  let candidates = sortXhsNotesByHotScore([...map.values()]).slice(0, 45);
+  await searchKeywords(keywords);
+
+  if (map.size < MIN_UNIQUE_BEFORE_SAVE) {
+    const extra = XHS_BULK_EXTRA_KEYWORDS.filter((k) => !keywords.includes(k));
+    await searchKeywords(extra);
+    console.info(
+      `[xhs] TikHub 补拉关键词 ${extra.length} 个后 unique=${map.size}`
+    );
+  }
+
+  console.info(`[xhs] TikHub 聚合 unique=${map.size} keywords=${keywords.length}`);
+
+  let candidates = sortXhsNotesByHotScore([...map.values()]);
 
   const toEnrich = candidates.slice(0, DETAIL_ENRICH_LIMIT);
   const enriched = await mapPool(toEnrich, 2, enrichNoteDetail);
